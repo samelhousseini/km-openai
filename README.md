@@ -1,6 +1,6 @@
 <br />
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://raw.githubusercontent.com/samelhousseini/km-openai/main/template.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsamelhousseini%2Fkm-openai%2Fmain%2Ftemplate.json)
   
   
 <br />
@@ -30,3 +30,5 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
 1. Upload the KB documents to the Blob Storage container “kmoaidemo”
 1. Start the search by running the first two cells in “experiment.ipynb” notebook
 1. "redis.yml" is also included with this repo. This is optional but might be needed if the user wants to use a Redis ACI instead of Redis Enterprise for development purposes.
+
+
