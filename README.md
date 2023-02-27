@@ -23,7 +23,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <img src="images/suffix.jpg" width="600" />
     </p>
     <br/>
-1. Once deployment is done, update the localSettings.json in Code with all the keys
+1. Once deployment is done, please update the localSettings.json in Code with all the keys and endpoints from all the resources that were just created.
 1. Deploy the Azure Functions to the FuncApp. During functions deployment in VS Code:
    * First, please upload the local settings to the FuncApp
    * it will ask for a storage account, please supply the one in the RG
