@@ -30,8 +30,8 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <br/>
     <br/>
 1. Update the .env in Code for: 
-   * CogSearch settings
-   * CogServ settings
+   * Cognitive Search settings: endpoint and primary key
+   * Cognitive Services settings: endpoint and primary key
    * Blob Connection String
    * Get the Azure Function URI of the "AzCogSearchDocCrackingFunc" from the Azure Portal, and write it in the "COG_SEARCH_CUSTOM_FUNC" field in .env
     <br/>
