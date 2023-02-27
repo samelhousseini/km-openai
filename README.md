@@ -76,9 +76,10 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
 <br/>
 
 # Troubleshooting
-
-1. If for whatever reason, there was an error in writing the .env settings, please remember to restart the kernel in the notebook after correcting them, in order for the changes to take effect.
-1. If for whatever reason, there was an error in writing the settings in the Function App Configuration, then please restart the Function App from the Azure portal, in order for the changes to take effect.
+The below are troubleshooting steps in case you face any problems with the solution:
+1. Please monitor the Azure Functions logs for any errors or exceptions.
+1. If for whatever reason, there was an mistake while writing the .env settings, please remember to restart the kernel in the notebook after correcting them, in order for the changes to take effect.
+1. If for whatever reason, there was an mistake while writing the settings in the Function App Configuration, then please restart the Function App from the Azure portal, in order for the changes to take effect.
 1. Please install [Redis Insight](https://redis.com/redis-enterprise/redis-insight/) if you want to inspect the embeddings in Redis.
     <br/>
     <br />
@@ -91,6 +92,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
 <br/>
 
 # Interfacing with the Solution: Chatbot and Postman
+For both cases below, please note that the "BotQnAHTTPFunc" Azure Function returns plain text. This could be easily changed to return the response in JSON format:
 
 1. In this repo, there's a general guide "AzureOpenAIandPVAbot.pdf" to build chat bots using Power Virtual Agents. This guide can be adapted and used to build a bot that will interface with the already deployed "BotQnAHTTPFunc" Azure Function in the Function App. The returned link for the document below has been hidden:
     <br/>
