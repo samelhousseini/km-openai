@@ -1,10 +1,13 @@
+**Please read the deployment guide below before deploying:**
 <br />
-
+<br />
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsamelhousseini%2Fkm-openai%2Fmain%2Ftemplate.json)
-  
-  
+<br />
+<br />
 <br />
 
+# Deployment Guide
+<br />
 
 The ARM template is not fully automated (yet), so a few manual steps will have to be taken to set up your project:
 
@@ -47,6 +50,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <img src="images/run_ingest.jpg" width="600" />
     </p>
     <br/>
-1. "redis.yml" is also included with this repo. This is optional but might be needed if the user wants to use a Redis ACI instead of Redis Enterprise for development purposes.
+1. "redis.yml" is also included with this repo. This is optional but might be needed if the user wants to use a Redis ACI instead of Redis Enterprise for development purposes. You can create the Redis container on ACI using the following command:<br/>
+        `az container create --resource-group <YOUR_RG_NAME> --file redis.yml`
 
 
