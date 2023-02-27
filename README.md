@@ -1,6 +1,6 @@
 <br />
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](template.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://github.com/samelhousseini/km-openai/blob/main/template.json)
   
   
 <br />
