@@ -23,8 +23,8 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <img src="images/suffix.jpg" width="600" />
     </p>
     <br/>
-1. Once deployment is done, please update the localSettings.json in VS Code with all the keys and endpoints from all the resources that were just created.Then go to the 
-1. Deploy the settings you've just filled in the localSettigns.json to the Function App. Please make sure that the "Azure Functions" extension is installed in your VS Code. Go to the right Function App under the "Resources" section and then right-click on "Application Settings" and "Upload Local Settings..."
+1. Once deployment is done, please update the local.settings.json in VS Code with all the keys and endpoints from all the resources that were just created.
+1. Deploy the settings you've just filled in the local.settigns.json to the Function App. Please make sure that the "Azure Functions" extension is installed in your VS Code. Go to the right Function App under the "Resources" section and then right-click on "Application Settings" and "Upload Local Settings..."
     <br/>
     <br />
     <p align="center">
