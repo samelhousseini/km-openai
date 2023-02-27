@@ -1,0 +1,74 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "WEBSITE_MAX_DYNAMIC_APPLICATION_SCALE_OUT":"1",
+    "FUNCTIONS_EXTENSION_VERSION":"~4",
+
+    "COG_SEARCH_ENDPOINT": "",
+    "COG_SEARCH_ADMIN_KEY": "",
+    "COG_SEARCH_CUSTOM_FUNC": "",
+    "KB_INDEX_NAME":"km-openai",
+    "KB_INDEXER_NAME":"km-openai-indexer",
+    "KB_DATA_SOURCE_NAME":"km-openai-docs",
+    "KB_SKILLSET_NAME":"km-openai-skills",
+    
+    "COG_SERV_ENDPOINT": "",
+    "COG_SERV_KEY": "",
+    
+    "COSMOS_URI": "",
+    "COSMOS_KEY": "",
+    "COSMOS_DB_NAME": "KM_OAI_DB",
+    "CATEGORYID": "KM_OAI_CATEGORY",
+
+    "DATABASE_MODE": "0",
+
+
+    "SERVICEBUS_CONN_STR":"",
+
+    "TRANSLATION_ENDPOINT": "",
+    "TRANSLATION_API_KEY": "",
+    "TRANSLATION_LOCATION": "westeurope",
+    
+    "KB_BLOB_CONN_STR":"",
+    "KB_BLOB_CONTAINER":"kmoaidemo",
+    "OUTPUT_BLOB_CONTAINER":"kmoaiprocessed",
+
+    "REDIS_ADDR": "",
+    "REDIS_PORT": "10000",
+    "REDIS_PASSWORD":"",
+    "REDIS_INDEX_NAME":"acs_emb_index",
+    "VECTOR_FIELD_IN_REDIS":"item_vector",
+    "NUMBER_PRODUCTS_INDEX":"1000",
+
+    "OPENAI_RESOURCE_ENDPOINT": "",
+    "OPENAI_API_KEY": "",
+
+    "ADA_002_EMBED_NUM_DIMS":"1536",
+    "ADA_002_MODEL_MAX_TOKENS":"2047",
+    "ADA_002_EMBEDDING_MODEL":"text-embedding-ada-002",
+    "ADA_EMBEDDING_ENCODING":"cl100k_base",
+
+    "DAVINCI_003_EMBED_NUM_DIMS":"12288",
+    "DAVINCI_003_MODEL_MAX_TOKENS":"4097",
+    "DAVINCI_003_EMB_MAX_TOKENS":"2047",
+    "DAVINCI_003_COMPLETIONS_MODEL":"text-davinci-003",
+    "DAVINCI_003_EMBEDDING_MODEL":"text-search-davinci-doc-001",
+    "DAVINCI_003_QUERY_EMB_MODEL":"text-search-davinci-query-001",
+    "DAVINCI_EMBEDDING_ENCODING":"p50k_base",
+    
+
+    "OVERLAP_TEXT":"80",
+    "SMALL_EMB_TOKEN_NUM":"2047",
+    "MEDIUM_EMB_TOKEN_NUM":"0",
+    "LARGE_EMB_TOKEN_NUM":"0",
+    "CHOSEN_EMB_MODEL":"text-embedding-ada-002",
+    "CHOSEN_QUERY_EMB_MODEL":"text-embedding-ada-002",
+    "CHOSEN_COMP_MODEL":"text-davinci-003",
+    "NUM_TOP_MATCHES":"5",
+    "MAX_OUTPUT_TOKENS":"500",
+    "MAX_QUERY_TOKENS":"500"
+
+  }
+}
