@@ -14,7 +14,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
    * please make sure that the Storage account name does not have any hyphens or punctuations
 <br/>
 <p align="center">
-<img src="images/suffix.jpg" width="400" />
+<img src="images/suffix.jpg" width="600" />
 </p>
 <br/>
 1. Once deployment is done, update the localSettings.json in Code with all the keys
@@ -36,7 +36,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
       1. text-embedding-ada-002
 <br/>
 <p align="center">
-<img src="images/oai_deployments.jpg" width="400" />
+<img src="images/oai_deployments.jpg" width="600" />
 </p>
 
 <br/>
@@ -44,7 +44,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
 1. Start the search by running the first two cells in “experiment.ipynb” notebook
 <br/>
 <p align="center">
-<img src="images/run_ingest.jpg" width="400" />
+<img src="images/run_ingest.jpg" width="600" />
 </p>
 <br/>
 1. "redis.yml" is also included with this repo. This is optional but might be needed if the user wants to use a Redis ACI instead of Redis Enterprise for development purposes.
