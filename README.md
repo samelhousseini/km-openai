@@ -1,6 +1,6 @@
 <br />
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://github.com/samelhousseini/km-openai/blob/main/template.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://github.com/samelhousseini/cognitive-services-speech-sdk/blob/feature/oai_prod_function/)
   
   
 <br />
