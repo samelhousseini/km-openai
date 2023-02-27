@@ -8,7 +8,6 @@
 
     "COG_SEARCH_ENDPOINT": "",
     "COG_SEARCH_ADMIN_KEY": "",
-    "COG_SEARCH_CUSTOM_FUNC": "",
     "KB_INDEX_NAME":"km-openai",
     "KB_INDEXER_NAME":"km-openai-indexer",
     "KB_DATA_SOURCE_NAME":"km-openai-docs",
