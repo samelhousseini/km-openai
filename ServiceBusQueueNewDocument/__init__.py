@@ -1,0 +1,64 @@
+import logging
+import json
+import azure.functions as func
+import smart_open
+import os, uuid
+from azure.storage.blob import BlobServiceClient, BlobClient
+
+from utils import helpers
+
+
+KB_BLOB_CONN_STR = os.environ['KB_BLOB_CONN_STR']
+OUTPUT_BLOB_CONTAINER = os.environ['OUTPUT_BLOB_CONTAINER']
+
+ADA_002_EMBED_NUM_DIMS  = int(os.environ['ADA_002_EMBED_NUM_DIMS'])
+ADA_002_MODEL_MAX_TOKENS  = int(os.environ['ADA_002_MODEL_MAX_TOKENS'])
+ADA_002_EMBEDDING_MODEL   = os.environ['ADA_002_EMBEDDING_MODEL']
+
+DAVINCI_003_EMBED_NUM_DIMS = int(os.environ['DAVINCI_003_EMBED_NUM_DIMS'])
+DAVINCI_003_MODEL_MAX_TOKENS = int(os.environ['DAVINCI_003_MODEL_MAX_TOKENS'])
+DAVINCI_003_COMPLETIONS_MODEL = os.environ['DAVINCI_003_COMPLETIONS_MODEL']
+DAVINCI_003_EMBEDDING_MODEL   = os.environ['DAVINCI_003_EMBEDDING_MODEL']
+DAVINCI_003_QUERY_EMB_MODEL   = os.environ['DAVINCI_003_QUERY_EMB_MODEL']
+
+CHOSEN_EMB_MODEL   = os.environ['CHOSEN_EMB_MODEL']
+SMALL_EMB_TOKEN_NUM  = int(os.environ['SMALL_EMB_TOKEN_NUM'])
+MEDIUM_EMB_TOKEN_NUM  = int(os.environ['MEDIUM_EMB_TOKEN_NUM'])
+LARGE_EMB_TOKEN_NUM  = int(os.environ['LARGE_EMB_TOKEN_NUM'])
+
+
+
+
+def main(msg: func.ServiceBusMessage):
+
+    msg_dict = json.loads(msg.get_body().decode('utf-8'))
+
+    logging.info('Python ServiceBus queue trigger processed message: %s', msg_dict)
+    logging.info("Event Type:%s", msg_dict['eventType'])
+
+    transport_params = {
+    'client': BlobServiceClient.from_connection_string(KB_BLOB_CONN_STR),
+    }
+
+    json_filename = os.path.basename(msg_dict['subject'])
+
+    with smart_open.open(f"azure://{OUTPUT_BLOB_CONTAINER}/{json_filename}", transport_params=transport_params) as fin:
+        data = json.load(fin)
+
+    # logging.info(data)
+
+    emb_documents = []
+    emb_documents += helpers.generate_embeddings(data, CHOSEN_EMB_MODEL, SMALL_EMB_TOKEN_NUM,  text_suffix = 'S')
+
+    if MEDIUM_EMB_TOKEN_NUM != 0:
+        emb_documents += helpers.generate_embeddings(data, CHOSEN_EMB_MODEL, MEDIUM_EMB_TOKEN_NUM, text_suffix = 'M', optional=True)
+
+    if LARGE_EMB_TOKEN_NUM != 0:
+        emb_documents += helpers.generate_embeddings(data, CHOSEN_EMB_MODEL, LARGE_EMB_TOKEN_NUM,  text_suffix = 'L', optional=True)
+
+    logging.info(f"Generated {len(emb_documents)} emb chunks from doc {json_filename}")
+
+    loaded = helpers.load_embedding_docs_in_redis(emb_documents, document_name = json_filename)
+
+    logging.info(f"Loaded into Redis {loaded} emb chunks from doc {json_filename}")
+    

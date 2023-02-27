@@ -1,0 +1,26 @@
+apiVersion: '2019-12-01'
+location: westeurope
+name: redis-with-file-share
+properties:
+  containers:
+  - name: redisearch
+    properties:
+      environmentVariables:
+        - name: "REDIS_ARGS"
+          value: "--save 60 1"
+      image: redis/redis-stack-server:latest
+      ports:
+      - port: 6379
+      resources:
+        requests:
+          cpu: 1.0
+          memoryInGB: 1.5
+  osType: Linux
+  restartPolicy: Always
+  ipAddress:
+    type: Public
+    ports:
+      - port: 6379
+    dnsNameLabel: aci-redis-cp1
+tags: {}
+type: Microsoft.ContainerInstance/containerGroups

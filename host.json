@@ -1,0 +1,28 @@
+{
+  "version": "2.0",
+  "functionTimeout": "-1",
+  "extensions": {
+    "serviceBus": {
+      "prefetchCount": 1,
+      "messageHandlerOptions": {
+        "maxConcurrentCalls": 1
+      }
+    }
+  },
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "excludedTypes": "Request"
+      }
+    }
+  },
+  "extensionBundle": {
+    "id": "Microsoft.Azure.Functions.ExtensionBundle",
+    "version": "[3.*, 4.0.0)"
+  },
+  "concurrency": {
+    "dynamicConcurrencyEnabled": true,
+    "snapshotPersistenceEnabled": true
+  }
+}
