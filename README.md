@@ -23,13 +23,16 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <img src="images/suffix.jpg" width="600" />
     </p>
     <br/>
-1. Once deployment is done, please update the localSettings.json in Code with all the keys and endpoints from all the resources that were just created.
-1. Deploy the Azure Functions to the FuncApp. During functions deployment in VS Code:
-   * First, please upload the local settings to the FuncApp
-   * it will ask for a storage account, please supply the one in the RG
+1. Once deployment is done, please update the localSettings.json in VS Code with all the keys and endpoints from all the resources that were just created.Then go to the 
+1. Deploy the settings you've just filled in the localSettigns.json to the Function App. Please make sure that the "Azure Functions" extension is installed in your VS Code. Go to the right Function App under the "Resources" section and then right-click on "Application Settings" and "Upload Local Settings..."
     <br/>
+    <br />
+    <p align="center">
+    <img src="images/local_settings.jpg" width="300" />
+    </p>
     <br/>
-1. Update the .env in Code for: 
+1. Deploy the Azure Functions to the FuncApp. During functions deployment in VS Code. The deployment will ask for a storage account, please supply the one in the RG
+1. Update the .env in VS Code for: 
    * Cognitive Search settings: endpoint and primary key
    * Cognitive Services settings: endpoint and primary key
    * Blob Connection String
@@ -37,7 +40,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <br/>
     <br />
     <p align="center">
-    <img src="images/custom_skill.jpg" width="600" />
+    <img src="images/custom_skill.jpg" width="450" />
     </p>
     <br/>
 1. Go to the FuncApp, and then click on one of the deployed functions, and then the “Monitor” tab. Then please create the application insights. This step is only needed for troubleshooting
@@ -51,7 +54,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <br/>
     <br />
     <p align="center">
-    <img src="images/oai_deployments.jpg" width="600" />
+    <img src="images/oai_deployments.jpg" width="500" />
     </p>
 
     <br/>
@@ -60,7 +63,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <br/>
     <br />
     <p align="center">
-    <img src="images/run_ingest.jpg" width="600" />
+    <img src="images/run_ingest.jpg" width="400" />
     </p>
     <br/>
 1. **(Optional)** "redis.yml" is also included with this repo. This is optional but might be needed if the user wants to use a Redis ACI instead of Redis Enterprise for development purposes. You can create the Redis container on ACI using the following command:<br/>
