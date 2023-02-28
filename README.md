@@ -93,6 +93,14 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
 <br/>
 <br/>
 
+# Knowledge Base - Web Pages
+Cognitive Search should be able to ingest a wide variety of document formats, such as Word documents, PDFs, Excel and CSV files, JSON files, etc.. When it comes to Knowledge Base, a common ask might be to include web pages as well. If the data cannot be easily downloaded, then there are two options:
+1. Cognitive Search have a few connectors for web crawling, such as: [Selenium](https://contentanalytics.digital.accenture.com/display/aspire40/Selenium+Crawler) and [Aspider](https://contentanalytics.digital.accenture.com/display/aspire40/Aspider+Web+Crawler)
+1. The OpenAI Cookbook has an [example notebook](https://github.com/openai/openai-cookbook/tree/main/apps/web-crawl-q-and-a) about crawling web pages with BeaufitulSoup
+
+<br/>
+<br/>
+
 # Troubleshooting
 The below are troubleshooting steps in case you face any problems with the solution:
 1. Please monitor the Azure Functions logs for any errors or exceptions.
