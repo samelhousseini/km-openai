@@ -6,7 +6,25 @@
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsamelhousseini%2Fkm-openai%2Fmain%2Ftemplate.json)
 <br />
 <br />
+
+# Architecture
+<br/>
 <br />
+<p align="center">
+<img src="images/km-openai.png" />
+</p>
+<br/>
+<br/>
+
+# Purpose
+The purpose of this repo is to accelerate the deployment of a Knowledge Mining solution that will ingest a Knowledge Base, generate embeddings using the contents extracted, store them in a vector search engine (Redis), and use that engine to answer queries / questions specific to that Knowledge Base.
+
+The Cognitive Search component serves to make it easier to ingest a Knowledge Base with a variety of document formats. The Cognitive Services component connected to the Search makes it possible to have an enrichment pipeline. This pipeline can generate information based on images for example, which can be included at the time of generating embeddings. 
+
+This repo also includes a guide to build a Power Virutal Agent bot that could be used and adapted to connect to this solution, to create an end-to-end Knowledge Base Chatbot.
+<br/>
+<br/>
+<br/>
 
 # Deployment Guide
 <br />
