@@ -140,3 +140,4 @@ load_embeddings.ipynb
 local.settings (dev).json
 local.settings (template).json
 local.settings (mine).json
+template_test.json

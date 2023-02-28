@@ -2,48 +2,54 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+       "ResourceSuffix": {
+            "type": "string",
+            "metadata": {
+        "description": "provide a 2-13 character suffix for all resources."
+            }
+        },
         "sites_km_aoi_funcapp_name": {
-            "defaultValue": "km-aoi-funcapp",
+            "defaultValue": "[concat('funcapp', parameters('ResourceSuffix'))]", 
             "type": "String"
         },
         "redisEnterprise_km_oai_redis_name": {
-            "defaultValue": "km-oai-redis",
+            "defaultValue":  "[concat('redisdb', parameters('ResourceSuffix'))]", 
             "type": "String"
         },
-        "serverfarms_ASP_KMOAIDemo_8517_name": {
-            "defaultValue": "ASP-KMOAIDemo-8517",
+        "serverfarms_ASP_KMOAIDemo_name": {
+            "defaultValue": "[concat('servfarm', parameters('ResourceSuffix'))]",  
             "type": "String"
         },
         "searchServices_km_aoi_search_name": {
-            "defaultValue": "km-aoi-search",
+            "defaultValue": "[concat('search', parameters('ResourceSuffix'))]",  
             "type": "String"
         },
         "accounts_km_oai_rs_name": {
-            "defaultValue": "km-oai-rs",
+            "defaultValue": "[concat('oai', parameters('ResourceSuffix'))]",   
             "type": "String"
         },
         "storageAccounts_kmoaistorage_name": {
-            "defaultValue": "kmoaistorage",
+            "defaultValue": "[replace(concat('storage', parameters('ResourceSuffix')), '-', '')]",  
             "type": "String"
         },
         "systemTopics_km_oai_event_grid_name": {
-            "defaultValue": "km-oai-event-grid",
+            "defaultValue": "[concat('evgrid', parameters('ResourceSuffix'))]",   
             "type": "String"
         },
         "namespaces_km_oai_service_bus_name": {
-            "defaultValue": "km-oai-service-bus",
+            "defaultValue": "[concat('bus', parameters('ResourceSuffix'))]",   
             "type": "String"
         },
         "accounts_km_aoi_cogserv_name": {
-            "defaultValue": "km-aoi-cogserv",
+            "defaultValue": "[concat('cogserv', parameters('ResourceSuffix'))]",   
             "type": "String"
         },
         "databaseAccounts_km_oai_cosmos_name": {
-            "defaultValue": "km-oai-cosmos",
+            "defaultValue": "[concat('cosmos', parameters('ResourceSuffix'))]",
             "type": "String"
         },
         "accounts_km_oai_translator_name": {
-            "defaultValue": "km-oai-translator",
+            "defaultValue": "[concat('trsltr', parameters('ResourceSuffix'))]",
             "type": "String"
         }
 
@@ -273,7 +279,7 @@
         {
             "type": "Microsoft.Web/serverfarms",
             "apiVersion": "2022-03-01",
-            "name": "[parameters('serverfarms_ASP_KMOAIDemo_8517_name')]",
+            "name": "[parameters('serverfarms_ASP_KMOAIDemo_name')]",
             "location": "West Europe",
             "sku": {
                 "name": "EP1",
@@ -434,7 +440,7 @@
             "name": "[concat(parameters('namespaces_km_oai_service_bus_name'), '/km-oai-processing-queue')]",
             "location": "westeurope",
             "dependsOn": [
-                "[resourceId('Microsoft.ServiceBus/namespaces', parameters('namespaces_km_oai_service_bus_name'))]"
+                "[resourceId('Microsoft.ServiceBus/namespaces', parameters('namespaces_km_oai_service_bus_name'))]" 
             ],
             "properties": {
                 "maxMessageSizeInKilobytes": 256,
@@ -518,7 +524,13 @@
             "name": "[parameters('sites_km_aoi_funcapp_name')]",
             "location": "West Europe",
             "dependsOn": [
-                "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_KMOAIDemo_8517_name'))]"
+                "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_KMOAIDemo_name'))]",
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccounts_kmoaistorage_name'))]", 
+                "[concat('Microsoft.CognitiveServices/accounts/', parameters('accounts_km_oai_translator_name'))]",
+                "[concat('Microsoft.CognitiveServices/accounts/', parameters('accounts_km_aoi_cogserv_name'))]",
+                "[concat('Microsoft.CognitiveServices/accounts/', parameters('accounts_km_oai_rs_name'))]",
+                "[concat('Microsoft.DocumentDB/databaseAccounts/', parameters('databaseAccounts_km_oai_cosmos_name'))]"
+                
             ],
             "tags": {
                   },
@@ -537,7 +549,7 @@
                         "hostType": "Repository"
                     }
                 ],
-                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_KMOAIDemo_8517_name'))]",
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_KMOAIDemo_name'))]",
                 "reserved": true,
                 "isXenon": false,
                 "hyperV": false,
@@ -551,7 +563,49 @@
                     "alwaysOn": false,
                     "http20Enabled": false,
                     "functionAppScaleLimit": 0,
-                    "minimumElasticInstanceCount": 1
+                    "minimumElasticInstanceCount": 1,
+                    "appSettings": [
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~4"
+                        }, 
+                        {
+                            "name": "TRANSLATION_API_KEY",
+                            "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('accounts_km_oai_translator_name')), '2021-10-01').key1]"
+                        }, 
+                        {
+                            "name": "COG_SERV_ENDPOINT",
+                            "value": "[concat('https://', parameters('accounts_km_aoi_cogserv_name'), '.cognitiveservices.azure.com/')]"
+                        },
+                        {
+                            "name": "COG_SERV_KEY",
+                            "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('accounts_km_aoi_cogserv_name')), '2021-10-01').key1]"
+                        }, 
+                        {
+                            "name": "OPENAI_RESOURCE_ENDPOINT",
+                            "value": "[concat('https://', parameters('accounts_km_oai_rs_name'), '.openai.azure.com/')]" 
+                        },
+                        {
+                            "name": "OPENAI_API_KEY",
+                            "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('accounts_km_oai_rs_name')), '2021-10-01').key1]"
+                        },
+                        {
+                            "name": "KB_BLOB_CONN_STR",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccounts_kmoaistorage_name'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_kmoaistorage_name')), '2019-06-01').keys[0].value, ';EndpointSuffix=core.windows.net')]"
+                        },
+                        {
+                            "name": "COSMOS_URI",
+                            "value": "[concat('https://', parameters('databaseAccounts_km_oai_cosmos_name'),'.documents.azure.com:443/')]"
+                        },
+                        {
+                            "name": "COSMOS_KEY",
+                            "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_km_oai_cosmos_name')), '2022-05-15').primaryMasterKey]"
+                        },
+                        {
+                            "name": "COG_SEARCH_ENDPOINT",
+                            "value": "[concat('https://', parameters('searchServices_km_aoi_search_name'), '.search.windows.net')]" 
+                        }
+                    ]
                 },
                 "scmSiteAlsoStopped": false,
                 "clientAffinityEnabled": false,
