@@ -13,16 +13,16 @@
             "type": "String",
             "allowedValues": ["yes", "no"]
         },
-        "accounts_km_oai_rs_name": {
-            "defaultValue": "[concat('oai', parameters('ResourceSuffix'))]",   
-            "type": "String"
-        },
         "accounts_km_oai_rs_endpoint": {
             "defaultValue": "",    
             "type": "String"
         },
         "accounts_km_oai_rs_key": {
             "defaultValue": "",   
+            "type": "String"
+        },
+        "accounts_km_oai_rs_name": {
+            "defaultValue": "[concat('oai', parameters('ResourceSuffix'))]",   
             "type": "String"
         },
         "sites_km_aoi_funcapp_name": {

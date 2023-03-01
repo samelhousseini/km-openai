@@ -144,3 +144,5 @@ template_test.json
 template_test copy.json
 
 .env copy
+template.json
+README copy.md

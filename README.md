@@ -31,37 +31,48 @@ This repo also includes a guide to build a Power Virutal Agent bot that could be
 
 The ARM template is not fully automated (yet), so a few manual steps will have to be taken to set up your project:
 
-1. At the deployment stage of the ARM template:
-   * please deploy all resources in only one of the following 3 regions: West Europe, East US, South Central US
-   * rename the instances randomly, a good idea would be to add your suffix to all resources, e.g. "-seh" and "seh" for the storage account
-   * please make sure that the Storage account name does not have any hyphens or punctuations
+1. At the deployment stage of the ARM templat, please deploy all resources in only one of the following 3 regions: West Europe, East US, South Central US
     <br/>
     <br />
     <p align="center">
-    <img src="images/suffix.jpg" width="600" />
+    <img src="images/suffix.jpg" width="600" /> 
     </p>
     <br/>
-1. Once deployment is done, please update the local.settings.json in VS Code with all the keys and endpoints from all the resources that were just created.
-1. Deploy the settings you've just filled in the local.settigns.json to the Function App. Please make sure that the "Azure Functions" extension is installed in your VS Code. Go to the right Function App under the "Resources" section and then right-click on "Application Settings" and "Upload Local Settings..."
+1. Once deployment is done, go to the "Outputs" section at the left-hand side:
     <br/>
     <br />
     <p align="center">
-    <img src="images/local_settings.jpg" width="300" />
+    <img src="images/depl-outputs.jpg" width="700" /> 
     </p>
     <br/>
-1. Deploy the Azure Functions to the FuncApp. During functions deployment in VS Code. The deployment will ask for a storage account, please supply the one in the RG
-1. Update the .env in VS Code for: 
-   * Cognitive Search settings: endpoint and primary key
-   * Cognitive Services settings: endpoint and primary key
-   * Blob Connection String
-   * Get the Azure Function URI of the "AzCogSearchDocCrackingFunc" from the Azure Portal, and write it in the "COG_SEARCH_CUSTOM_FUNC" field in .env
+1. From the Outputs section, please copy these values as you will need them in the .env file, to kickstart the Cognitive Search ingestion process.
     <br/>
     <br />
     <p align="center">
-    <img src="images/custom_skill.jpg" width="450" />
+    <img src="images/copyoutputs.jpg" width="700" /> copyoutputs
+    </p>
+    <br/>
+1. The next step would be to deploy the Azure Functions to the FuncApp. During functions deployment in VS Code. The deployment will ask for a storage account, please supply the one in the RG
+    <br/>
+    <br />
+    <p align="center">
+    <img src="images/funcdeploy.jpg" width="300" />
+    </p>
+    <br/>
+1. Update the .env in VS Code with the 5 settings you got out of Step #3 from the Outputs section. And one additional setting you can get from VS Code as detailed below: 
+   * Cognitive Search settings: COG_SEARCH_ENDPOINT endpoint and COG_SEARCH_ADMIN_KEY primary key (2 settings)
+   * Cognitive Services settings: COG_SERV_ENDPOINT endpoint and COG_SERV_KEY primary key (2 settings)
+   * Blob Connection String KB_BLOB_CONN_STR (1 setting)
+   * Custom Skill URI COG_SEARCH_CUSTOM_FUNC which you can get out of the "AzCogSearchDocCrackingFunc" from VS Code (1 setting)
+    <br/>
+    <br />
+    <p align="center">
+    <img src="images/copyfuncurl.jpg" width="450" />
     </p>
     <br/>
 1. Go to the FuncApp, and then click on one of the deployed functions, and then the “Monitor” tab. Then please create the application insights. This step is only needed for troubleshooting
+    <br />
+    <br />
 1. Deploy 4 models in OpenAI:
    * Go to Deployments in your OpenAI resource
    * Add 4 models:
@@ -77,8 +88,13 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
 
     <br/>
 1. Upload the KB documents to the Blob Storage container “kmoaidemo”
-1. Before running the "experiments.ipynb" notebook, a Conda environment will need to be created. Python 3.8 and 3.9 were tested and worked fine. The packages can either be installed from within the notebook, or run pip install after activating the new environment:
+    <br />
+    <br />
+1. Before running the "experiments.ipynb" notebook, a Conda environment will need to be created. Python 3.8 and 3.9 were tested and worked fine. The packages can either be installed from within the first cell of the notebook, or run pip install after activating the new environment:
+
     `pip install -r requirements.py`
+   <br />
+<br />
 1. Start the search by running the third cells in “experiment.ipynb” notebook
     <br/>
     <br />
