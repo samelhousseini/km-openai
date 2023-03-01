@@ -17,7 +17,7 @@
 <br/>
 
 # Purpose
-The purpose of this repo is to accelerate the deployment of a Knowledge Mining solution that will ingest a Knowledge Base, generate embeddings using the contents extracted, store them in a vector search engine (Redis), and use that engine to answer queries / questions specific to that Knowledge Base.
+The purpose of this repo is to accelerate the deployment of a Python-based Knowledge Mining solution that will ingest a Knowledge Base, generate embeddings using the contents extracted, store them in a vector search engine (Redis), and use that engine to answer queries / questions specific to that Knowledge Base.
 
 The Cognitive Search component serves to make it easier to ingest a Knowledge Base with a variety of document formats. The Cognitive Services component connected to the Search makes it possible to have an enrichment pipeline. This pipeline can generate information based on images for example, which can be included at the time of generating embeddings. 
 
