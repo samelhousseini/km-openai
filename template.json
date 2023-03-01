@@ -8,6 +8,23 @@
         "description": "provide a 2-13 character suffix for all resources."
             }
         },
+        "deploy_openai": {
+            "defaultValue": "no",
+            "type": "String",
+            "allowedValues": ["yes", "no"]
+        },
+        "accounts_km_oai_rs_name": {
+            "defaultValue": "[concat('oai', parameters('ResourceSuffix'))]",   
+            "type": "String"
+        },
+        "accounts_km_oai_rs_endpoint": {
+            "defaultValue": "",    
+            "type": "String"
+        },
+        "accounts_km_oai_rs_key": {
+            "defaultValue": "",   
+            "type": "String"
+        },
         "sites_km_aoi_funcapp_name": {
             "defaultValue": "[concat('funcapp', parameters('ResourceSuffix'))]", 
             "type": "String"
@@ -22,10 +39,6 @@
         },
         "searchServices_km_aoi_search_name": {
             "defaultValue": "[concat('search', parameters('ResourceSuffix'))]",  
-            "type": "String"
-        },
-        "accounts_km_oai_rs_name": {
-            "defaultValue": "[concat('oai', parameters('ResourceSuffix'))]",   
             "type": "String"
         },
         "storageAccounts_kmoaistorage_name": {
@@ -64,7 +77,7 @@
             "type": "Microsoft.Cache/redisEnterprise",
             "apiVersion": "2022-01-01",
             "name": "[parameters('redisEnterprise_km_oai_redis_name')]",
-            "location": "West Europe",
+            "location": "[resourceGroup().location]",
             "sku": {
                 "name": "Enterprise_E10",
                 "capacity": 2
@@ -77,7 +90,7 @@
             "type": "Microsoft.CognitiveServices/accounts",
             "apiVersion": "2022-12-01",
             "name": "[parameters('accounts_km_aoi_cogserv_name')]",
-            "location": "westeurope",
+            "location": "[resourceGroup().location]",
             "sku": {
                 "name": "S0"
             },
@@ -97,10 +110,11 @@
             }
         },
         {
+            "condition": "[equals(parameters('deploy_openai'), 'yes')]",
             "type": "Microsoft.CognitiveServices/accounts",
             "apiVersion": "2022-12-01",
             "name": "[parameters('accounts_km_oai_rs_name')]",
-            "location": "westeurope",
+            "location": "[resourceGroup().location]",
             "sku": {
                 "name": "S0"
             },
@@ -114,7 +128,7 @@
             "type": "Microsoft.CognitiveServices/accounts",
             "apiVersion": "2022-12-01",
             "name": "[parameters('accounts_km_oai_translator_name')]",
-            "location": "westeurope",
+            "location": "[resourceGroup().location]",
             "sku": {
                 "name": "S1"
             },
@@ -136,7 +150,7 @@
             "type": "Microsoft.DocumentDB/databaseAccounts",
             "apiVersion": "2022-11-15",
             "name": "[parameters('databaseAccounts_km_oai_cosmos_name')]",
-            "location": "West Europe",
+            "location": "[resourceGroup().location]",
             "tags": {
                 "defaultExperience": "Core (SQL)",
                 "hidden-cosmos-mmspecial": ""
@@ -170,7 +184,7 @@
                 },
                 "locations": [
                     {
-                        "locationName": "West Europe",
+                        "locationName": "[resourceGroup().location]",
                         "provisioningState": "Succeeded",
                         "failoverPriority": 0,
                         "isZoneRedundant": false
@@ -199,7 +213,7 @@
             "type": "Microsoft.Search/searchServices",
             "apiVersion": "2022-09-01",
             "name": "[parameters('searchServices_km_aoi_search_name')]",
-            "location": "West Europe",
+            "location": "[resourceGroup().location]",
             "sku": {
                 "name": "standard"
             },
@@ -221,7 +235,7 @@
             "type": "Microsoft.ServiceBus/namespaces",
             "apiVersion": "2022-10-01-preview",
             "name": "[parameters('namespaces_km_oai_service_bus_name')]",
-            "location": "West Europe",
+            "location": "[resourceGroup().location]",
             "sku": {
                 "name": "Standard",
                 "tier": "Standard"
@@ -238,7 +252,7 @@
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2022-09-01",
             "name": "[parameters('storageAccounts_kmoaistorage_name')]",
-            "location": "westeurope",
+            "location": "[resourceGroup().location]",
             "sku": {
                 "name": "Standard_LRS",
                 "tier": "Standard"
@@ -280,7 +294,7 @@
             "type": "Microsoft.Web/serverfarms",
             "apiVersion": "2022-03-01",
             "name": "[parameters('serverfarms_ASP_KMOAIDemo_name')]",
-            "location": "West Europe",
+            "location": "[resourceGroup().location]",
             "sku": {
                 "name": "EP1",
                 "tier": "ElasticPremium",
@@ -394,7 +408,7 @@
             "type": "Microsoft.EventGrid/systemTopics",
             "apiVersion": "2022-06-15",
             "name": "[parameters('systemTopics_km_oai_event_grid_name')]",
-            "location": "westeurope",
+            "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_kmoaistorage_name'))]"
             ],
@@ -407,7 +421,7 @@
             "type": "Microsoft.ServiceBus/namespaces/authorizationrules",
             "apiVersion": "2022-10-01-preview",
             "name": "[concat(parameters('namespaces_km_oai_service_bus_name'), '/RootManageSharedAccessKey')]",
-            "location": "westeurope",
+            "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[resourceId('Microsoft.ServiceBus/namespaces', parameters('namespaces_km_oai_service_bus_name'))]"
             ],
@@ -423,7 +437,7 @@
             "type": "Microsoft.ServiceBus/namespaces/networkRuleSets",
             "apiVersion": "2022-10-01-preview",
             "name": "[concat(parameters('namespaces_km_oai_service_bus_name'), '/default')]",
-            "location": "West Europe",
+            "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[resourceId('Microsoft.ServiceBus/namespaces', parameters('namespaces_km_oai_service_bus_name'))]"
             ],
@@ -438,7 +452,7 @@
             "type": "Microsoft.ServiceBus/namespaces/queues",
             "apiVersion": "2022-10-01-preview",
             "name": "[concat(parameters('namespaces_km_oai_service_bus_name'), '/km-oai-processing-queue')]",
-            "location": "westeurope",
+            "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[resourceId('Microsoft.ServiceBus/namespaces', parameters('namespaces_km_oai_service_bus_name'))]" 
             ],
@@ -522,14 +536,14 @@
             "type": "Microsoft.Web/sites",
             "apiVersion": "2022-03-01",
             "name": "[parameters('sites_km_aoi_funcapp_name')]",
-            "location": "West Europe",
+            "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_KMOAIDemo_name'))]",
                 "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccounts_kmoaistorage_name'))]", 
                 "[concat('Microsoft.CognitiveServices/accounts/', parameters('accounts_km_oai_translator_name'))]",
                 "[concat('Microsoft.CognitiveServices/accounts/', parameters('accounts_km_aoi_cogserv_name'))]",
-                "[concat('Microsoft.CognitiveServices/accounts/', parameters('accounts_km_oai_rs_name'))]",
-                "[concat('Microsoft.DocumentDB/databaseAccounts/', parameters('databaseAccounts_km_oai_cosmos_name'))]"
+                "[concat('Microsoft.DocumentDB/databaseAccounts/', parameters('databaseAccounts_km_oai_cosmos_name'))]",
+                "[concat('Microsoft.Cache/RedisEnterprise/', parameters('redisEnterprise_km_oai_redis_name'), '/databases/default')]"
                 
             ],
             "tags": {
@@ -574,6 +588,10 @@
                             "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('accounts_km_oai_translator_name')), '2021-10-01').key1]"
                         }, 
                         {
+                            "name": "TRANSLATION_LOCATION",
+                            "value": "[resourceGroup().location]"
+                        },
+                        {
                             "name": "COG_SERV_ENDPOINT",
                             "value": "[concat('https://', parameters('accounts_km_aoi_cogserv_name'), '.cognitiveservices.azure.com/')]"
                         },
@@ -583,11 +601,11 @@
                         }, 
                         {
                             "name": "OPENAI_RESOURCE_ENDPOINT",
-                            "value": "[concat('https://', parameters('accounts_km_oai_rs_name'), '.openai.azure.com/')]" 
+                            "value": "[if(equals(parameters('deploy_openai'),'yes'), concat('https://', parameters('accounts_km_oai_rs_name'), '.openai.azure.com/'),  parameters('accounts_km_oai_rs_endpoint'))]"  
                         },
                         {
                             "name": "OPENAI_API_KEY",
-                            "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('accounts_km_oai_rs_name')), '2021-10-01').key1]"
+                            "value": "[if(equals(parameters('deploy_openai'),'yes'), listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('accounts_km_oai_rs_name')), '2021-10-01').key1,  parameters('accounts_km_oai_rs_key'))]"  
                         },
                         {
                             "name": "KB_BLOB_CONN_STR",
@@ -604,7 +622,155 @@
                         {
                             "name": "COG_SEARCH_ENDPOINT",
                             "value": "[concat('https://', parameters('searchServices_km_aoi_search_name'), '.search.windows.net')]" 
-                        }
+                        },
+                        {
+                            "name": "SERVICEBUS_CONN_STR",
+                            "value": "[listKeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules/', parameters('namespaces_km_oai_service_bus_name'),  'RootManageSharedAccessKey'), '2021-11-01').primaryConnectionString]"
+                        },
+                        {
+                            "name": "REDIS_PASSWORD",
+                            "value": "[ listKeys(resourceId('Microsoft.Cache/RedisEnterprise/databases', parameters('redisEnterprise_km_oai_redis_name'),  'default'), '2022-01-01').primaryKey]"
+                        }, 
+                        {
+                            "name": "REDDIS_ADDR",
+                            "value": "[concat( parameters('redisEnterprise_km_oai_redis_name'), '.', resourceGroup().location, '.redisenterprise.cache.azure.net')]"
+                        },
+                        {
+                            "name": "KB_INDEX_NAME",
+                            "value": "km-openai"
+                        } ,
+                        {
+                            "name": "KB_INDEXER_NAME",
+                            "value": "km-openai-indexer"
+                        } ,
+                        {
+                            "name": "KB_DATA_SOURCE_NAME",
+                            "value": "km-openai-docs"
+                        } ,
+                        {
+                            "name": "KB_SKILLSET_NAME",
+                            "value": "km-openai-skills"
+                        } ,
+                        {
+                            "name": "DATABASE_MODE",
+                            "value": "0"
+                        } ,
+                        {
+                            "name": "REDIS_PORT",
+                            "value": "10000"
+                        } ,
+                        {
+                            "name": "REDIS_INDEX_NAME",
+                            "value": "'acs_emb_index'"
+                        } ,
+                        {
+                            "name": "VECTOR_FIELD_IN_REDIS",
+                            "value": "'item_vector'"
+                        } ,
+                        {
+                            "name": "NUMBER_PRODUCTS_INDEX",
+                            "value": "1000"
+                        } ,
+                        {
+                            "name": "CATEGORYID",
+                            "value": "KM_OAI_CATEGORY"
+                        } ,
+                        {
+                            "name": "COSMOS_DB_NAME",
+                            "value": "KM_OAI_DB"
+                        } ,
+                        {
+                            "name": "KB_BLOB_CONTAINER",
+                            "value": "kmoaidemo"
+                        } ,
+                        {
+                            "name": "OUTPUT_BLOB_CONTAINER",
+                            "value": "kmoaiprocessed"
+                        } ,
+                        {
+                            "name": "MAX_OUTPUT_TOKENS",
+                            "value": "500"
+                        } ,
+                        {
+                            "name": "MAX_QUERY_TOKENS",
+                            "value": "500"
+                        } ,
+                        {
+                            "name": "CHOSEN_QUERY_EMB_MODEL",
+                            "value": "text-embedding-ada-002"
+                        } ,
+                        {
+                            "name": "CHOSEN_COMP_MODEL",
+                            "value": "text-davinci-003"
+                        } ,
+                        {
+                            "name": "OVERLAP_TEXT",
+                            "value": "80"
+                        } ,
+                        {
+                            "name": "ADA_002_EMBED_NUM_DIMS",
+                            "value": "1536"
+                        } ,
+                        {
+                            "name": "ADA_002_MODEL_MAX_TOKENS",
+                            "value": "2047"
+                        } ,
+                        {
+                            "name": "ADA_002_EMBEDDING_MODEL",
+                            "value": "text-embedding-ada-002"
+                        } ,
+                        {
+                            "name": "ADA_EMBEDDING_ENCODING",
+                            "value": "cl100k_base"
+                        } ,
+                        {
+                            "name": "DAVINCI_003_EMBED_NUM_DIMS",
+                            "value": "12288"
+                        } ,
+                        {
+                            "name": "DAVINCI_003_MODEL_MAX_TOKENS",
+                            "value": "4000"
+                        } ,
+                        {
+                            "name": "DAVINCI_003_EMB_MAX_TOKENS",
+                            "value": "2047"
+                        } ,
+                        {
+                            "name": "DAVINCI_003_COMPLETIONS_MODEL",
+                            "value": "text-davinci-003"
+                        } ,
+                        {
+                            "name": "DAVINCI_003_EMBEDDING_MODEL",
+                            "value": "text-search-davinci-doc-001"
+                        } ,
+                        {
+                            "name": "DAVINCI_003_QUERY_EMB_MODEL",
+                            "value": "text-search-davinci-query-001"
+                        } ,
+                        {
+                            "name": "DAVINCI_EMBEDDING_ENCODING",
+                            "value": "p50k_base"
+                        } ,
+                        {
+                            "name": "CHOSEN_EMB_MODEL",
+                            "value": "text-embedding-ada-002"
+                        } ,
+                        {
+                            "name": "SMALL_EMB_TOKEN_NUM",
+                            "value": "2047"
+                        } ,
+                        {
+                            "name": "MEDIUM_EMB_TOKEN_NUM",
+                            "value": "1000"
+                        } ,
+                        {
+                            "name": "LARGE_EMB_TOKEN_NUM",
+                            "value": "2047"
+                        } ,
+                        {
+                            "name": "NUM_TOP_MATCHES",
+                            "value": "5"
+                        } 
                     ]
                 },
                 "scmSiteAlsoStopped": false,
@@ -626,7 +792,7 @@
             "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
             "apiVersion": "2022-03-01",
             "name": "[concat(parameters('sites_km_aoi_funcapp_name'), '/ftp')]",
-            "location": "West Europe",
+            "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[resourceId('Microsoft.Web/sites', parameters('sites_km_aoi_funcapp_name'))]"
             ],
@@ -641,7 +807,7 @@
             "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
             "apiVersion": "2022-03-01",
             "name": "[concat(parameters('sites_km_aoi_funcapp_name'), '/scm')]",
-            "location": "West Europe",
+            "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[resourceId('Microsoft.Web/sites', parameters('sites_km_aoi_funcapp_name'))]"
             ],
@@ -656,7 +822,7 @@
             "type": "Microsoft.Web/sites/config",
             "apiVersion": "2022-03-01",
             "name": "[concat(parameters('sites_km_aoi_funcapp_name'), '/web')]",
-            "location": "West Europe",
+            "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[resourceId('Microsoft.Web/sites', parameters('sites_km_aoi_funcapp_name'))]"
             ],
@@ -746,7 +912,7 @@
             "type": "Microsoft.Web/sites/hostNameBindings",
             "apiVersion": "2022-03-01",
             "name": "[concat(parameters('sites_km_aoi_funcapp_name'), '/', parameters('sites_km_aoi_funcapp_name'), '.azurewebsites.net')]",
-            "location": "West Europe",
+            "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[resourceId('Microsoft.Web/sites', parameters('sites_km_aoi_funcapp_name'))]"
             ],
