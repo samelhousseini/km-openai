@@ -1139,13 +1139,12 @@
         },
         "COG_SEARCH_ENDPOINT": {
             "type": "string",
-            "value": "[concat('https://', parameters('accounts_km_aoi_cogserv_name'), '.cognitiveservices.azure.com/')]"
+            "value": "[concat('https://', parameters('searchServices_km_aoi_search_name'), '.search.windows.net')]"
         },
         "COG_SEARCH_ADMIN_KEY": {
             "type": "string",
-            "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('accounts_km_aoi_cogserv_name')), '2021-10-01').key1]"
+            "value":"[listAdminKeys(parameters('searchServices_km_aoi_search_name'), '2022-09-01').primaryKey]"
         }
 
     }
 }
-
