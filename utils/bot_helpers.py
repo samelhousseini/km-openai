@@ -25,7 +25,7 @@ CHOSEN_COMP_MODEL       = os.environ['CHOSEN_COMP_MODEL']
 
 
         
-redis_conn = redis_helpers.get_new_conn()
+redis_conn = redis_helpers.get_new_conn() 
 
 
 

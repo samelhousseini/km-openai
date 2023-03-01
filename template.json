@@ -673,11 +673,11 @@
                         } ,
                         {
                             "name": "REDIS_INDEX_NAME",
-                            "value": "'acs_emb_index'"
+                            "value": "acs_emb_index"
                         } ,
                         {
                             "name": "VECTOR_FIELD_IN_REDIS",
-                            "value": "'item_vector'"
+                            "value": "item_vector"
                         } ,
                         {
                             "name": "NUMBER_PRODUCTS_INDEX",
@@ -700,20 +700,20 @@
                             "value": "kmoaiprocessed"
                         } ,
                         {
-                            "name": "MAX_OUTPUT_TOKENS",
-                            "value": "500"
-                        } ,
-                        {
-                            "name": "MAX_QUERY_TOKENS",
-                            "value": "500"
-                        } ,
-                        {
                             "name": "CHOSEN_QUERY_EMB_MODEL",
                             "value": "text-embedding-ada-002"
                         } ,
                         {
                             "name": "CHOSEN_COMP_MODEL",
                             "value": "text-davinci-003"
+                        } ,
+                        {
+                            "name": "MAX_QUERY_TOKENS",
+                            "value": "500"
+                        } ,
+                        {
+                            "name": "MAX_OUTPUT_TOKENS",
+                            "value": "500"
                         } ,
                         {
                             "name": "OVERLAP_TEXT",
@@ -782,7 +782,7 @@
                         {
                             "name": "NUM_TOP_MATCHES",
                             "value": "5"
-                        } 
+                        }
                     ]
                 },
                 "scmSiteAlsoStopped": false,
@@ -1123,5 +1123,29 @@
                 "publicAccess": "None"
             }
         }
-    ]
+    ],
+    "outputs": {
+        "COG_SERV_ENDPOINT": {
+            "type": "string",
+            "value": "[concat('https://', parameters('accounts_km_aoi_cogserv_name'), '.cognitiveservices.azure.com/')]"
+        },
+        "COG_SERV_KEY": {
+            "type": "string",
+            "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('accounts_km_aoi_cogserv_name')), '2021-10-01').key1]"
+        },
+        "KB_BLOB_CONN_STR": {
+            "type": "string",
+            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccounts_kmoaistorage_name'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_kmoaistorage_name')), '2019-06-01').keys[0].value, ';EndpointSuffix=core.windows.net')]"
+        },
+        "COG_SEARCH_ENDPOINT": {
+            "type": "string",
+            "value": "[concat('https://', parameters('accounts_km_aoi_cogserv_name'), '.cognitiveservices.azure.com/')]"
+        },
+        "COG_SEARCH_ADMIN_KEY": {
+            "type": "string",
+            "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('accounts_km_aoi_cogserv_name')), '2021-10-01').key1]"
+        }
+
+    }
 }
+

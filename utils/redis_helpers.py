@@ -76,10 +76,10 @@ def get_new_conn():
     return redis_conn
 
 
-def redis_upsert_embedding(redis_conn, e):    
+def redis_upsert_embedding(redis_conn, e):     
     try:
         embeds = np.array(e['item_vector']).astype(np.float32).tobytes()
-        meta = {'text_en': e['text_en'], 'text':e['text'], 'doc_url': e['doc_url'], 'timestamp': e['timestamp'], 'item_vector':embeds}
+        meta = {'text_en': e['text_en'], 'text':e['text'], 'doc_url': e['doc_url'], 'timestamp': e['timestamp'], VECTOR_FIELD_IN_REDIS:embeds}
         p = redis_conn.pipeline(transaction=False)
         p.hset(e['id'], mapping=meta)
         p.execute()   
