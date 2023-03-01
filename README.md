@@ -45,7 +45,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <img src="images/depl-outputs.jpg" width="700" /> 
     </p>
     <br/>
-1. From the Outputs section, please copy these values as you will need them in the .env file, to kickstart the Cognitive Search ingestion process.
+1. From the Outputs section, please copy these values (or keep this browser page open) as you will need them in the .env file, to kickstart the Cognitive Search ingestion process. More on this in Step #5 below.
     <br/>
     <br />
     <p align="center">
