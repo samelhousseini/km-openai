@@ -39,7 +39,9 @@ def check_model_deployment(oai_model):
                 return deployment["id"]
                 
 
-        if not model_exists: openai.Deployment.create(model=oai_model, scale_settings={"scale_type":"standard"})
+        if not model_exists: 
+            openai.Deployment.create(model=oai_model, scale_settings={"scale_type":"standard"})
+            time.sleep(30)
         assert model_exists, f"Model {oai_model} is not deployed, deploying now"
         
     except Exception as e:
