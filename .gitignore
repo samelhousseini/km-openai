@@ -142,3 +142,5 @@ local.settings (template).json
 local.settings (mine).json
 template_test.json
 template_test copy.json
+
+.env copy

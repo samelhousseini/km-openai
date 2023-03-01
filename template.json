@@ -582,7 +582,11 @@
                         {
                             "name": "FUNCTIONS_EXTENSION_VERSION",
                             "value": "~4"
-                        }, 
+                        },
+                        {
+                            "name": "TRANSLATION_ENDPOINT",
+                            "value": "https://api.cognitive.microsofttranslator.com"
+                        },
                         {
                             "name": "TRANSLATION_API_KEY",
                             "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('accounts_km_oai_translator_name')), '2021-10-01').key1]"
@@ -632,7 +636,7 @@
                             "value": "[ listKeys(resourceId('Microsoft.Cache/RedisEnterprise/databases', parameters('redisEnterprise_km_oai_redis_name'),  'default'), '2022-01-01').primaryKey]"
                         }, 
                         {
-                            "name": "REDDIS_ADDR",
+                            "name": "REDIS_ADDR",
                             "value": "[concat( parameters('redisEnterprise_km_oai_redis_name'), '.', resourceGroup().location, '.redisenterprise.cache.azure.net')]"
                         }, 
                         {
