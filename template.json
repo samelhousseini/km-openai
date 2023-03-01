@@ -634,7 +634,15 @@
                         {
                             "name": "REDDIS_ADDR",
                             "value": "[concat( parameters('redisEnterprise_km_oai_redis_name'), '.', resourceGroup().location, '.redisenterprise.cache.azure.net')]"
-                        },
+                        }, 
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "python"
+                        } ,
+                        {
+                            "name": "WEBSITE_MAX_DYNAMIC_APPLICATION_SCALE_OUT",
+                            "value": "1"
+                        } ,
                         {
                             "name": "KB_INDEX_NAME",
                             "value": "km-openai"
