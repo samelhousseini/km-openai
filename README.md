@@ -57,6 +57,14 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <img src="images/openaifuncapp.jpg" width="700" /> 
     </p>
     <br/>
+
+1. When it comes to Redis Enterprise, then same as the previous step, the user has the choice to deploy it or not.
+    <br/>
+    <br />
+    <p align="center">
+    <img src="images/redischoice.jpg" width="700" /> 
+    </p>
+    <br/>
 1. Once deployment is done, go to the "Outputs" section at the left-hand side:
     <br/>
     <br />
