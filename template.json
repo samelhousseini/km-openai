@@ -16,11 +16,11 @@
                 "description": "If 'no', then please supply the endpoint and key of the existing OpenAI resource in the below two fields. If 'yes', then please choose the location of the new OpenAI resource."
             }
         },
-        "ExistingNewOpenAIResourceEndpoint": {
+        "ExistingOpenAIResourceEndpoint": {
             "defaultValue": "",    
             "type": "String"
         },
-        "ExistingNewOpenAIResourceKey": {
+        "ExistingOpenAIResourceKey": {
             "defaultValue": "",   
             "type": "String"
         },
@@ -37,12 +37,28 @@
                 "southcentralus"
                 ]
         },
-        "FunctionApp": {
-            "defaultValue": "[concat('funcapp', parameters('ResourceSuffix'))]", 
+        "DeployNewRedisResource": {
+            "defaultValue": "no",
+            "type": "String",
+            "allowedValues": ["yes", "no"],
+             "metadata": {
+                "description": "If 'no', then please supply the endpoint and key of the existing Redis resource in the below two fields."
+            }
+        },
+        "ExistingRedisResourceEndpoint": {
+            "defaultValue": "",    
+            "type": "String"
+        },
+        "ExistingRedisResourceKey": {
+            "defaultValue": "",   
             "type": "String"
         },
         "RedisEnterprise": {
             "defaultValue":  "[concat('redisdb', parameters('ResourceSuffix'))]", 
+            "type": "String"
+        },
+        "FunctionApp": {
+            "defaultValue": "[concat('funcapp', parameters('ResourceSuffix'))]", 
             "type": "String"
         },
         "ServerFarm": {
@@ -86,6 +102,7 @@
     },
     "resources": [
         {
+            "condition": "[equals(parameters('DeployNewRedisResource'), 'yes')]",
             "type": "Microsoft.Cache/redisEnterprise",
             "apiVersion": "2022-01-01",
             "name": "[parameters('RedisEnterprise')]",
@@ -329,6 +346,7 @@
             }
         },
         {
+            "condition": "[equals(parameters('DeployNewRedisResource'), 'yes')]",
             "type": "Microsoft.Cache/redisEnterprise/databases",
             "apiVersion": "2022-01-01",
             "name": "[concat(parameters('RedisEnterprise'), '/default')]",
@@ -550,13 +568,7 @@
             "name": "[parameters('FunctionApp')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Web/serverfarms', parameters('ServerFarm'))]",
-                "[concat('Microsoft.Storage/storageAccounts/', parameters('StorageAccount'))]", 
-                "[concat('Microsoft.CognitiveServices/accounts/', parameters('Translator'))]",
-                "[concat('Microsoft.CognitiveServices/accounts/', parameters('CognitiveServices'))]",
-                "[concat('Microsoft.DocumentDB/databaseAccounts/', parameters('Cosmos'))]",
-                "[concat('Microsoft.Cache/RedisEnterprise/', parameters('RedisEnterprise'), '/databases/default')]"
-                
+                "[resourceId('Microsoft.Web/serverfarms', parameters('ServerFarm'))]"
             ],
             "tags": {
                   },
@@ -617,11 +629,11 @@
                         }, 
                         {
                             "name": "OPENAI_RESOURCE_ENDPOINT",
-                            "value": "[if(equals(parameters('DeployNewOpenAIResource'),'yes'), concat('https://', parameters('NewOpenAIResource'), '.openai.azure.com/'),  parameters('ExistingNewOpenAIResourceEndpoint'))]"  
+                            "value": "[if(equals(parameters('DeployNewOpenAIResource'),'yes'), concat('https://', parameters('NewOpenAIResource'), '.openai.azure.com/'),  parameters('ExistingOpenAIResourceEndpoint'))]"  
                         },
                         {
                             "name": "OPENAI_API_KEY",
-                            "value": "[if(equals(parameters('DeployNewOpenAIResource'),'yes'), listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('NewOpenAIResource')), '2021-10-01').key1,  parameters('ExistingNewOpenAIResourceKey'))]"  
+                            "value": "[if(equals(parameters('DeployNewOpenAIResource'),'yes'), listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('NewOpenAIResource')), '2021-10-01').key1,  parameters('ExistingOpenAIResourceKey'))]"  
                         },
                         {
                             "name": "KB_BLOB_CONN_STR",
@@ -645,11 +657,11 @@
                         },
                         {
                             "name": "REDIS_PASSWORD",
-                            "value": "[ listKeys(resourceId('Microsoft.Cache/RedisEnterprise/databases', parameters('RedisEnterprise'),  'default'), '2022-01-01').primaryKey]"
+                            "value": "[ if(equals(parameters('DeployNewRedisResource'),'yes'), listKeys(resourceId('Microsoft.Cache/RedisEnterprise/databases', parameters('RedisEnterprise'),  'default'), '2022-01-01').primaryKey, parameters('ExistingRedisResourceKey'))]"
                         }, 
                         {
                             "name": "REDIS_ADDR",
-                            "value": "[concat( parameters('RedisEnterprise'), '.', resourceGroup().location, '.redisenterprise.cache.azure.net')]"
+                            "value": "[ if(equals(parameters('DeployNewRedisResource'),'yes'), concat( parameters('RedisEnterprise'), '.', resourceGroup().location, '.redisenterprise.cache.azure.net'), parameters('ExistingRedisResourceEndpoint'))]"
                         }, 
                         {
                             "name": "FUNCTIONS_WORKER_RUNTIME",
@@ -1159,11 +1171,11 @@
         },
         "EnvironmentVariableREDIS_ADDR": {
             "type": "string",
-            "value": "[concat( parameters('RedisEnterprise'), '.', resourceGroup().location, '.redisenterprise.cache.azure.net')]"
+            "value": "[ if(equals(parameters('DeployNewRedisResource'),'yes'), concat( parameters('RedisEnterprise'), '.', resourceGroup().location, '.redisenterprise.cache.azure.net'), '')]"
         },
         "EnvironmentVariableREDIS_PASSWORD": {
             "type": "string",
-            "value": "[ listKeys(resourceId('Microsoft.Cache/RedisEnterprise/databases', parameters('RedisEnterprise'),  'default'), '2022-01-01').primaryKey]"
+            "value": "[  if(equals(parameters('DeployNewRedisResource'),'yes'), listKeys(resourceId('Microsoft.Cache/RedisEnterprise/databases', parameters('RedisEnterprise'),  'default'), '2022-01-01').primaryKey, '')]"
         }
     }
 }
