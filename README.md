@@ -80,7 +80,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <br/>
     <br />
     <p align="center">
-    <img src="images/redischoice.jpg" width="700" /> 
+    <img src="images/redischoice.jpg" width="600" /> 
     </p>
     <br/>
 1. Once deployment is done, go to the "Outputs" section at the left-hand side:
@@ -171,7 +171,7 @@ The below are troubleshooting steps in case you face any problems with the solut
     <br/>
     <br />
     <p align="center">
-    <img src="images/redis.jpg" width="600" />
+    <img src="images/redis.jpg" width="800" />
     </p>
     <br/>
 
@@ -195,7 +195,7 @@ For both cases below, please note that the "BotQnAHTTPFunc" Azure Function retur
     <img src="images/postman.jpg" width="600" />
     </p>
     <br/>
-1. The following queries can be used to try with the current sample dataset to try the new service:
+1. The following queries can be used to try thew new service with the current sample dataset:
     * `In which classes did the Danish sailors qualify?`
     * `What are the reviews of the Lost City hotel?`
     * `what are the reviews of the Atlantis hotel?` -> this should give a negative answer as it is not included in the sample knowledge base.
