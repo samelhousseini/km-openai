@@ -31,11 +31,30 @@ This repo also includes a guide to build a Power Virutal Agent bot that could be
 
 The ARM template is not fully automated (yet), so a few manual steps will have to be taken to set up your project:
 
-1. At the deployment stage of the ARM templat, please deploy all resources in only one of the following 3 regions: West Europe, East US, South Central US
+1. At the deployment stage of the ARM template, please choose a suffix that will be added to all your resource names. This will make sure to avoid name conflicts for the resources.
     <br/>
     <br />
     <p align="center">
-    <img src="images/suffix.jpg" width="600" /> 
+    <img src="images/suffix.jpg" width="700" /> 
+    </p>
+    <br/>
+1. When it comes to the OpenAI resource, there are 3 choices:
+    * The first option is to choose "no" in the "Deploy New OpenAI Resource", and then provide an existing OpenAI resource. In this case, please provide the endpoint and key values in the "Existing Open AI Resource" fields
+
+    * The second option is to choose "yes" which will then create a new OpenAI resource in this Resource Group. This is also based on the choice in the "New OpenAI Resource Location Field", which is one of the following 3 regions where OpenAI can be deployed: West Europe, East US, South Central US
+    <br/>
+    <br />
+    <p align="center">
+    <img src="images/openaichoice.jpg" width="700" /> 
+    </p>
+    <br/>
+
+    * The third option is to choose "no", but also you do not provide an existing OpenAI resource. This might happen if you want to deploy the solution now and you will supply the OpenAI resource credentials later. In that case, these values can be updated later in the "Configuration" section of the Function App. 
+
+    <br/>
+    <br />
+    <p align="center">
+    <img src="images/openaifuncapp.jpg" width="700" /> 
     </p>
     <br/>
 1. Once deployment is done, go to the "Outputs" section at the left-hand side:
@@ -49,7 +68,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <br/>
     <br />
     <p align="center">
-    <img src="images/copyoutputs.jpg" width="700" /> copyoutputs
+    <img src="images/copyoutputs.jpg" width="700" /> 
     </p>
     <br/>
 1. The next step would be to deploy the Azure Functions to the FuncApp. During functions deployment in VS Code. The deployment will ask for a storage account, please supply the one in the RG
@@ -70,7 +89,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <img src="images/copyfuncurl.jpg" width="450" />
     </p>
     <br/>
-1. Go to the FuncApp, and then click on one of the deployed functions, and then the “Monitor” tab. Then please create the application insights. This step is only needed for troubleshooting
+1. **(Optional)** For troubleshooting and log monitoring, please go to the Function App, and then click on one of the deployed functions, and then the “Monitor” tab. Then please create the Application Insights resource. Application Insights will allow you to monitor and check function logs.
     <br />
     <br />
 1. Deploy 4 models in OpenAI:

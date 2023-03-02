@@ -146,3 +146,4 @@ template_test copy.json
 .env copy
 template.json
 README copy.md
+template (backup).json
