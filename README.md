@@ -26,6 +26,24 @@ This repo also includes a guide to build a Power Virutal Agent bot that could be
 <br/>
 <br/>
 
+# Features
+The below are the features of this solution:
+1. No maximum limit on document size except the limit imposed by Cognitive Search (4 million characters for the Standard Tier). If more is needed, then higher Search tiers can be used.
+
+1. Automatic chunking of documents based on the maximum token number for each OpenAI model
+
+1. Managing OpenAI API rate limiting and mitigating its impact by processing the documents serially, and retrying OpenAI API calls with exponential backoff when hitting limit errors
+
+1. The ability to configure a wide range of parameters by changing the Function App parameters, including the models used for OpenAI Embedding and Completion API calls, chunk size, etc..
+
+1. Automatic translation from/to English using Cognitive Services, since OpenAI works best with English
+
+1. The Cognitive Search ecosystem provides the potential to add a wide variety of custom skills, as well as access the native search capabilities which can complement the embedding search in Redis.
+
+
+<br />
+<br />
+
 # Deployment Guide
 <br />
 
