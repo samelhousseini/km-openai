@@ -139,7 +139,8 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
 
     `pip install -r requirements.py`
    <br />
-<br />
+    <br />
+
 1. Start the search by running the third cells in “experiment.ipynb” notebook
     <br/>
     <br />
@@ -147,9 +148,11 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <img src="images/run_ingest.jpg" width="400" />
     </p>
     <br/>
-
+    <br/>
 1. **(Optional)** "redis.yml" is also included with this repo. This is optional but might be needed if the user wants to use a Redis ACI instead of Redis Enterprise for development purposes. You can create the Redis container on ACI using the following command:<br/>
         `az container create --resource-group <YOUR_RG_NAME> --file redis.yml`
+    <br/>
+    <br/>
 1. **(Optional)** Cosmos DB is added for development purposes as well. In the Function App settings, there is a field "DATABASE_MODE" that controls the behavior of the Custom Skill in Cognitive Search. If set to 0 (which is the default), it will save the documents contents in the Blob Storage. If it's set to 1, it will create records in Cosmos DB. Cosmos can then be accessed programmatically from a Python notebook to test around with embeddings and completions.
 
 <br/>
