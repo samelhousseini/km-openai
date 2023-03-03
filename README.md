@@ -244,7 +244,7 @@ For both cases below, please note that the "BotQnAHTTPFunc" Azure Function retur
 
 Based on the README of this repo, ChatGPT was asked to write a prompt for Midjourney to generate an image, and the following are the generated prompt and image:
 
-`'Create an image of a knowledge mining solution that is alive and sentient, with the ability to actively search for and extract knowledge from its surroundings. The solution should be depicted as a friendly and helpful companion to those seeking knowledge, and should have unique features such as the ability to translate languages, generate custom skills, and store and retrieve knowledge embeddings from a Redis search engine.'`
+`'Create a watercolor image of a knowledge mining solution that is alive and sentient, with the ability to actively search for and extract knowledge from its surroundings. The solution should be depicted as a friendly and helpful companion to those seeking knowledge, and should have unique features such as the ability to translate languages, generate custom skills, and store and retrieve knowledge embeddings from a Redis search engine.'`
 <br/>
 <br />
 <p align="center">
