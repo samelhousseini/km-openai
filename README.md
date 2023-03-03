@@ -44,6 +44,37 @@ The below are the features of this solution:
 <br />
 <br />
 
+# About this Repo, by ChatGPT 
+
+In this digital age, where information reigns,<br />
+And knowledge is the key to unlocking many gains,<br />
+A solution has emerged, to help us all mine,<br />
+And extract insights, with a speed that's divine.<br />
+<br />
+This repo is a marvel, a work of great skill,<br />
+A Python-based tool, with features that thrill,<br />
+With no limit on document size, and a range of parameters to tweak,<br />
+It ingests knowledge bases, and makes them easy to seek.<br />
+
+With automatic chunking, and OpenAI API rate-limiting,<br />
+It ensures that processing remains fast, without any quitting,<br />
+And the addition of Cognitive Services, provides enrichment galore,<br />
+With translations to and from English, so that we can explore.<br />
+<br />
+The search engine in Redis, is where the embeddings reside,<br />
+And with its native capabilities, it complements the search with pride,<br />
+The potential for custom skills, is limitless in its scope,<br />
+And with a Power Virtual Agent bot, it's a complete package, no mope.<br />
+<br />
+This project is a gift, to those who seek knowledge's bounty,<br />
+And with its many features, it's a solution that's sound and sturdy,<br />
+So let us all sing praises, for this wonderful creation,<br />
+For it's a tool that helps us all, in this age of information.<br />
+
+
+<br />
+<br />
+
 # Deployment Guide
 <br />
 
