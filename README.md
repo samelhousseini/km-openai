@@ -7,7 +7,8 @@
 <br />
 <br />
 
-# Architecture
+
+# Knowledge Mining with OpenAI Architecture
 <br/>
 <br />
 <p align="center">
@@ -17,7 +18,7 @@
 <br/>
 
 # Purpose
-The purpose of this repo is to accelerate the deployment of a Python-based Knowledge Mining solution that will ingest a Knowledge Base, generate embeddings using the contents extracted, store them in a vector search engine (Redis), and use that engine to answer queries / questions specific to that Knowledge Base.
+The purpose of this repo is to accelerate the deployment of a Python-based Knowledge Mining solution with OpenAI that will ingest a Knowledge Base, generate embeddings using the contents extracted, store them in a vector search engine (Redis), and use that engine to answer queries / questions specific to that Knowledge Base.
 
 The Cognitive Search component serves to make it easier to ingest a Knowledge Base with a variety of document formats. The Cognitive Services component connected to the Search makes it possible to have an enrichment pipeline. This pipeline can generate information based on images for example, which can be included at the time of generating embeddings. 
 
@@ -238,6 +239,20 @@ For both cases below, please note that the "BotQnAHTTPFunc" Azure Function retur
 
 <br/>
 <br/>
+
+# OpenAI Knowledge Mining Art
+
+Based on the README of this repo, ChatGPT was asked to write a prompt for Midjourney to generate an image, and the following are the generated prompt and image:
+
+`'Create an image of a knowledge mining solution that is alive and sentient, with the ability to actively search for and extract knowledge from its surroundings. The solution should be depicted as a friendly and helpful companion to those seeking knowledge, and should have unique features such as the ability to translate languages, generate custom skills, and store and retrieve knowledge embeddings from a Redis search engine.'`
+<br/>
+<br />
+<p align="center">
+<img src="images/midjourney.png" width="700" />
+</p>
+<br/>
+
+
 
 # AI Rangers Solution Accelerators
 
