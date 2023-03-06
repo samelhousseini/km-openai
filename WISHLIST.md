@@ -9,3 +9,5 @@ The following features are added to the wishlist to be implemented:
 1. Code: Adding a demo for HTML crawling
 1. Code: Adding an embedding match filtering (in Redis) for filtering on metadata 
 1. Code: Adding UI (?) for controlling Cognitive Search indexing and re-indexing
+1. Code: Storing contents, embeddings, and queries in Cosmos. It's important to know which are the most asked queries.
+1. Code: Adding support for fine-tuned models.
