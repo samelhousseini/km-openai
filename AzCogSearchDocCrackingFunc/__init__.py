@@ -61,7 +61,7 @@ def analyze_doc(data_dict):
             except Exception as e:
                 container.create_container()
 
-            blob_name = urllib.parse.unquote(os.path.basename(doc_url))
+            blob_name = urllib.parse.unquote(os.path.basename(doc_url.split('?')[0]))
             pre, ext = os.path.splitext(blob_name)
             blob_name = pre + '.json'            
             blob_client = container.get_blob_client(blob=blob_name)

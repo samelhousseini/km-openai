@@ -169,7 +169,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <br />
 1. Before running the "experiments.ipynb" notebook, a Conda environment will need to be created. Python 3.8 and 3.9 were tested and worked fine. The packages can either be installed from within the first cell of the notebook, or run pip install after activating the new environment:
 
-    `pip install -r requirements.py`
+    `pip install -r requirements.txt`
    <br />
     <br />
 

@@ -63,6 +63,8 @@ def openai_interrogate_text(query, completion_model, embedding_model, topK=5, ve
     print(f"Interrogating Text with embedding mode {embedding_model} and completion model {completion_model}")
     logging.info(f"Interrogating Text with embedding mode {embedding_model} and completion model {completion_model}")
 
+    query = query.lower()
+
     completion_enc = openai_helpers.get_encoder(completion_model)
     embedding_enc = openai_helpers.get_encoder(embedding_model)
 
@@ -115,9 +117,16 @@ def openai_interrogate_text(query, completion_model, embedding_model, topK=5, ve
         print("full prompt length", len(completion_enc.encode(prompt)))
         print("Prompt", prompt)
         print("##############################################################################")
-        return_str = 'Link: ' + doc_url + '\n\n\nExcerpt from Knowledge Base: "' + context + '"\n\n\nAnswer: ' + final_answer
-    else:
-        return_str = 'Link: ' + doc_url+ '"\n\n\nAnswer: ' + final_answer
+
+        #return_str = 'Link: ' + doc_url + '\n\n\nExcerpt from Knowledge Base: "' + context + '"\n\n\nAnswer: ' + final_answer
+    # else:
+        #return_str = 'Link: ' + doc_url+ '"\n\n\nAnswer: ' + final_answer
+
+    ret_dict  = {
+        "link": doc_url,
+        "answer": final_answer,
+        "context": context
+    }
 
     
-    return return_str
+    return json.dumps(ret_dict, indent=4) 

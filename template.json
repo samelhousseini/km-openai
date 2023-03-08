@@ -797,19 +797,27 @@
                         } ,
                         {
                             "name": "SMALL_EMB_TOKEN_NUM",
-                            "value": "2047"
+                            "value": "125"
                         } ,
                         {
                             "name": "MEDIUM_EMB_TOKEN_NUM",
-                            "value": "1000"
+                            "value": "250"
                         } ,
                         {
                             "name": "LARGE_EMB_TOKEN_NUM",
-                            "value": "2047"
+                            "value": "500"
+                        } ,
+                        {
+                            "name": "X_LARGE_EMB_TOKEN_NUM",
+                            "value": "800"
                         } ,
                         {
                             "name": "NUM_TOP_MATCHES",
-                            "value": "5"
+                            "value": "25"
+                        },
+                        {
+                            "name": "FR_CONTAINER",
+                            "value": "kmoaiforms"
                         }
                     ]
                 },
@@ -1104,6 +1112,23 @@
             "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
             "apiVersion": "2022-09-01",
             "name": "[concat(parameters('StorageAccount'), '/default/kmoaiprocessed')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('StorageAccount'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccount'))]"
+            ],
+            "properties": {
+                "immutableStorageWithVersioning": {
+                    "enabled": false
+                },
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('StorageAccount'), '/default/kmoaiforms')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('StorageAccount'), 'default')]",
                 "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccount'))]"
