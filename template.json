@@ -693,7 +693,7 @@
                         } ,
                         {
                             "name": "DATABASE_MODE",
-                            "value": "0"
+                            "value": "1"
                         } ,
                         {
                             "name": "REDIS_PORT",
@@ -714,6 +714,10 @@
                         {
                             "name": "CATEGORYID",
                             "value": "KM_OAI_CATEGORY"
+                        } , 
+                        {
+                            "name": "EMBCATEGORYID",
+                            "value": "KM_OAI_EMB_CATEGORY"
                         } ,
                         {
                             "name": "COSMOS_DB_NAME",

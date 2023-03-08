@@ -8,6 +8,10 @@ from azure.storage.blob import ContainerClient
 import urllib
 import uuid
 
+from utils import cosmos_helpers
+from utils import storage
+
+
 
 DATABASE_MODE = os.environ['DATABASE_MODE']
 COSMOS_URI  = os.environ['COSMOS_URI']
@@ -25,51 +29,28 @@ def remove_urls(text):
 
 
 
-def analyze_doc(data_dict):
+def analyze_doc(data_dict, DATABASE_MODE):
+    print(DATABASE_MODE)
     
     ret_dict = {}
-
-    doc_id = data_dict.get('id', str(uuid.uuid4()))
-    cs_doc = data_dict['content']
-    timestamp = data_dict.get('timestamp', "1/1/1970 00:00:00 AM"), 
-    doc_url = data_dict.get('doc_url', 'https://microsoft.com')
-    doc_text = remove_urls(cs_doc.replace("\n\n", " ").replace("....", " ")).replace("\n\n", " ")
-
-    new_doc = {
-        "id": doc_id,
-        "categoryId": CATEGORYID,
-        "timestamp": timestamp,
-        "doc_url": doc_url,
-        "text": doc_text 
-    }
+    db_status = ''
+    data_dict['text'] = remove_urls(data_dict['content'].replace("\n\n", " ").replace("....", " ")).replace("\n\n", " ")
 
     try:
         if DATABASE_MODE == '1':
-            client = CosmosClient(url=COSMOS_URI, credential=COSMOS_KEY)
-            partitionKeyPath = PartitionKey(path="/categoryId")
-            database = client.create_database_if_not_exists(id=COSMOS_DB_NAME)
-            container = database.create_container_if_not_exists(id="documents", partition_key=partitionKeyPath)
-            container.upsert_item(new_doc)
-            ret_dict['status'] = f"Document {doc_id} was successfully inserted into Cosmos"
-            logging.info(ret_dict['status'])
-            
-        else:
-            container = ContainerClient.from_connection_string(KB_BLOB_CONN_STR, OUTPUT_BLOB_CONTAINER)
+            db_status = cosmos_helpers.cosmos_store_contents(data_dict)
+            logging.info(db_status)
+            print(db_status)
+    except Exception as e:    
+        doc_id = data_dict.get('id', 'Unknown ID')
+        logging.error(f"Exception: Document {doc_id} created an exception.\n{e}")
+        ret_dict['status'] = f"Exception: Document {doc_id} created an exception.\n{e}"
 
-            try:
-                container_properties = container.get_container_properties()
-            except Exception as e:
-                container.create_container()
-
-            blob_name = urllib.parse.unquote(os.path.basename(doc_url.split('?')[0]))
-            pre, ext = os.path.splitext(blob_name)
-            blob_name = pre + '.json'            
-            blob_client = container.get_blob_client(blob=blob_name)
-            blob_client.upload_blob(json.dumps(new_doc, indent=4), overwrite=True)
-            ret_dict['status'] = f"Document {doc_id} was successfully saved to the {OUTPUT_BLOB_CONTAINER} container"
-            logging.info(ret_dict['status'])
-
+    try:
+        ret_dict = storage.save_json_document(data_dict, OUTPUT_BLOB_CONTAINER)
+        logging.info(ret_dict['status'])
     except Exception as e:
+        doc_id = data_dict.get('id', 'Unknown ID')
         logging.error(f"Exception: Document {doc_id} created an exception.\n{e}")
         ret_dict['status'] = f"Exception: Document {doc_id} created an exception.\n{e}"
 
