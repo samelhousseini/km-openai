@@ -29,8 +29,7 @@ def remove_urls(text):
 
 
 
-def analyze_doc(data_dict, DATABASE_MODE):
-    print(DATABASE_MODE)
+def analyze_doc(data_dict):
     
     ret_dict = {}
     db_status = ''
