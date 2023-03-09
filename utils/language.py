@@ -62,4 +62,9 @@ def translate(text, from_lang, to_lang = 'en'):
     request = requests.post(constructed_url, params=params, headers=headers, json=body)
     response = request.json()
 
-    return response[0]['translations'][0]['text']
+    try:
+        print(response)
+        return response[0]['translations'][0]['text']
+    except Exception as e:
+        print(e)
+        return response

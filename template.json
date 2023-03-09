@@ -327,19 +327,19 @@
             "type": "Microsoft.Web/serverfarms",
             "apiVersion": "2022-03-01",
             "name": "[parameters('ServerFarm')]",
-            "location": "[resourceGroup().location]",
+            "location": "West Europe",
             "sku": {
-                "name": "EP1",
-                "tier": "ElasticPremium",
-                "size": "EP1",
-                "family": "EP",
+                "name": "B2",
+                "tier": "Basic",
+                "size": "B2",
+                "family": "B",
                 "capacity": 1
             },
-            "kind": "elastic",
+            "kind": "linux",
             "properties": {
                 "perSiteScaling": false,
-                "elasticScaleEnabled": true,
-                "maximumElasticWorkerCount": 20,
+                "elasticScaleEnabled": false,
+                "maximumElasticWorkerCount": 1,
                 "isSpot": false,
                 "reserved": true,
                 "isXenon": false,
@@ -693,7 +693,7 @@
                         } ,
                         {
                             "name": "DATABASE_MODE",
-                            "value": "0"
+                            "value": "1"
                         } ,
                         {
                             "name": "REDIS_PORT",
@@ -714,6 +714,10 @@
                         {
                             "name": "CATEGORYID",
                             "value": "KM_OAI_CATEGORY"
+                        } , 
+                        {
+                            "name": "EMBCATEGORYID",
+                            "value": "KM_OAI_EMB_CATEGORY"
                         } ,
                         {
                             "name": "COSMOS_DB_NAME",
@@ -797,19 +801,27 @@
                         } ,
                         {
                             "name": "SMALL_EMB_TOKEN_NUM",
-                            "value": "2047"
+                            "value": "125"
                         } ,
                         {
                             "name": "MEDIUM_EMB_TOKEN_NUM",
-                            "value": "1000"
+                            "value": "250"
                         } ,
                         {
                             "name": "LARGE_EMB_TOKEN_NUM",
-                            "value": "2047"
+                            "value": "500"
+                        } ,
+                        {
+                            "name": "X_LARGE_EMB_TOKEN_NUM",
+                            "value": "800"
                         } ,
                         {
                             "name": "NUM_TOP_MATCHES",
-                            "value": "5"
+                            "value": "25"
+                        },
+                        {
+                            "name": "FR_CONTAINER",
+                            "value": "kmoaiforms"
                         }
                     ]
                 },
@@ -1104,6 +1116,23 @@
             "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
             "apiVersion": "2022-09-01",
             "name": "[concat(parameters('StorageAccount'), '/default/kmoaiprocessed')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('StorageAccount'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccount'))]"
+            ],
+            "properties": {
+                "immutableStorageWithVersioning": {
+                    "enabled": false
+                },
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('StorageAccount'), '/default/kmoaiforms')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('StorageAccount'), 'default')]",
                 "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccount'))]"

@@ -29,6 +29,9 @@ This repo also includes a guide to build a Power Virutal Agent bot that could be
 
 # Features
 The below are the features of this solution:
+
+1. Calculting embeddings from multiple chunk sizes for the same document in order to maximize vector matching. Through experimentation, we determined that having embeddings generated from the following chunk sizes (125, 250, 500 and 800 tokens) of the same document would optimize accuracy (number of correctly answered queries).
+
 1. No maximum limit on document size except the limit imposed by Cognitive Search (4 million characters for the Standard Tier). If more is needed, then higher Search tiers can be used.
 
 1. Automatic chunking of documents based on the maximum token number for each OpenAI model
@@ -169,7 +172,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <br />
 1. Before running the "experiments.ipynb" notebook, a Conda environment will need to be created. Python 3.8 and 3.9 were tested and worked fine. The packages can either be installed from within the first cell of the notebook, or run pip install after activating the new environment:
 
-    `pip install -r requirements.py`
+    `pip install -r requirements.txt`
    <br />
     <br />
 

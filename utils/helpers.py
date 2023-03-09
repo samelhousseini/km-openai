@@ -47,26 +47,32 @@ def create_emb_dict(doc_id, text_en, text, doc_url, timestamp, item_vector):
 
 
 
-def generate_embeddings(json_object, embedding_model, max_emb_tokens, text_suffix = '', optional=False):
+def generate_embeddings(json_object, embedding_model, max_emb_tokens, previous_max_tokens = 0, text_suffix = '',  gen_emb=True):
     
     emb_documents = []
 
     logging.info(f"Starting to generate embeddings with {embedding_model} and {max_emb_tokens} tokens")
 
+    try:
+        timestamp = json_object['timestamp'][0]
+    except:
+        timestamp = "1/1/1970 00:00:00 AM"
+
     doc_id = json_object['id']
-    timestamp = json_object['timestamp'][0]
     doc_text = json_object['text']
-    doc_url = storage.create_sas(json_object['doc_url'])
+    doc_url = storage.create_sas(json_object.get('doc_url', "https://microsoft.com"))
     filename = os.path.basename(doc_url)
 
     enc = openai_helpers.get_encoder(embedding_model)
     tokens = enc.encode(doc_text)
     lang = language.detect_content_language(doc_text[:500])
 
-    print("Comparing lengths", len(tokens) , max_emb_tokens-OVERLAP_TEXT)
-    if (len(tokens) < max_emb_tokens-OVERLAP_TEXT) and (optional==True):
+    print("Comparing lengths", len(tokens) , previous_max_tokens-OVERLAP_TEXT)
+
+    if (len(tokens) < previous_max_tokens-OVERLAP_TEXT) and (previous_max_tokens > 0):
         print("Skipping generating embeddings as it is optional for this text")
         return emb_documents
+
 
     suff = 0 
     for chunk in chunked_words(tokens, chunk_length=max_emb_tokens-OVERLAP_TEXT):
@@ -74,8 +80,12 @@ def generate_embeddings(json_object, embedding_model, max_emb_tokens, text_suffi
         translated_chunk = decoded_chunk
         if lang != 'en': translated_chunk = language.translate(decoded_chunk, lang)
        
-        embdding = openai_helpers.get_openai_embedding(translated_chunk, embedding_model)
-        emb_doc =  create_emb_dict(f"{doc_id}_{text_suffix}_{suff}", translated_chunk, decoded_chunk, doc_url, timestamp, embdding)
+        if gen_emb:
+            embedding = openai_helpers.get_openai_embedding(translated_chunk, embedding_model)
+        else:
+            embedding = ''
+
+        emb_doc =  create_emb_dict(f"{doc_id}_{text_suffix}_{suff}", translated_chunk, decoded_chunk, doc_url, timestamp, embedding)
         emb_documents.append(emb_doc)
         suff += 1
 
@@ -113,7 +123,7 @@ def generate_embeddings_from_json_docs(json_folder, embedding_model, max_emb_tok
 
 
 
-def save_embdding_docs_to_pkl(emb_documents, emb_filename):
+def save_embedding_docs_to_pkl(emb_documents, emb_filename):
     with open(emb_filename, 'wb') as pickle_out:
         pickle.dump(emb_documents, pickle_out)
 
@@ -145,7 +155,8 @@ def load_embedding_docs_in_redis(emb_documents, emb_filename = '', document_name
         if counter % 200 == 0:
             print (f'Processed: {counter} of {len(emb_documents)} for document {document_name}')
             logging.info (f'Processed: {counter} of {len(emb_documents)} for document {document_name}')
-            
+    
+    print (f'Processed: {counter} of {len(emb_documents)} for document {document_name}')
 
     return loaded
 

@@ -148,3 +148,15 @@ template.json
 README copy.md
 template (backup).json
 template (backup1).json
+embs.pkl
+jsonl.pkl
+data.json
+full_data.pkl
+full_data.json
+new_emb_arr.pkl
+demo_06_transaction_data_understanding (1).ipynb
+data.jsonl
+baseline.pkl
+baseline.json
+
+backup/

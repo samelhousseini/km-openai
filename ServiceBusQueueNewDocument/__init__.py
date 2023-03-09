@@ -6,7 +6,7 @@ import os, uuid
 from azure.storage.blob import BlobServiceClient, BlobClient
 
 from utils import helpers
-
+from utils import cosmos_helpers
 
 KB_BLOB_CONN_STR = os.environ['KB_BLOB_CONN_STR']
 OUTPUT_BLOB_CONTAINER = os.environ['OUTPUT_BLOB_CONTAINER']
@@ -25,7 +25,7 @@ CHOSEN_EMB_MODEL   = os.environ['CHOSEN_EMB_MODEL']
 SMALL_EMB_TOKEN_NUM  = int(os.environ['SMALL_EMB_TOKEN_NUM'])
 MEDIUM_EMB_TOKEN_NUM  = int(os.environ['MEDIUM_EMB_TOKEN_NUM'])
 LARGE_EMB_TOKEN_NUM  = int(os.environ['LARGE_EMB_TOKEN_NUM'])
-
+X_LARGE_EMB_TOKEN_NUM = int(os.environ['X_LARGE_EMB_TOKEN_NUM'])
 
 
 
@@ -48,13 +48,19 @@ def main(msg: func.ServiceBusMessage):
     # logging.info(data)
 
     emb_documents = []
+
     emb_documents += helpers.generate_embeddings(data, CHOSEN_EMB_MODEL, SMALL_EMB_TOKEN_NUM,  text_suffix = 'S')
 
     if MEDIUM_EMB_TOKEN_NUM != 0:
-        emb_documents += helpers.generate_embeddings(data, CHOSEN_EMB_MODEL, MEDIUM_EMB_TOKEN_NUM, text_suffix = 'M', optional=True)
+        emb_documents += helpers.generate_embeddings(data, CHOSEN_EMB_MODEL, MEDIUM_EMB_TOKEN_NUM, text_suffix = 'M', previous_max_tokens=SMALL_EMB_TOKEN_NUM)
 
     if LARGE_EMB_TOKEN_NUM != 0:
-        emb_documents += helpers.generate_embeddings(data, CHOSEN_EMB_MODEL, LARGE_EMB_TOKEN_NUM,  text_suffix = 'L', optional=True)
+        emb_documents += helpers.generate_embeddings(data, CHOSEN_EMB_MODEL, LARGE_EMB_TOKEN_NUM,  text_suffix = 'L', previous_max_tokens=MEDIUM_EMB_TOKEN_NUM)
+
+    if X_LARGE_EMB_TOKEN_NUM != 0:
+        emb_documents += helpers.generate_embeddings(data, CHOSEN_EMB_MODEL, X_LARGE_EMB_TOKEN_NUM,  text_suffix = 'XL', previous_max_tokens=LARGE_EMB_TOKEN_NUM)
+
+    cosmos_helpers.cosmos_backup_embeddings(emb_documents)
 
     logging.info(f"Generated {len(emb_documents)} emb chunks from doc {json_filename}")
 

@@ -9,7 +9,7 @@ from utils import language
 from utils import storage
 from utils import redis_helpers
 from utils import openai_helpers
-
+from utils import cosmos_helpers
 
 MAX_QUERY_TOKENS             = int(os.environ["MAX_QUERY_TOKENS"])
 MAX_OUTPUT_TOKENS            = int(os.environ["MAX_OUTPUT_TOKENS"])
@@ -63,6 +63,8 @@ def openai_interrogate_text(query, completion_model, embedding_model, topK=5, ve
     print(f"Interrogating Text with embedding mode {embedding_model} and completion model {completion_model}")
     logging.info(f"Interrogating Text with embedding mode {embedding_model} and completion model {completion_model}")
 
+    query = query.lower()
+
     completion_enc = openai_helpers.get_encoder(completion_model)
     embedding_enc = openai_helpers.get_encoder(embedding_model)
 
@@ -78,7 +80,13 @@ def openai_interrogate_text(query, completion_model, embedding_model, topK=5, ve
     results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=topK)
 
     if len(results) == 0:
-        return "Sorry, no embeddings are loaded in Redis"
+        logging.warning("No embeddings found in Redis, attempting to load embeddings from Cosmos")
+        cosmos_helpers.cosmos_restore_embeddings()
+        results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=topK)
+        
+    if len(results) == 0:        
+        logging.warning("No embeddings found in Redis or Cosmos")
+        return "Sorry, no embeddings are loaded in Redis or Cosmos"
 
     first_score = float(results[0]['score'])    
     context = '\n\n\n'.join([t['text_en'] for t in results])
@@ -115,9 +123,16 @@ def openai_interrogate_text(query, completion_model, embedding_model, topK=5, ve
         print("full prompt length", len(completion_enc.encode(prompt)))
         print("Prompt", prompt)
         print("##############################################################################")
-        return_str = 'Link: ' + doc_url + '\n\n\nExcerpt from Knowledge Base: "' + context + '"\n\n\nAnswer: ' + final_answer
-    else:
-        return_str = 'Link: ' + doc_url+ '"\n\n\nAnswer: ' + final_answer
+
+
+    while final_answer.startswith("Answer:"):
+        final_answer = final_answer[7:].strip()
+
+    ret_dict  = {
+        "link": doc_url,
+        "answer": final_answer,
+        "context": context
+    }
 
     
-    return return_str
+    return json.dumps(ret_dict, indent=4) 

@@ -71,7 +71,7 @@ def check_model_deployment(oai_model):
 
 
 
-def get_prompt(context, query):
+def experiment_prompt(context, query):
 
     prompt =f"""
     Context: {context}
@@ -129,7 +129,7 @@ def openai_summarize(text, max_output_tokens = MAX_OUTPUT_TOKENS, lang='en'):
 
 @retry(wait=wait_random_exponential(min=1, max=120), stop=stop_after_attempt(20))
 def contact_openai(prompt, completion_model, max_output_tokens):
-    print("contacting oai")
+    #print("contacting oai")
     
     deployment_id = check_model_deployment(completion_model)
 
