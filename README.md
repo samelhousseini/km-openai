@@ -38,7 +38,7 @@ The below are the features of this solution:
 
 1. Cosmos DB is used to store the contents of the ingested files. Cosmos is also used to store the generated embeddings, and automatically load them when the Redis index is empty.
 
-1. Automatic chunking of documents based on the maximum token number for each OpenAI model
+1. Automatic chunking of documents based on the specified number of tokensfor each OpenAI model to generate embeddings.
 
 1. Managing OpenAI API rate limiting and mitigating its impact by processing the documents serially, and retrying OpenAI API calls with exponential backoff when hitting limit errors
 
