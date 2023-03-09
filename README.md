@@ -30,7 +30,7 @@ This repo also includes a guide to build a Power Virutal Agent bot that could be
 # Features
 The below are the features of this solution:
 
-1. Calculting embeddings from multiple chunk sizes for the same document in order to maximize vector matching. Through experimentation, we determined that having embeddings generated from the following chunk sizes (125, 250, 500 and 800 tokens) of the same document would optimize accuracy (number of correctly answered queries).
+1. Calculating embeddings from multiple chunk sizes for the same document in order to maximize vector matching. Through experimentation, we determined that having embeddings generated from the following chunk sizes (125, 250, 500 and 800 tokens) of the same document would optimize accuracy (number of correctly answered queries).
 
 1. No maximum limit on document size except the limit imposed by Cognitive Search (4 million characters per document for the Standard Tier). If more is needed, then higher Search tiers can be used.
 
