@@ -48,6 +48,18 @@ The below are the features of this solution:
 
 1. The Cognitive Search ecosystem provides the potential to add a wide variety of custom skills, as well as access the native search capabilities which can complement the embedding search in Redis.
 
+1. This repo has been tested with Python 3.8 and 3.9
+
+<br />
+<br />
+
+# Upcoming Features
+
+1. Automated Azure Functions deployment through ARM template
+
+1. GUI for triggering Cognitive Search and Form Recognizer document ingestion
+
+1. ChatGPT integration (when released on Azure)
 
 <br />
 <br />
