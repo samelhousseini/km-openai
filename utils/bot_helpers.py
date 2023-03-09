@@ -42,6 +42,9 @@ def get_model_max_tokens(model):
         return ADA_002_MODEL_MAX_TOKENS
 
 
+## Original Prompt - too strict for OpenAI
+## Answer the question using the above Context only, and if the answer is not contained within the Context above, say "Sorry, the query did not find a good match. Please rephrase your question":
+
 
 def get_prompt(context, query):
 
@@ -50,9 +53,9 @@ def get_prompt(context, query):
     
     Question: {query}       
     
-    Answer the question using the above Context only, and if the answer is not contained within the Context above, say "Sorry, the query did not find a good match. Please rephrase your question":
+    Answer the question using the above Context:
     """
-
+    
     return prompt
 
 

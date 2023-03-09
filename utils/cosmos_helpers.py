@@ -79,7 +79,9 @@ def cosmos_store_contents(data_dict):
     new_doc['categoryId'] = CATEGORYID
     new_doc['timestamp']  = new_doc.get('timestamp', datetime.now().strftime("%m/%d/%Y, %H:%M:%S")),  
     new_doc['doc_url']    = new_doc.get('doc_url', f'https://microsoft.com/{str(uuid.uuid4())}')
-    del new_doc['content']
+
+    if 'content' in new_doc.keys():
+        del new_doc['content']
 
     try:
         container.upsert_item(new_doc)
