@@ -27,8 +27,19 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         else:
             query = req_body.get('query')
 
+
+    prev_prompt = req.params.get('prompt') 
+
+    if not prev_prompt:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            pass
+        else:
+            prev_prompt = req_body.get('prompt')
+
     if query:
-        str = bot_helpers.openai_interrogate_text(query, CHOSEN_COMP_MODEL, CHOSEN_QUERY_EMB_MODEL, NUM_TOP_MATCHES)
+        str = bot_helpers.openai_interrogate_text(query, CHOSEN_COMP_MODEL, CHOSEN_QUERY_EMB_MODEL, prev_prompt=prev_prompt, topK=NUM_TOP_MATCHES)
         return func.HttpResponse(str)
     else:
         return func.HttpResponse(

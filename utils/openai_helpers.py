@@ -19,9 +19,6 @@ openai.api_base = os.environ["OPENAI_RESOURCE_ENDPOINT"]
 openai.api_version = "2022-12-01"
 
 
-EMBEDDING_MODEL = "text-embedding-ada-002"
-EMB_QUERY_MODEL = "text-embedding-ada-002"
-COMPLETIONS_MODEL = "text-davinci-003"
 
 
 MAX_OUTPUT_TOKENS = 750
@@ -105,6 +102,8 @@ def get_encoder(embedding_model):
     if embedding_model == "text-search-davinci-doc-001":
         return tiktoken.get_encoding("p50k_base")
     elif embedding_model == "text-embedding-ada-002":
+        return tiktoken.get_encoding("cl100k_base")
+    elif embedding_model == "gpt-3.5-turbo": 
         return tiktoken.get_encoding("cl100k_base")
     else:
         return tiktoken.get_encoding("gpt2")

@@ -794,6 +794,18 @@
                         {
                             "name": "DAVINCI_EMBEDDING_ENCODING",
                             "value": "p50k_base"
+                        } , 
+                        {
+                            "name": "GPT35_TURBO_COMPLETIONS_MODEL",
+                            "value": "gpt-35-turbo"
+                        } ,
+                        {
+                            "name": "GPT35_TURBO_COMPLETIONS_MAX_TOKENS",
+                            "value": "8193"
+                        } ,
+                        {
+                            "name": "GPT35_TURBO_COMPLETIONS_ENCODING",
+                            "value": "cl100k_base"
                         } ,
                         {
                             "name": "CHOSEN_EMB_MODEL",
