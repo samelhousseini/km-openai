@@ -26,6 +26,7 @@ CHOSEN_EMB_MODEL        = os.environ['CHOSEN_EMB_MODEL']
 CHOSEN_QUERY_EMB_MODEL  = os.environ['CHOSEN_QUERY_EMB_MODEL']
 CHOSEN_COMP_MODEL       = os.environ['CHOSEN_COMP_MODEL']
 
+RESRTICTIVE_PROMPT    = os.environ['RESRTICTIVE_PROMPT']
 
         
 redis_conn = redis_helpers.get_new_conn() 
@@ -56,9 +57,17 @@ def get_prompt(context, query, completion_model = None):
     logging.info(f"{completion_model}, {GPT35_TURBO_COMPLETIONS_MODEL}, {completion_model == GPT35_TURBO_COMPLETIONS_MODEL}")
 
     if completion_model == GPT35_TURBO_COMPLETIONS_MODEL:
+
+
+        if RESRTICTIVE_PROMPT == 'yes':
+            instruction = "The system is an AI assistant that helps people find information in the provided context below. Only answer questions based on the facts listed below. If the facts below don't answer the question, say you don't know. "
+        else:
+            instruction = "The system is an AI assistant that helps people find information in the provided context below. Only answer questions based on the facts listed below."
+
+
         prompt = f"""
         <|im_start|>system
-        The system is an AI assistant that helps people find information in the provided context below. Only answer questions based on the fact listed below. If the facts below don't answer the question, say you don't know. 
+        {instruction}
         {context}
         <|im_end|>
         <|im_start|>user
@@ -69,14 +78,24 @@ def get_prompt(context, query, completion_model = None):
         """
 
     else:
+
+        if RESRTICTIVE_PROMPT == 'yes':
+            instruction = "Answer the question using the above Context only, and if the answer is not contained within the Context above, say 'Sorry, the query did not find a good match. Please rephrase your question':"
+        else:
+            instruction = "Answer the question using the above Context:"
+
+
         prompt =f"""
         Context: {context}
         
         Question: {query}       
         
-        Answer the question using the above Context only, and if the answer is not contained within the Context above, say "Sorry, the query did not find a good match. Please rephrase your question":
+        {instruction}
         """
-        
+    
+    logging.info(f"Using as prompt instruction: {instruction}")
+    print(f"Using as prompt instruction: {instruction}")
+
     return prompt
 
 

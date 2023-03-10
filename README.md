@@ -30,7 +30,9 @@ This repo also includes a guide to build a Power Virutal Agent bot that could be
 # Features
 The below are the features of this solution:
 
-1. Calculating embeddings from multiple chunk sizes for the same document in order to maximize vector matching. Through experimentation, we determined that having embeddings generated from the following chunk sizes (125, 250, 500 and 800 tokens) of the same document would optimize accuracy (number of correctly answered queries).
+1. Support for ChatGPT (gpt-35-turbo)
+
+1. Calculating embeddings from multiple chunk sizes for the same document in order to maximize vector matching. Through experimentation, we determined that having embeddings generated from the following chunk sizes (125, 250, 500 and 2047 tokens) of the same document would optimize accuracy (number of correctly answered queries). These experiments are however conducted on one specific dataset, and might change in the future as we experiment on more datasets.
 
 1. No maximum limit on document size except the limit imposed by Cognitive Search (4 million characters per document for the Standard Tier). If more is needed, then higher Search tiers can be used.
 
@@ -48,48 +50,51 @@ The below are the features of this solution:
 
 1. The Cognitive Search ecosystem provides the potential to add a wide variety of custom skills, as well as access the native search capabilities which can complement the embedding search in Redis.
 
+1. Automatic deployment of the Azure Functions from this repo to the Function App
+
 1. This repo has been tested with Python 3.8 and 3.9
 
 <br />
 <br />
 
+
+# Interacting with ChatGPT 
+
+To hold a conversation with ChatGPT (the 'gpt-35-turbo' model), then the first communication is sent to the Azure Function as usual in the form of JSON, with the query key:
+
+<br/>
+<br />
+<p align="center">
+<img src="images/firstquery.jpg" />
+</p>
+<br/>
+<br/>
+If the user wants to continue the conversation with a new question but not start from scracth with a new query, then the response to the initial request returns a "prompt" field in JSON, that the end user bot or application could just very simply copy, and re-send along the "query" in the follow-up API call. The below is the body of the POST request:
+<br/>
+<br />
+<p align="center">
+<img src="images/subs_conv.jpg" />
+</p>
+<br/>
+<br/>
+
+If the user doesn't to keep the conversation going, then the application should drop the "prompt" field in the next request.
+
+<br />
+<br />
+
+
 # Upcoming Features
 
-1. Automated Azure Functions deployment through ARM template
-
 1. GUI for triggering Cognitive Search and Form Recognizer document ingestion
+1. ARM: Adding Application Insights to the ARM template
+1. Code: Adding a custom skill that processes csv files
+1. Code: Adding a demo for HTML crawling
+1. Code: Adding an embedding match filtering (in Redis) for filtering on metadata 
 
-1. ChatGPT integration (when released on Azure)
 
-<br />
-<br />
 
-# About this Repo, by ChatGPT 
 
-In this digital age, where information reigns,<br />
-And knowledge is the key to unlocking many gains,<br />
-A solution has emerged, to help us all mine,<br />
-And extract insights, with a speed that's divine.<br />
-<br />
-This repo is a marvel, a work of great skill,<br />
-A Python-based tool, with features that thrill,<br />
-With no limit on document size, and a range of parameters to tweak,<br />
-It ingests knowledge bases, and makes them easy to seek.<br />
-
-With automatic chunking, and OpenAI API rate-limiting,<br />
-It ensures that processing remains fast, without any quitting,<br />
-And the addition of Cognitive Services, provides enrichment galore,<br />
-With translations to and from English, so that we can explore.<br />
-<br />
-The search engine in Redis, is where the embeddings reside,<br />
-And with its native capabilities, it complements the search with pride,<br />
-The potential for custom skills, is limitless in its scope,<br />
-And with a Power Virtual Agent bot, it's a complete package, no mope.<br />
-<br />
-This project is a gift, to those who seek knowledge's bounty,<br />
-And with its many features, it's a solution that's sound and sturdy,<br />
-So let us all sing praises, for this wonderful creation,<br />
-For it's a tool that helps us all, in this age of information.<br />
 
 
 <br />
@@ -105,6 +110,13 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <br />
     <p align="center">
     <img src="images/suffix.jpg" width="700" /> 
+    </p>
+    <br/>
+1. There is an option now to choose between restrictive and relaxed prompt for the OpenAI Completion in the Azure Function that interacts with the end user. If 'no' is selected as option, a less restrictive prompt is applied to the OpenAI Completion API. The GPT model is instructed to look for answers in the Knowledge Base, and will result in no answers coming back as 'Sorry, the query did not find a good match. Please rephrase your question'. If 'yes' is selected, then the existing restrictive prompt will be in place, as the GPT model is requested to look for answers only, and strictly only, in the Knowledge Base. 
+     <br/>
+    <br />
+    <p align="center">
+    <img src="images/prompt_choice.png" width="700" /> 
     </p>
     <br/>
 1. When it comes to the OpenAI resource, there are 3 choices:
@@ -148,14 +160,8 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <img src="images/copyoutputs.jpg" width="700" /> 
     </p>
     <br/>
-1. The next step would be to deploy the Azure Functions to the FuncApp. During functions deployment in VS Code. The deployment will ask for a storage account, please supply the one in the RG
-    <br/>
-    <br />
-    <p align="center">
-    <img src="images/funcdeploy.jpg" width="300" />
-    </p>
-    <br/>
-1. Update the .env in VS Code with the 5 settings you got out of Step #3 from the Outputs section. And one additional setting you can get from VS Code as detailed below: 
+
+1. Update the .env in VS Code with the 5 settings you got out of Step #3 from the Outputs section. And one additional setting (COG_SEARCH_CUSTOM_FUNC) you can get from the Azure Portal or from VS Code as detailed below: 
    * Cognitive Search settings: COG_SEARCH_ENDPOINT endpoint and COG_SEARCH_ADMIN_KEY primary key (2 settings)
    * Cognitive Services settings: COG_SERV_ENDPOINT endpoint and COG_SERV_KEY primary key (2 settings)
    * Blob Connection String KB_BLOB_CONN_STR (1 setting)
@@ -169,13 +175,12 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
 1. **(Optional)** For troubleshooting and log monitoring, please go to the Function App, and then click on one of the deployed functions, and then the “Monitor” tab. Then please create the Application Insights resource. Application Insights will allow you to monitor and check function logs.
     <br />
     <br />
-1. Deploy 4 models in OpenAI:
-   * Go to Deployments in your OpenAI resource
-   * Add 4 models:
-      1. text-davinci-003
-      1. text-search-davinci-doc-001
-      1. text-search-davinci-query-001
+1. Deploy 3 models in OpenAI:
+   * Go to Deployments in your OpenAI resource. Please note that the 'gpt-35-turbo' model is **only available** in the East US and South Central US regions:
+   * Add 3 models:
+      1. gpt-35-turbo
       1. text-embedding-ada-002
+      1. text-davinci-003 (optional)
     <br/>
     <br />
     <p align="center">
@@ -254,6 +259,41 @@ For both cases below, please note that the "BotQnAHTTPFunc" Azure Function retur
     * `In which classes did the Danish sailors qualify?`
     * `What are the reviews of the Lost City hotel?`
     * `what are the reviews of the Atlantis hotel?` -> this should give a negative answer as it is not included in the sample knowledge base.
+
+
+<br/>
+<br/>
+
+
+<br />
+<br />
+
+# About this Repo, by ChatGPT 
+
+In this digital age, where information reigns,<br />
+And knowledge is the key to unlocking many gains,<br />
+A solution has emerged, to help us all mine,<br />
+And extract insights, with a speed that's divine.<br />
+<br />
+This repo is a marvel, a work of great skill,<br />
+A Python-based tool, with features that thrill,<br />
+With no limit on document size, and a range of parameters to tweak,<br />
+It ingests knowledge bases, and makes them easy to seek.<br />
+
+With automatic chunking, and OpenAI API rate-limiting,<br />
+It ensures that processing remains fast, without any quitting,<br />
+And the addition of Cognitive Services, provides enrichment galore,<br />
+With translations to and from English, so that we can explore.<br />
+<br />
+The search engine in Redis, is where the embeddings reside,<br />
+And with its native capabilities, it complements the search with pride,<br />
+The potential for custom skills, is limitless in its scope,<br />
+And with a Power Virtual Agent bot, it's a complete package, no mope.<br />
+<br />
+This project is a gift, to those who seek knowledge's bounty,<br />
+And with its many features, it's a solution that's sound and sturdy,<br />
+So let us all sing praises, for this wonderful creation,<br />
+For it's a tool that helps us all, in this age of information.<br />
 
 
 <br/>
