@@ -91,6 +91,7 @@ If the user doesn't to keep the conversation going, then the application should 
 1. Code: Adding a custom skill that processes csv files
 1. Code: Adding a demo for HTML crawling
 1. Code: Adding an embedding match filtering (in Redis) for filtering on metadata 
+1. Integrating the features of the new repo from CogSearch PG into this one
 
 
 
