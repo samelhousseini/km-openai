@@ -32,15 +32,15 @@ The below are the features of this solution:
 
 1. Support for ChatGPT (gpt-35-turbo)
 
-1. Calculating embeddings from multiple chunk sizes for the same document in order to maximize vector matching. Through experimentation, we determined that having embeddings generated from the following chunk sizes (125, 250, 500 and 2047 tokens) of the same document would optimize accuracy (number of correctly answered queries). These experiments are however conducted on one specific dataset, and might change in the future as we experiment on more datasets.
+1. Automatic segmenting / chunking of documents with overlap based on the specified number(s) of tokens for each OpenAI model to generate embeddings.
+ 
+1. Calculating embeddings from multiple segment / chunk sizes for the same document in order to maximize vector matching. Through experimentation, we determined that having embeddings generated from the following chunk sizes (125, 250, 500 and 2047 tokens) of the same document would optimize accuracy (number of correctly answered queries). These experiments are however conducted on one specific dataset, and might change in the future as we experiment on more datasets.
 
 1. No maximum limit on document size except the limit imposed by Cognitive Search (4 million characters per document for the Standard Tier). If more is needed, then higher Search tiers can be used.
 
 1. Added support for Form Recognizer, where Form Recognizer can complement Cognitive Search when it comes to ingesting Forms
 
 1. Cosmos DB is used to store the contents of the ingested files. Cosmos is also used to store the generated embeddings, and automatically load them when the Redis index is empty.
-
-1. Automatic chunking of documents based on the specified number of tokensfor each OpenAI model to generate embeddings.
 
 1. Managing OpenAI API rate limiting and mitigating its impact by processing the documents serially, and retrying OpenAI API calls with exponential backoff when hitting limit errors
 
@@ -92,9 +92,6 @@ If the user doesn't to keep the conversation going, then the application should 
 1. Code: Adding a demo for HTML crawling
 1. Code: Adding an embedding match filtering (in Redis) for filtering on metadata 
 1. Integrating the features of the new repo from CogSearch PG into this one
-
-
-
 
 
 

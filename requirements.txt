@@ -20,3 +20,5 @@ azure-storage-file-share
 python-dotenv
 azure-search-documents
 azure-ai-formrecognizer
+beautifulsoup4
+lxml

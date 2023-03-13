@@ -18,7 +18,7 @@ document_analysis_client = DocumentAnalysisClient(COG_SERV_ENDPOINT, AzureKeyCre
 
 
 
-def process_forms(in_container = FR_CONTAINER, out_container = OUTPUT_BLOB_CONTAINER):
+def process_forms(in_container = FR_CONTAINER, out_container = OUTPUT_BLOB_CONTAINER): 
     blob_list = storage.list_documents(in_container)
 
     for b in blob_list:
@@ -27,7 +27,7 @@ def process_forms(in_container = FR_CONTAINER, out_container = OUTPUT_BLOB_CONTA
 
         new_json = {
             'text': result,
-            'doc_url': url
+            'doc_url': b
         }
 
         storage.save_json_document(new_json, container = out_container )

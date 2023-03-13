@@ -67,7 +67,7 @@ def save_json_document(data_dict, container = OUTPUT_BLOB_CONTAINER):
     container_client = blob_service_client.get_container_client(container)
 
     try:
-        container_properties = container_client.get_container_properties()
+        container_properties = container_client.get_container_properties() 
     except Exception as e:
         container_client.create_container()
 
@@ -89,7 +89,8 @@ def list_documents(container):
     generator = container_client.list_blobs()
     blobs = []
     for blob in generator:
-       blobs.append(blob.name)
+        blob_client = blob_service_client.get_blob_client(container=container, blob=blob.name)
+        blobs.append(blob_client.url)
 
     return blobs
 
