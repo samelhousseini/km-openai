@@ -101,6 +101,11 @@ def get_document_url(container, filename):
 
 
 def get_document(container, filename):
+    
+    transport_params = {
+        'client': blob_service_client
+    }
+
     with smart_open.open(f"azure://{container}/{filename}", transport_params=transport_params) as fin:
         data = fin.read()
 

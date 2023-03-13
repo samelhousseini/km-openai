@@ -844,7 +844,7 @@
                             "value": "kmoaiforms"
                         },
                         {
-                            "name": "RESRTICTIVE_PROMPT",
+                            "name": "RESTRICTIVE_PROMPT",
                             "value": "[ parameters('UseRestrictivePrompt')]"
                         },
                         {
