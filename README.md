@@ -22,7 +22,7 @@ The purpose of this repo is to accelerate the deployment of a Python-based Knowl
 
 The Cognitive Search component serves to make it easier to ingest a Knowledge Base with a variety of document formats. The Cognitive Services component connected to the Search makes it possible to have an enrichment pipeline. This pipeline can generate information based on images for example, which can be included at the time of generating embeddings. 
 
-This repo also includes a guide to build a Power Virutal Agent bot that could be used and adapted to connect to this solution, to create an end-to-end Knowledge Base Chatbot.
+This repo also includes a guide to build a Power Virtual Agent bot that could be used and adapted to connect to this solution, to create an end-to-end Knowledge Base Chatbot.
 <br/>
 <br/>
 <br/>
