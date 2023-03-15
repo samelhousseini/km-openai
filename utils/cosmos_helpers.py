@@ -92,3 +92,24 @@ def cosmos_store_contents(data_dict):
         ret_dict['status'] = f"Document {new_doc['id']} failed to be inserted into Cosmos: {e}"
 
     return ret_dict
+
+
+
+# def cosmos_download_contents():
+#     QUERY = "SELECT * FROM documents p WHERE p.categoryId = @categoryId"
+#     params = [dict(name="@categoryId", value=CATEGORYID)]
+
+#     contents = container.query_items(query=QUERY, parameters=params, enable_cross_partition_query=False, max_item_count=10)
+#     counter = 0
+    
+#     try:
+#         for c in contents:
+#             #counter += redis_helpers.redis_upsert_embedding(redis_conn, e)
+#             # print(c)
+#             yield self._parse_entry(item_dict) 
+            
+#     except Exception as e:
+#         print("No Documents found")
+
+#     logging.info(f"Loaded {counter} embeddings from Cosmos into Redis")
+#     print(f"Loaded {counter} embeddings from Cosmos into Redis")    

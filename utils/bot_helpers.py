@@ -74,7 +74,6 @@ def get_prompt(context, query, completion_model = None):
         {query}       
         <|im_end|>
         <|im_start|>assistant
-
         """
 
     else:
