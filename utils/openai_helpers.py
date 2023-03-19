@@ -21,8 +21,27 @@ openai.api_version = "2022-12-01"
 
 
 
-MAX_OUTPUT_TOKENS = 750
+MAX_QUERY_TOKENS             = int(os.environ["MAX_QUERY_TOKENS"])
+MAX_OUTPUT_TOKENS            = int(os.environ["MAX_OUTPUT_TOKENS"])
+
+DAVINCI_003_MODEL_MAX_TOKENS = int(os.environ["DAVINCI_003_MODEL_MAX_TOKENS"])
+ADA_002_MODEL_MAX_TOKENS     = int(os.environ["ADA_002_MODEL_MAX_TOKENS"])
+DAVINCI_003_EMB_MAX_TOKENS   = int(os.environ['DAVINCI_003_EMB_MAX_TOKENS'])
+
+
+GPT35_TURBO_COMPLETIONS_MODEL = os.environ['GPT35_TURBO_COMPLETIONS_MODEL']
+GPT35_TURBO_COMPLETIONS_MAX_TOKENS = int(os.environ["GPT35_TURBO_COMPLETIONS_MAX_TOKENS"])
+
+CHOSEN_EMB_MODEL        = os.environ['CHOSEN_EMB_MODEL']
+CHOSEN_QUERY_EMB_MODEL  = os.environ['CHOSEN_QUERY_EMB_MODEL']
+CHOSEN_COMP_MODEL       = os.environ['CHOSEN_COMP_MODEL']
+
+RESTRICTIVE_PROMPT    = os.environ['RESTRICTIVE_PROMPT']
+
+
 TEMPERATURE = 0
+
+
 
 
 def check_model_deployment(oai_model):
@@ -98,6 +117,23 @@ def get_summ_prompt(text):
 
 
 
+def get_model_max_tokens(model):
+    if model == "text-search-davinci-doc-001":
+        return DAVINCI_003_EMB_MAX_TOKENS
+    elif model == "text-search-davinci-query-001":
+        return DAVINCI_003_EMB_MAX_TOKENS        
+    elif model == "text-davinci-003":
+        return DAVINCI_003_MODEL_MAX_TOKENS        
+    elif model == "text-embedding-ada-002":
+        return ADA_002_MODEL_MAX_TOKENS
+    elif model == "gpt-35-turbo":
+        return GPT35_TURBO_COMPLETIONS_MAX_TOKENS        
+    else:
+        return ADA_002_MODEL_MAX_TOKENS
+
+
+
+
 def get_encoder(embedding_model):
     if embedding_model == "text-search-davinci-doc-001":
         return tiktoken.get_encoding("p50k_base")
@@ -120,9 +156,9 @@ def get_openai_embedding(query, embedding_model):
 
 
 @retry(wait=wait_random_exponential(min=1, max=120), stop=stop_after_attempt(20))
-def openai_summarize(text, max_output_tokens = MAX_OUTPUT_TOKENS, lang='en'):
+def openai_summarize(text, completion_model, max_output_tokens = MAX_OUTPUT_TOKENS, lang='en'):
     prompt = get_summ_prompt(text)
-    return contact_openai(prompt, max_output_tokens)
+    return contact_openai(prompt, completion_model, max_output_tokens)
 
 
 

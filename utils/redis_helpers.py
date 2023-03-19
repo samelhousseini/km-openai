@@ -9,6 +9,13 @@ from redis.commands.search.field import TagField
 from redis.commands.search.query import Query
 from redis.commands.search.result import Result
 
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+)
+
+
 
 REDIS_ADDR = os.environ["REDIS_ADDR"]   
 REDIS_PORT = os.environ["REDIS_PORT"]   
@@ -57,9 +64,9 @@ def redis_reset_index(redis_new_conn):
 def test_redis(redis_new_conn):
     try:
         out = redis_new_conn.ft(REDIS_INDEX_NAME).info()
-        print(f"Found Redis Index {REDIS_INDEX_NAME}")
+        # print(f"Found Redis Index {REDIS_INDEX_NAME}")
     except Exception as e:
-        print(f"Redis Index {REDIS_INDEX_NAME} not found. Creating a new index.")
+        # print(f"Redis Index {REDIS_INDEX_NAME} not found. Creating a new index.")
         logging.error(f"Redis Index {REDIS_INDEX_NAME} not found. Creating a new index.")
         redis_reset_index(redis_new_conn)
 
@@ -70,12 +77,13 @@ def get_new_conn():
     else:
         redis_conn = redis.StrictRedis(host=REDIS_ADDR, port=int(REDIS_PORT), password=REDIS_PASSWORD, ssl=True)
 
-    print('Connected to redis')
+    # print('Connected to redis')
     test_redis(redis_conn)
     
     return redis_conn
 
 
+retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
 def redis_upsert_embedding(redis_conn, e):     
     try:
         embeds = np.array(e[VECTOR_FIELD_IN_REDIS]).astype(np.float32).tobytes()
@@ -92,11 +100,16 @@ def redis_upsert_embedding(redis_conn, e):
 
 
 
-
+@retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
 def redis_query_embedding_index(redis_conn, query_emb, t_id, topK=5):
    
+    if os.environ['redis_filter_param'] is not None:
+        filter_param = os.environ['redis_filter_param']
+    else:
+        filter_param = '*'
+        
     query_vector = np.array(query_emb).astype(np.float32).tobytes()
-    q = Query(f'*=>[KNN {topK} @{VECTOR_FIELD_IN_REDIS} $vec_param AS vector_score]').sort_by('vector_score')\
+    q = Query(f'{filter_param}=>[KNN {topK} @{VECTOR_FIELD_IN_REDIS} $vec_param AS vector_score]').sort_by('vector_score')\
                                 .paging(0,topK).return_fields('vector_score','doc_url','text', 'text_en', 'timestamp').dialect(2)
     params_dict = {"vec_param": query_vector}
     results = redis_conn.ft(REDIS_INDEX_NAME).search(q, query_params = params_dict)

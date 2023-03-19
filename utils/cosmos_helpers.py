@@ -23,7 +23,23 @@ VECTOR_FIELD_IN_REDIS  = os.environ['VECTOR_FIELD_IN_REDIS']
 client = CosmosClient(url=COSMOS_URI, credential=COSMOS_KEY)
 partitionKeyPath = PartitionKey(path="/categoryId")
 database = client.create_database_if_not_exists(id=COSMOS_DB_NAME)
-container = database.create_container_if_not_exists(id="documents", partition_key=partitionKeyPath)
+
+def init_container():
+
+    indexing_policy={ "includedPaths":[{ "path":"/*"}], "excludedPaths":[{ "path":"/\"_etag\"/?"},{ "path":"/item_vector/?"}]}
+    
+    try:
+        container = database.create_container_if_not_exists(id="documents", partition_key=partitionKeyPath,indexing_policy=indexing_policy)
+    except:
+        try:
+            container = database.create_container_if_not_exists(id="documents", partition_key=partitionKeyPath,indexing_policy=indexing_policy)
+
+        except Exception as e:
+            logging.error(f"Encountered error {e} while creating the container")
+            print(f"Encountered error {e} while creating the container")
+
+
+container = init_container()
 
 
 

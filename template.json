@@ -53,6 +53,10 @@
                 "description": "If 'no', then please supply the endpoint and key of the existing Redis resource in the below two fields."
             }
         },
+        "ExistingRedisResourcePort": {
+            "defaultValue": "10000",
+            "type": "String"
+        },
         "ExistingRedisResourceEndpoint": {
             "defaultValue": "",    
             "type": "String"
@@ -61,10 +65,23 @@
             "defaultValue": "",   
             "type": "String"
         },
-        "ExistingRedisResourcePort": {
-            "defaultValue": "10000",
+        "UseBing": {
+            "defaultValue": "no",
+            "type": "String",
+            "allowedValues": ["yes", "no"],
+             "metadata": {
+                "description": "If 'yes', Bing will be used as one of the tools for the LLMs to find answers. If 'no', Bing will not be used."
+            }
+        },
+        "ExistingBingSearchURL": {
+            "defaultValue": "https://api.bing.microsoft.com/v7.0/search",    
             "type": "String"
         },
+        "ExistingBingSubscriptionKey": {
+            "defaultValue": "",   
+            "type": "String"
+        },
+
         "RedisEnterprise": {
             "defaultValue":  "[concat('redisdb', parameters('ResourceSuffix'))]", 
             "type": "String"
@@ -99,10 +116,6 @@
         },
         "Cosmos": {
             "defaultValue": "[concat('cosmos', parameters('ResourceSuffix'))]",
-            "type": "String"
-        },
-        "Translator": {
-            "defaultValue": "[concat('trsltr', parameters('ResourceSuffix'))]",
             "type": "String"
         }
 
@@ -162,28 +175,6 @@
             "kind": "OpenAI",
             "properties": {
                 "customSubDomainName": "[parameters('NewOpenAIResource')]",
-                "publicNetworkAccess": "Enabled"
-            }
-        },
-        {
-            "type": "Microsoft.CognitiveServices/accounts",
-            "apiVersion": "2022-12-01",
-            "name": "[parameters('Translator')]",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "S1"
-            },
-            "kind": "TextTranslation",
-            "identity": {
-                "type": "None"
-            },
-            "properties": {
-                "customSubDomainName": "[parameters('Translator')]",
-                "networkAcls": {
-                    "defaultAction": "Allow",
-                    "virtualNetworkRules": [],
-                    "ipRules": []
-                },
                 "publicNetworkAccess": "Enabled"
             }
         },
@@ -625,7 +616,7 @@
                         },
                         {
                             "name": "TRANSLATION_API_KEY",
-                            "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('Translator')), '2021-10-01').key1]"
+                            "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('CognitiveServices')), '2021-10-01').key1]"
                         }, 
                         {
                             "name": "TRANSLATION_LOCATION",
@@ -854,9 +845,43 @@
                         {
                             "name": "AzureWebJobsDashboard",
                             "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}', parameters('StorageAccount'), listKeys(parameters('StorageAccount'), '2021-09-01').keys[0].value)]"
+                        },
+                        {
+                            "name": "USE_BING",
+                            "value": "[ parameters('UseBing')]"
+                        } ,
+                        {
+                            "name": "BING_SEARCH_URL",
+                            "value": "[ parameters('ExistingBingSearchURL')]"
+                        },
+                        {
+                            "name": "BING_SUBSCRIPTION_KEY",
+                            "value":"[ parameters('ExistingBingSubscriptionKey')]"
+                        },
+                         {
+                            "name": "KB_SEM_INDEX_NAME",
+                            "value": "km-openai-sem"
+                        } ,
+                        {
+                            "name": "MAX_HISTORY_TOKENS",
+                            "value": "1000"
+                        } ,
+                        {
+                            "name": "CONVERSATION_TTL_SECS",
+                            "value": "7200"
+                        } ,
+                        {
+                            "name": "MAX_SEARCH_TOKENS",
+                            "value": "2000"
+                        },
+                        {
+                            "name": "PRE_CONTEXT",
+                            "value": "250"
+                        },
+                        {
+                            "name": "COG_SEARCH_ADMIN_KEY",
+                            "value": "[listAdminKeys(parameters('CognitiveSearch'), '2022-09-01').primaryKey]"
                         }
-
-
                     ]
                 },
                 "scmSiteAlsoStopped": false,

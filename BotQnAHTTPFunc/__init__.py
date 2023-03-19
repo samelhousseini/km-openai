@@ -14,10 +14,8 @@ NUM_TOP_MATCHES = int(os.environ['NUM_TOP_MATCHES'])
 
 
 
-def main(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
-
-    query = req.params.get('query') 
+def get_param(req, param_name):
+    param = req.params.get(param_name) 
 
     if not query:
         try:
@@ -25,21 +23,27 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         except ValueError:
             pass
         else:
-            query = req_body.get('query')
+            param = req_body.get(param_name)
+    
+    return param
 
 
-    prev_prompt = req.params.get('prompt') 
 
-    if not prev_prompt:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            prev_prompt = req_body.get('prompt')
+
+def main(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
+
+    query = get_param(req, 'query')
+    prompt_id = get_param(req, 'prompt')
+    filter_param = get_param(req, 'filter')
+    
+    if filter_param is None:
+        os.environ['redis_filter_param'] = '*'
+    else:
+        os.environ['redis_filter_param'] = filter_param
 
     if query:
-        str = bot_helpers.openai_interrogate_text(query, CHOSEN_COMP_MODEL, CHOSEN_QUERY_EMB_MODEL, prev_prompt=prev_prompt, topK=NUM_TOP_MATCHES)
+        str = bot_helpers.openai_interrogate_text(query, prompt_id=prompt_id)
         return func.HttpResponse(str)
     else:
         return func.HttpResponse(

@@ -27,13 +27,26 @@ def remove_urls(text):
     text = re.sub(r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b', '', text, flags=re.MULTILINE)
     return text
 
+re_strs = [
+    "customXml\/[-a-zA-Z0-9+&@#\/%=~_|$?!:,.]*", 
+    "ppt\/[-a-zA-Z0-9+&@#\/%=~_|$?!:,.]*",
+    "\.MsftOfcThm_[-a-zA-Z0-9+&@#\/%=~_|$?!:,.]*[\r\n\t\f\v ]\{[\r\n\t\f\v ].*[\r\n\t\f\v ]\}",
+    "SlidePowerPoint",
+    "PresentationPowerPoint",
+    '[a-zA-Z0-9]*\.(?:gif|emf)'
+    ]
+
 
 
 def analyze_doc(data_dict):
     
     ret_dict = {}
     db_status = ''
-    data_dict['text'] = remove_urls(data_dict['content'].replace("\n\n", " ").replace("....", " ")).replace("\n\n", " ")
+    data_dict['text'] = remove_urls(data_dict['content'].replace("\n\n", " ").replace("....", " ")).replace("\n\n", " ").replace("\n", " ")
+
+    for re_str in re_strs:
+        matches = re.findall(re_str, data_dict['text'], re.DOTALL)
+        for m in matches: data_dict['text'] = data_dict['text'].replace(m, '')
 
     try:
         if DATABASE_MODE == '1':
