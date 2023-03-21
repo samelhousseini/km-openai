@@ -36,7 +36,7 @@ def get_container_name(url):
 
 def create_sas(blob_path):
 
-    blob_name = urllib.parse.unquote(os.path.basename(blob_path))
+    blob_name = urllib.parse.unquote(os.path.basename(blob_path.split('?')[0]))
     container = get_container_name(blob_path)
 
     blob_client = blob_service_client.get_blob_client(container=container, blob=blob_name)
