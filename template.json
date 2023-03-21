@@ -757,7 +757,7 @@
                         } ,
                         {
                             "name": "ADA_002_MODEL_MAX_TOKENS",
-                            "value": "2047"
+                            "value": "4095"
                         } ,
                         {
                             "name": "ADA_002_EMBEDDING_MODEL",
