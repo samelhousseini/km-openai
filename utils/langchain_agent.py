@@ -55,8 +55,6 @@ openai.api_version = "2022-12-01"
 
 DEFAULT_RESPONSE = "Sorry, the question was not clear, or the information is not in the knowledge base. Please rephrase your question."
 
-bing_search = BingSearchAPIWrapper()
-
 
 
 class KMOAI_Agent():
@@ -82,6 +80,7 @@ class KMOAI_Agent():
 
 
         if USE_BING == 'yes':
+            bing_search = BingSearchAPIWrapper()
             zs_tools.append(Tool(name="Online Search", func=bing_search.run, description='useful for when you need to answer questions about current events from the internet'),)
 
         ds_tools = [

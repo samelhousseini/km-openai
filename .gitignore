@@ -162,3 +162,4 @@ baseline.json
 backup/
 WebSiteCrawler.ipynb
 agent copy.ipynb
+.env copy 2
