@@ -186,6 +186,16 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     </p>
 
     <br/>
+
+1. Enable Semantic Search in your Cognitive Search resource by clicking on "Select Plan" in the "Semantic Search" setting. For testing, you could enable the Free monthly plan. For other scenario, you can enable the paid monthly plans.
+    <br/>
+    <br />
+    <p align="center">
+    <img src="images/sem_search.jpg" width="400" />
+    </p>
+    <br/>
+    <br/>
+
 1. Upload the KB documents to the Blob Storage container “kmoaidemo”
     <br />
     <br />
