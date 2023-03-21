@@ -6,6 +6,7 @@ import json
 import logging
 import re
 import uuid
+import urllib
 
 from langchain.llms.openai import AzureOpenAI
 from langchain.agents import initialize_agent, Tool, load_tools, AgentExecutor
@@ -160,7 +161,7 @@ class KMOAI_Agent():
         source_matches = re.findall(r'\[(.*?)\]', answer)  
         for s in source_matches:
             answer = answer.replace('['+s+']', '')
-            sources.append(s)
+            sources.append(urllib.parse.unquote(s))
 
         source_matches = re.findall(r'\((.*?)\)', answer)  
         for s in source_matches:
