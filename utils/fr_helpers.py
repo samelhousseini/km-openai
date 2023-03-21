@@ -22,7 +22,7 @@ def process_forms(in_container = FR_CONTAINER, out_container = OUTPUT_BLOB_CONTA
     blob_list = storage.list_documents(in_container)
 
     for b in blob_list:
-        url = storage.create_sas(b, container= in_container)
+        url = storage.create_sas(b)
         result = fr_analyze_doc(url)
 
         new_json = {

@@ -13,33 +13,36 @@ DAVINCI_003_COMPLETIONS_MODEL = os.environ['DAVINCI_003_COMPLETIONS_MODEL']
 NUM_TOP_MATCHES = int(os.environ['NUM_TOP_MATCHES'])
 
 
+def get_param(req, param_name):
+    param = req.params.get(param_name) 
+
+    if not param:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            pass
+        else:
+            param = req_body.get(param_name)
+    
+    return param
+
+
+
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
-    query = req.params.get('query') 
-
-    if not query:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            query = req_body.get('query')
-
-
-    prev_prompt = req.params.get('prompt') 
-
-    if not prev_prompt:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            prev_prompt = req_body.get('prompt')
+    query = get_param(req, 'query')
+    session_id = get_param(req, 'session_id')
+    filter_param = get_param(req, 'filter')
+    
+    if filter_param is None:
+        os.environ['redis_filter_param'] = '*'
+    else:
+        os.environ['redis_filter_param'] = filter_param
 
     if query:
-        str = bot_helpers.openai_interrogate_text(query, CHOSEN_COMP_MODEL, CHOSEN_QUERY_EMB_MODEL, prev_prompt=prev_prompt, topK=NUM_TOP_MATCHES)
+        str = bot_helpers.openai_interrogate_text(query, session_id=session_id, filter_param=filter_param)
         return func.HttpResponse(str)
     else:
         return func.HttpResponse(

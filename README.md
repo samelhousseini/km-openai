@@ -69,7 +69,7 @@ To hold a conversation with ChatGPT (the 'gpt-35-turbo' model), then the first c
 </p>
 <br/>
 <br/>
-If the user wants to continue the conversation with a new question but not start from scracth with a new query, then the response to the initial request returns a "prompt" field in JSON, that the end user bot or application could just very simply copy, and re-send along the "query" in the follow-up API call. The below is the body of the POST request:
+If the user wants to continue the conversation with a new question but not start from scratch with a new query, then the response to the initial request returns a "prompt" field in JSON, that the end user bot or application could just very simply copy, and re-send along the "query" in the follow-up API call. The below is the body of the POST request:
 <br/>
 <br />
 <p align="center">
@@ -151,7 +151,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <img src="images/depl-outputs.jpg" width="700" /> 
     </p>
     <br/>
-1. From the Outputs section, please copy these values (or keep this browser page open) as you will need them in the .env file, to kickstart the Cognitive Search ingestion process. More on this in Step #5 below.
+1. From the Outputs section, please copy these values (or keep this browser page open) as you will need them in the .env file, to kickstart the Cognitive Search ingestion process. More on this in the next step.
     <br/>
     <br />
     <p align="center">
@@ -159,7 +159,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     </p>
     <br/>
 
-1. Update the .env in VS Code with the 5 settings you got out of Step #3 from the Outputs section. And one additional setting (COG_SEARCH_CUSTOM_FUNC) you can get from the Azure Portal or from VS Code as detailed below: 
+1. Update the .env in VS Code with the 5 settings you got out of the previous step from the Outputs section. And one additional setting (COG_SEARCH_CUSTOM_FUNC) you can get from the Azure Portal or from VS Code as detailed below: 
    * Cognitive Search settings: COG_SEARCH_ENDPOINT endpoint and COG_SEARCH_ADMIN_KEY primary key (2 settings)
    * Cognitive Services settings: COG_SERV_ENDPOINT endpoint and COG_SERV_KEY primary key (2 settings)
    * Blob Connection String KB_BLOB_CONN_STR (1 setting)

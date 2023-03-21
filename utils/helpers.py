@@ -1,5 +1,6 @@
 import os
 import pickle
+import re
 import numpy as np
 import tiktoken
 import json
@@ -7,65 +8,66 @@ import logging
 from azure.storage.blob import BlobServiceClient, BlobClient
 from azure.storage.blob import ContainerClient, __version__
 from azure.storage.blob import generate_blob_sas, BlobSasPermissions
-
+import copy
 
 from utils import language
 from utils import storage
 from utils import redis_helpers
 from utils import openai_helpers
+from utils.kb_doc import KB_Doc
 
 
 OVERLAP_TEXT = int(os.environ["OVERLAP_TEXT"])
-
-
-### REDIS ENTRY SCHEMA 
-"""
-{
-    'id': "",
-    'text_en': "", 
-    'text': "", 
-    'doc_url':  "", 
-    'timestamp': "", 
-    'item_vector': ""
-}
-"""
-
-def helpers_test():
-    print("test")
+NUM_TOP_MATCHES = int(os.environ['NUM_TOP_MATCHES'])
+CHOSEN_EMB_MODEL   = os.environ['CHOSEN_EMB_MODEL']
+CHOSEN_QUERY_EMB_MODEL   = os.environ['CHOSEN_QUERY_EMB_MODEL']
+CHOSEN_COMP_MODEL   = os.environ['CHOSEN_COMP_MODEL']
+MAX_SEARCH_TOKENS  = int(os.environ.get("MAX_SEARCH_TOKENS"))
 
 
 
-def create_emb_dict(doc_id, text_en, text, doc_url, timestamp, item_vector):
-    return {
-                'id': doc_id,
-                'text_en': text_en, 
-                'text': text, 
-                'doc_url':  doc_url, 
-                'timestamp': timestamp, 
-                'item_vector': item_vector
-            }
 
 
-
-def generate_embeddings(json_object, embedding_model, max_emb_tokens, previous_max_tokens = 0, text_suffix = '',  gen_emb=True):
+def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_max_tokens = 0, text_suffix = '',  gen_emb=True):
     
     emb_documents = []
+
+    json_object = full_kbd_doc.get_dict()
 
     logging.info(f"Starting to generate embeddings with {embedding_model} and {max_emb_tokens} tokens")
 
     try:
-        timestamp = json_object['timestamp'][0]
+        if isinstance(json_object['timestamp'], list):
+            json_object['timestamp'] = json_object['timestamp'][0]
+        elif isinstance(json_object['timestamp'], str):
+            json_object['timestamp'] = json_object['timestamp']
+        else:
+            json_object['timestamp'] = "1/1/1970 00:00:00 AM"    
     except:
-        timestamp = "1/1/1970 00:00:00 AM"
+        json_object['timestamp'] = "1/1/1970 00:00:00 AM"
+
+    
+
+    #### FOR DEMO PURPOSES ONLY -- OF COURSE NOT SECURE
+    access = 'public'
+    filename = os.path.basename(json_object['doc_url'])
+
+    if filename.startswith('PRIVATE_'):
+        access = 'private'
+    #### FOR DEMO PURPOSES ONLY -- OF COURSE NOT SECURE
+
 
     doc_id = json_object['id']
     doc_text = json_object['text']
-    doc_url = storage.create_sas(json_object.get('doc_url', "https://microsoft.com"))
-    filename = os.path.basename(doc_url)
-
     enc = openai_helpers.get_encoder(embedding_model)
     tokens = enc.encode(doc_text)
     lang = language.detect_content_language(doc_text[:500])
+
+    json_object['doc_url'] = storage.create_sas(json_object.get('doc_url', "https://microsoft.com"))
+    json_object['filename'] = filename
+    json_object['access'] = access
+    json_object['orig_lang'] = lang
+
 
     print("Comparing lengths", len(tokens) , previous_max_tokens-OVERLAP_TEXT)
 
@@ -85,11 +87,19 @@ def generate_embeddings(json_object, embedding_model, max_emb_tokens, previous_m
         else:
             embedding = ''
 
-        emb_doc =  create_emb_dict(f"{doc_id}_{text_suffix}_{suff}", translated_chunk, decoded_chunk, doc_url, timestamp, embedding)
-        emb_documents.append(emb_doc)
+        dd = copy.copy(json_object)
+        dd['id'] = f"{doc_id}_{text_suffix}_{suff}"
+        dd['text_en'] = translated_chunk
+        dd['text'] = decoded_chunk
+        dd['item_vector'] = embedding
+
+        chunk_kbd_doc = KB_Doc()
+        chunk_kbd_doc.load(dd)
+
+        emb_documents.append(chunk_kbd_doc.get_dict())
         suff += 1
 
-        if suff % 100 == 0:
+        if suff % 10 == 0:
             print (f'Processed: {suff} embeddings for document {filename}')
             logging.info (f'Processed: {suff} embeddings for document {filename}')
 
@@ -183,3 +193,47 @@ def push_summarizations(doc_text, completion_model, max_output_tokens):
 
 
 
+re_strs = [
+    "customXml\/[-a-zA-Z0-9+&@#\/%=~_|$?!:,.]*", 
+    "ppt\/[-a-zA-Z0-9+&@#\/%=~_|$?!:,.]*",
+    "\.MsftOfcThm_[-a-zA-Z0-9+&@#\/%=~_|$?!:,.]*[\r\n\t\f\v ]\{[\r\n\t\f\v ].*[\r\n\t\f\v ]\}",
+    "SlidePowerPoint",
+    "PresentationPowerPoint",
+    '[a-zA-Z0-9]*\.(?:gif|emf)'
+    ]
+
+
+
+def redis_search(query: str, filter_param: str):
+    redis_conn = redis_helpers.get_new_conn()
+    completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
+
+    query_embedding = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
+    results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
+    
+    context = ' \n'.join([f"[{t['doc_url']}] " + t['text_en'].replace('\n', ' ') for t in results])
+
+    for re_str in re_strs:
+        matches = re.findall(re_str, context, re.DOTALL)
+        for m in matches: context = context.replace(m, '')
+
+    context = completion_enc.decode(completion_enc.encode(context)[:MAX_SEARCH_TOKENS])
+    
+    return context
+
+
+def redis_lookup(query: str, filter_param: str):
+    redis_conn = redis_helpers.get_new_conn()
+    completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
+    
+    query_embedding = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
+    results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=1, filter_param=filter_param)
+
+    context = ' \n'.join([f"[{t['doc_url']}] " + t['text_en'].replace('\n', ' ') for t in results])
+    
+    for re_str in re_strs:
+        matches = re.findall(re_str, context, re.DOTALL)
+        for m in matches: context = context.replace(m, '')
+
+    context = completion_enc.decode(completion_enc.encode(context)[:MAX_SEARCH_TOKENS])
+    return context

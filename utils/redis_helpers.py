@@ -10,6 +10,21 @@ from redis.commands.search.query import Query
 from redis.commands.search.result import Result
 
 
+## https://redis-py.readthedocs.io/en/stable/commands.html
+## https://redis.io/docs/stack/search/reference/query_syntax/
+
+
+
+from utils.kb_doc import KB_Doc
+
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+)
+
+
+
 REDIS_ADDR = os.environ["REDIS_ADDR"]   
 REDIS_PORT = os.environ["REDIS_PORT"]   
 REDIS_PASSWORD = os.environ["REDIS_PASSWORD"]   
@@ -35,15 +50,11 @@ def get_model_dims(embedding_model):
 def create_search_index (redis_new_conn, vector_field_name, number_of_vectors, vector_dimensions=512, distance_metric='L2'):
     M=40
     EF=200
-    redis_new_conn.ft(REDIS_INDEX_NAME).create_index([
-        #VectorField(vector_field_name, "FLAT", {"TYPE": "FLOAT32", "DIM": vector_dimensions, "DISTANCE_METRIC": distance_metric, "INITIAL_CAP": number_of_vectors, "BLOCK_SIZE":number_of_vectors }),
-        VectorField(vector_field_name, "HNSW", {"TYPE": "FLOAT32", "DIM": vector_dimensions, "DISTANCE_METRIC": distance_metric, "INITIAL_CAP": number_of_vectors, "M": M, "EF_CONSTRUCTION": EF}),
-        TagField("id"),
-        TextField("text"),
-        TextField("text_en"),
-        TextField("doc_url"),
-        TagField("timestamp")        
-    ])
+
+    fields = [VectorField(vector_field_name, "HNSW", {"TYPE": "FLOAT32", "DIM": vector_dimensions, "DISTANCE_METRIC": distance_metric, "INITIAL_CAP": number_of_vectors, "M": M, "EF_CONSTRUCTION": EF})] + \
+             [TextField(f) for f in KB_Doc().get_fields() if f != VECTOR_FIELD_IN_REDIS]
+
+    redis_new_conn.ft(REDIS_INDEX_NAME).create_index(fields)
 
 
 def redis_reset_index(redis_new_conn):
@@ -57,9 +68,9 @@ def redis_reset_index(redis_new_conn):
 def test_redis(redis_new_conn):
     try:
         out = redis_new_conn.ft(REDIS_INDEX_NAME).info()
-        print(f"Found Redis Index {REDIS_INDEX_NAME}")
+        # print(f"Found Redis Index {REDIS_INDEX_NAME}")
     except Exception as e:
-        print(f"Redis Index {REDIS_INDEX_NAME} not found. Creating a new index.")
+        # print(f"Redis Index {REDIS_INDEX_NAME} not found. Creating a new index.")
         logging.error(f"Redis Index {REDIS_INDEX_NAME} not found. Creating a new index.")
         redis_reset_index(redis_new_conn)
 
@@ -70,18 +81,22 @@ def get_new_conn():
     else:
         redis_conn = redis.StrictRedis(host=REDIS_ADDR, port=int(REDIS_PORT), password=REDIS_PASSWORD, ssl=True)
 
-    print('Connected to redis')
+    #print('Connected to redis', redis_conn)
     test_redis(redis_conn)
     
     return redis_conn
 
 
+retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
 def redis_upsert_embedding(redis_conn, e):     
     try:
-        embeds = np.array(e[VECTOR_FIELD_IN_REDIS]).astype(np.float32).tobytes()
-        meta = {'text_en': e['text_en'], 'text':e['text'], 'doc_url': e['doc_url'], 'timestamp': e['timestamp'], VECTOR_FIELD_IN_REDIS:embeds}
+        #embeds = np.array(e[VECTOR_FIELD_IN_REDIS]).astype(np.float32).tobytes()
+        #meta = {'text_en': e['text_en'], 'text':e['text'], 'doc_url': e['doc_url'], 'timestamp': e['timestamp'], VECTOR_FIELD_IN_REDIS:embeds}
+
+        e[VECTOR_FIELD_IN_REDIS] = np.array(e[VECTOR_FIELD_IN_REDIS]).astype(np.float32).tobytes()
+
         p = redis_conn.pipeline(transaction=False)
-        p.hset(e['id'], mapping=meta)
+        p.hset(e['id'], mapping=e)
         p.execute()   
         return 1
 
@@ -92,24 +107,29 @@ def redis_upsert_embedding(redis_conn, e):
 
 
 
-
-def redis_query_embedding_index(redis_conn, query_emb, t_id, topK=5):
+@retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
+def redis_query_embedding_index(redis_conn, query_emb, t_id, topK=5, filter_param=None):
    
+    if (filter_param is None) or (filter_param == '*'):
+        filter_param = '*'
+    else:
+        if not filter_param.startswith('@'):
+            filter_param = '@' + filter_param
+
+    filter_param = filter_param.replace('-', '\-')
+    fields = list(KB_Doc().get_fields()) + ['vector_score']
+    
     query_vector = np.array(query_emb).astype(np.float32).tobytes()
-    q = Query(f'*=>[KNN {topK} @{VECTOR_FIELD_IN_REDIS} $vec_param AS vector_score]').sort_by('vector_score')\
-                                .paging(0,topK).return_fields('vector_score','doc_url','text', 'text_en', 'timestamp').dialect(2)
+    
+    query_string = f'({filter_param})=>[KNN {topK} @{VECTOR_FIELD_IN_REDIS} $vec_param AS vector_score]'
+    # print('\n', query_string, filter_param, '\n')
+
+    q = Query(query_string).sort_by('vector_score').paging(0,topK).return_fields(*fields).dialect(2)
     params_dict = {"vec_param": query_vector}
+    
     results = redis_conn.ft(REDIS_INDEX_NAME).search(q, query_params = params_dict)
     
-    return [{
-                'id':match.id , 
-                'text':match.text, 
-                'text_en':match.text_en,
-                'doc_url':match.doc_url,
-                'timestamp':str(match.timestamp), 
-                'score':match.vector_score
-            } 
-            for match in results.docs if match.id != t_id]
+    return [{k: match.__dict__[k] for k in (set(list(match.__dict__.keys())) - set([VECTOR_FIELD_IN_REDIS]))} for match in results.docs if match.id != t_id]
 
 
 

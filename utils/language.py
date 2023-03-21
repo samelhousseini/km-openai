@@ -4,10 +4,15 @@ import uuid
 import os
 import logging
 
-TRANSLATION_API_KEY = os.environ["TRANSLATION_API_KEY"]
+import typing
+from azure.core.credentials import AzureKeyCredential
+from azure.ai.textanalytics import TextAnalyticsClient
+
+TRANSLATION_API_KEY  = os.environ["COG_SERV_KEY"]
 TRANSLATION_ENDPOINT = os.environ["TRANSLATION_ENDPOINT"]
 TRANSLATION_LOCATION = os.environ["TRANSLATION_LOCATION"]
-
+COG_SERV_ENDPOINT    = os.environ["COG_SERV_ENDPOINT"]
+COG_SERV_KEY         = os.environ["COG_SERV_KEY"]
 
 
 def detect_content_language(content):
@@ -68,3 +73,23 @@ def translate(text, from_lang, to_lang = 'en'):
     except Exception as e:
         print(e)
         return response
+
+
+
+def extract_entities(text):
+
+    text_analytics_client = TextAnalyticsClient(endpoint=COG_SERV_ENDPOINT, credential=AzureKeyCredential(COG_SERV_KEY))
+    reviews = [text]
+
+    result = text_analytics_client.recognize_entities(reviews)
+    result = [review for review in result if not review.is_error]
+    organization_to_reviews: typing.Dict[str, typing.List[str]] = {}
+
+    entities = []
+
+    for idx, review in enumerate(result):
+        for entity in review.entities:
+            entities.append(entity.text)
+            #print(entity.text)
+    
+    return entities
