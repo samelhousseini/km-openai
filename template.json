@@ -821,11 +821,11 @@
                         } ,
                         {
                             "name": "LARGE_EMB_TOKEN_NUM",
-                            "value": "000"
+                            "value": "900"
                         } ,
                         {
                             "name": "X_LARGE_EMB_TOKEN_NUM",
-                            "value": "2047"
+                            "value": "4095"
                         } ,
                         {
                             "name": "NUM_TOP_MATCHES",
