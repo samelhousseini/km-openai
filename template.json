@@ -250,6 +250,7 @@
                 "name": "standard"
             },
             "properties": {
+                "semanticSearch": "free",
                 "replicaCount": 1,
                 "partitionCount": 1,
                 "hostingMode": "Default",
@@ -748,7 +749,7 @@
                         } ,
                         {
                             "name": "OVERLAP_TEXT",
-                            "value": "80"
+                            "value": "40"
                         } ,
                         {
                             "name": "ADA_002_EMBED_NUM_DIMS",
@@ -812,15 +813,15 @@
                         } ,
                         {
                             "name": "SMALL_EMB_TOKEN_NUM",
-                            "value": "125"
+                            "value": "300"
                         } ,
                         {
                             "name": "MEDIUM_EMB_TOKEN_NUM",
-                            "value": "250"
+                            "value": "600"
                         } ,
                         {
                             "name": "LARGE_EMB_TOKEN_NUM",
-                            "value": "500"
+                            "value": "000"
                         } ,
                         {
                             "name": "X_LARGE_EMB_TOKEN_NUM",

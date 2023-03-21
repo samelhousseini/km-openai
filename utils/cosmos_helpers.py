@@ -38,6 +38,7 @@ def init_container():
             logging.error(f"Encountered error {e} while creating the container")
             print(f"Encountered error {e} while creating the container")
 
+    return container
 
 container = init_container()
 

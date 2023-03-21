@@ -21,7 +21,7 @@ KB_SKILLSET_NAME = os.environ["KB_SKILLSET_NAME"]
 KB_BLOB_CONN_STR = os.environ["KB_BLOB_CONN_STR"]
 COG_SERV_ENDPOINT = os.environ["COG_SERV_ENDPOINT"]
 COG_SERV_KEY = os.environ["COG_SERV_KEY"]
-COG_SEARCH_CUSTOM_FUNC  = os.environ["COG_SEARCH_CUSTOM_FUNC"]
+COG_SEARCH_CUSTOM_FUNC  = os.environ.get("COG_SEARCH_CUSTOM_FUNC", "https://")
 NUM_TOP_MATCHES = int(os.environ['NUM_TOP_MATCHES'])
 MAX_SEARCH_TOKENS  = int(os.environ.get("MAX_SEARCH_TOKENS"))
 KB_SEM_INDEX_NAME = os.environ["KB_SEM_INDEX_NAME"]
@@ -48,7 +48,7 @@ sem_search_client = SearchClient(endpoint=COG_SEARCH_ENDPOINT,
                                     credential=AzureKeyCredential(COG_SEARCH_ADMIN_KEY))
 
 
-exclude_category = None
+include_category = None
 KB_FIELDS_CONTENT = "content"
 KB_FIELDS_CATEGORY =  "category"
 KB_FIELDS_SOURCEFILE  = "sourcefile"
@@ -70,6 +70,7 @@ def create_semantic_search_index():
             SearchableField(name="content", type="Edm.String", analyzer_name="en.microsoft"),
             SimpleField(name="category", type="Edm.String", filterable=True, facetable=True),
             SimpleField(name="sourcefile", type="Edm.String", filterable=True, facetable=True),
+            SimpleField(name="container", type="Edm.String", filterable=True, facetable=True),
             SimpleField(name="orig_lang", type="Edm.String", filterable=True, facetable=True),
         ],
         semantic_settings=SemanticSettings(
@@ -137,7 +138,8 @@ def index_semantic_sections(sections):
             "content": s['text_en'],
             "category": s['access'],
             "sourcefile": s['doc_url'],
-            "orig_lang": s['orig_lang']
+            "orig_lang": s['orig_lang'],
+            "container": s['container']
         }
 
         batch.append(dd) 
@@ -189,8 +191,8 @@ def create_skillset():
     
 
 
-def create_indexer():
-    container = SearchIndexerDataContainer(name=KB_BLOB_CONTAINER)
+def create_indexer(container):
+    container = SearchIndexerDataContainer(name=container)
 
     data_source = SearchIndexerDataSourceConnection(
         name=KB_DATA_SOURCE_NAME,
@@ -244,11 +246,11 @@ def run_indexer():
 
 
 
-def ingest_kb():
+def ingest_kb(container = KB_BLOB_CONTAINER):
     create_semantic_search_index()
     create_index()
     create_skillset()
-    create_indexer()
+    create_indexer(container)
     run_indexer()
 
 
@@ -268,12 +270,21 @@ re_strs = [
 
 
 
-def cog_search(terms: str):
+def cog_search(terms: str, filter_param = None):
     print ("\nsearching: " + terms)
     completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
+
     # Optionally enable captions for summaries by adding optional arugment query_caption="extractive|highlight-false"
     # and adjust the string formatting below to include the captions from the @search.captions field
-    filter = "category ne '{}'".format(exclude_category.replace("'", "''")) if exclude_category else None
+    
+    filter = None
+    if filter_param is not None:
+        filter_const = filter_param.replace("@", '').split(':')
+        if len(filter_const) > 0:
+            filter = f"{filter_const[0]} eq '{filter_const[1]}'"
+    
+    print(f"CogSearch filter: {filter}")
+    
     r = sem_search_client.search(terms, 
                              filter=filter,
                              top = NUM_TOP_MATCHES,
@@ -282,7 +293,6 @@ def cog_search(terms: str):
                              query_speller="lexicon", 
                              semantic_configuration_name="default")
 
-    # context = "\n".join([f"[{doc[KB_FIELDS_SOURCEPAGE]}] " + (doc[KB_FIELDS_CONTENT][:500]).replace("\n", "").replace("\r", "") for doc in r])       
     context = "\n".join([f"[{doc[KB_FIELDS_SOURCEFILE]}] " + (doc[KB_FIELDS_CONTENT][:500]).replace("\n", "").replace("\r", "") for doc in r])
     
     for re_str in re_strs:
@@ -294,13 +304,23 @@ def cog_search(terms: str):
 
 
 
-def cog_lookup(terms: str):
+def cog_lookup(terms: str, filter_param = None):
+
     print ("\nlooking up: " + terms)
     completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
-    filter = "category ne '{}'".format(exclude_category.replace("'", "''")) if exclude_category else None
+
+    filter = None
+    if filter_param is not None:
+        filter_const = filter_param.replace("@", '').split(':')
+        if len(filter_const) > 0:
+            filter = f"{filter_const[0]} eq '{filter_const[1]}'"
+
+    print(f"CogLookup terms: {terms} filter: {filter}")
+    logging.info(f"CogLookup terms: {terms} filter: {filter}")
+
     r = sem_search_client.search(terms, 
                                 filter=filter,
-                                top = NUM_TOP_MATCHES,
+                                top = 1,
                                 include_total_count=True,
                                 query_type=QueryType.SEMANTIC, 
                                 query_language="en-us", 
@@ -326,3 +346,4 @@ def cog_lookup(terms: str):
         return context
         
     return ''    
+

@@ -8,7 +8,7 @@ import logging
 from azure.storage.blob import BlobServiceClient, BlobClient
 from azure.storage.blob import ContainerClient, __version__
 from azure.storage.blob import generate_blob_sas, BlobSasPermissions
-
+import copy
 
 from utils import language
 from utils import storage
@@ -37,22 +37,37 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
     logging.info(f"Starting to generate embeddings with {embedding_model} and {max_emb_tokens} tokens")
 
     try:
-        timestamp = json_object['timestamp'][0]
+        if isinstance(json_object['timestamp'], list):
+            json_object['timestamp'] = json_object['timestamp'][0]
+        elif isinstance(json_object['timestamp'], str):
+            json_object['timestamp'] = json_object['timestamp']
+        else:
+            json_object['timestamp'] = "1/1/1970 00:00:00 AM"    
     except:
-        timestamp = "1/1/1970 00:00:00 AM"
+        json_object['timestamp'] = "1/1/1970 00:00:00 AM"
 
-    doc_id = json_object['id']
-    doc_text = json_object['text']
-    doc_url = storage.create_sas(json_object.get('doc_url', "https://microsoft.com"))
-    filename = os.path.basename(doc_url)
+    
+
+    #### FOR DEMO PURPOSES ONLY -- OF COURSE NOT SECURE
     access = 'public'
+    filename = os.path.basename(json_object['doc_url'])
 
     if filename.startswith('PRIVATE_'):
         access = 'private'
+    #### FOR DEMO PURPOSES ONLY -- OF COURSE NOT SECURE
 
+
+    doc_id = json_object['id']
+    doc_text = json_object['text']
     enc = openai_helpers.get_encoder(embedding_model)
     tokens = enc.encode(doc_text)
     lang = language.detect_content_language(doc_text[:500])
+
+    json_object['doc_url'] = storage.create_sas(json_object.get('doc_url', "https://microsoft.com"))
+    json_object['filename'] = filename
+    json_object['access'] = access
+    json_object['orig_lang'] = lang
+
 
     print("Comparing lengths", len(tokens) , previous_max_tokens-OVERLAP_TEXT)
 
@@ -72,23 +87,19 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
         else:
             embedding = ''
 
+        dd = copy.copy(json_object)
+        dd['id'] = f"{doc_id}_{text_suffix}_{suff}"
+        dd['text_en'] = translated_chunk
+        dd['text'] = decoded_chunk
+        dd['item_vector'] = embedding
 
         chunk_kbd_doc = KB_Doc()
-        chunk_kbd_doc.load({
-                            'id':f"{doc_id}_{text_suffix}_{suff}", 
-                            'text_en': translated_chunk, 
-                            'text': decoded_chunk, 
-                            'doc_url': doc_url, 
-                            'timestamp': timestamp, 
-                            'item_vector': embedding,
-                            'orig_lang': lang,
-                            'access': access
-                        })
+        chunk_kbd_doc.load(dd)
 
         emb_documents.append(chunk_kbd_doc.get_dict())
         suff += 1
 
-        if suff % 100 == 0:
+        if suff % 10 == 0:
             print (f'Processed: {suff} embeddings for document {filename}')
             logging.info (f'Processed: {suff} embeddings for document {filename}')
 
@@ -193,15 +204,14 @@ re_strs = [
 
 
 
-def redis_search(query: str):
+def redis_search(query: str, filter_param: str):
     redis_conn = redis_helpers.get_new_conn()
     completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
 
     query_embedding = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
-    results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES)
+    results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
     
     context = ' \n'.join([f"[{t['doc_url']}] " + t['text_en'].replace('\n', ' ') for t in results])
-    context = context.replace('\n', ' ')
 
     for re_str in re_strs:
         matches = re.findall(re_str, context, re.DOTALL)
@@ -212,15 +222,14 @@ def redis_search(query: str):
     return context
 
 
-def redis_lookup(query: str):
+def redis_lookup(query: str, filter_param: str):
     redis_conn = redis_helpers.get_new_conn()
     completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
     
     query_embedding = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
-    results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES)
+    results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=1, filter_param=filter_param)
 
     context = ' \n'.join([f"[{t['doc_url']}] " + t['text_en'].replace('\n', ' ') for t in results])
-    context = context.replace('\n', ' ')
     
     for re_str in re_strs:
         matches = re.findall(re_str, context, re.DOTALL)

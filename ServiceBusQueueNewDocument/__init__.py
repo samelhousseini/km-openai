@@ -32,6 +32,7 @@ X_LARGE_EMB_TOKEN_NUM = int(os.environ['X_LARGE_EMB_TOKEN_NUM'])
 
 
 
+
 def main(msg: func.ServiceBusMessage):
 
     msg_dict = json.loads(msg.get_body().decode('utf-8'))

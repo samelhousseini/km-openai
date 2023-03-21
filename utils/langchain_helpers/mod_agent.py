@@ -77,9 +77,9 @@ class ModAgent(Agent):
         # print("@@@@@ full_output", full_output)
         parsed_output = self._extract_tool_and_input(full_output)
 
-        if parsed_output is None:                
-            # print("@@@@@ parsed_output", parsed_output)
-            parsed_output = ['Finish', full_output]
+        # if parsed_output is None:                
+        #     # print("@@@@@ parsed_output", parsed_output)
+        #     parsed_output = ['Finish', full_output]
 
         while parsed_output is None:
             full_output = self._fix_text(full_output)

@@ -13,11 +13,10 @@ DAVINCI_003_COMPLETIONS_MODEL = os.environ['DAVINCI_003_COMPLETIONS_MODEL']
 NUM_TOP_MATCHES = int(os.environ['NUM_TOP_MATCHES'])
 
 
-
 def get_param(req, param_name):
     param = req.params.get(param_name) 
 
-    if not query:
+    if not param:
         try:
             req_body = req.get_json()
         except ValueError:
@@ -34,7 +33,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
     query = get_param(req, 'query')
-    prompt_id = get_param(req, 'prompt')
+    session_id = get_param(req, 'session_id')
     filter_param = get_param(req, 'filter')
     
     if filter_param is None:
@@ -43,7 +42,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         os.environ['redis_filter_param'] = filter_param
 
     if query:
-        str = bot_helpers.openai_interrogate_text(query, prompt_id=prompt_id)
+        str = bot_helpers.openai_interrogate_text(query, session_id=session_id, filter_param=filter_param)
         return func.HttpResponse(str)
     else:
         return func.HttpResponse(

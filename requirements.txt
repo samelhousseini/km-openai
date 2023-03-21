@@ -17,8 +17,9 @@ redis
 tiktoken
 azure-storage-file-share
 python-dotenv
-azure-search-documents
+azure-search-documents>=11.4.0b3
 azure-ai-formrecognizer
 beautifulsoup4
 lxml
 azure-ai-textanalytics
+langchain

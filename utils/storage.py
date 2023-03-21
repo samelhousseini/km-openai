@@ -29,9 +29,15 @@ def get_kb_container_client():
 blob_service_client = get_kb_container_client()
 
 
-def create_sas(blob_path, container = KB_BLOB_CONTAINER):
+def get_container_name(url):
+    return url.split('.blob.core.windows.net/')[1].split('/')[0]
+
+
+
+def create_sas(blob_path):
 
     blob_name = urllib.parse.unquote(os.path.basename(blob_path))
+    container = get_container_name(blob_path)
 
     blob_client = blob_service_client.get_blob_client(container=container, blob=blob_name)
 
@@ -41,7 +47,7 @@ def create_sas(blob_path, container = KB_BLOB_CONTAINER):
             container_name=container,
             blob_name=blob_name,
             permission=BlobSasPermissions(read=True),
-            expiry=datetime.utcnow() + timedelta(hours=5*365*24),
+            expiry=datetime.utcnow() + timedelta(hours=10*365*24),
         )
     
     sas_url = blob_client.url + '?' + token
@@ -110,3 +116,19 @@ def get_document(container, filename):
         data = fin.read()
 
     return data
+
+
+def download_document(url, as_text = True):
+    
+    blob_client = blob_service_client.get_blob_client(container=container, blob=blob_name)
+    blob_name = urllib.parse.unquote(os.path.basename(blob_path))
+    container = get_container_name(blob_path)
+    download_stream = blob_client.download_blob()
+
+    if as_text:
+        return download_stream.content_as_text()
+    else:
+        return download_stream.content_as_bytes()
+    
+
+    

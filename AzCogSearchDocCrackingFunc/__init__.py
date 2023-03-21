@@ -12,13 +12,13 @@ from utils import cosmos_helpers
 from utils import storage
 
 
-
 DATABASE_MODE = os.environ['DATABASE_MODE']
 COSMOS_URI  = os.environ['COSMOS_URI']
 COSMOS_KEY  = os.environ['COSMOS_KEY']
 COSMOS_DB_NAME   = os.environ['COSMOS_DB_NAME']
 CATEGORYID  = os.environ['CATEGORYID']
 
+KB_BLOB_CONTAINER = os.environ['KB_BLOB_CONTAINER'] 
 KB_BLOB_CONN_STR = os.environ['KB_BLOB_CONN_STR']
 OUTPUT_BLOB_CONTAINER = os.environ['OUTPUT_BLOB_CONTAINER']
 
@@ -43,6 +43,8 @@ def analyze_doc(data_dict):
     ret_dict = {}
     db_status = ''
     data_dict['text'] = remove_urls(data_dict['content'].replace("\n\n", " ").replace("....", " ")).replace("\n\n", " ").replace("\n", " ")
+
+    data_dict['container'] = storage.get_container_name(data_dict['doc_url'])
 
     for re_str in re_strs:
         matches = re.findall(re_str, data_dict['text'], re.DOTALL)

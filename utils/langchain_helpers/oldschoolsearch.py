@@ -64,7 +64,7 @@ class OldSchoolSearch():
             logging.warning("No embeddings found in Redis or Cosmos")
             return "Sorry, no embeddings are loaded in Redis or Cosmos"
 
-        first_score = float(results[0]['score'])    
+        first_score = float(results[0]['vector_score'])    
         context = ' '.join([t['text_en'].replace('\n', ' ') for t in results])
         
         matches = re.findall("ppt\/[-a-zA-Z0-9+&@#\/%=~_|$?!:,.]*", context, re.DOTALL)

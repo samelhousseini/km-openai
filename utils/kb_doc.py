@@ -1,8 +1,10 @@
-
 import os
 import json
+from datetime import datetime, timedelta
+
 
 KB_INDEX_NAME = os.environ.get("KB_INDEX_NAME")
+KB_BLOB_CONTAINER = os.environ.get("KB_INDEX_NAME")
 
 class KB_Doc():
 
@@ -12,11 +14,13 @@ class KB_Doc():
         self.text_en = ''
         self.text = ''
         self.doc_url = ''
-        self.timestamp = ''
+        self.timestamp = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         self.item_vector = []
         self.orig_lang = 'en'
         self.access = 'public'
         self.client = KB_INDEX_NAME
+        self.container = KB_BLOB_CONTAINER
+        self.filename = ''
 
 
     def load(self, data):
@@ -24,15 +28,9 @@ class KB_Doc():
             setattr(self, k, data[k])
 
 
+    def get_fields(self):
+        return self.__dict__.keys()
+
+
     def get_dict(self):
-        return {
-                    'id': self.id,
-                    'text_en': self.text_en, 
-                    'text': self.text, 
-                    'doc_url':  self.doc_url, 
-                    'timestamp': self.timestamp, 
-                    'item_vector': self.item_vector,
-                    'orig_lang': self.orig_lang,
-                    'access': self.access,
-                    'client': self.client
-                }
+        return self.__dict__
