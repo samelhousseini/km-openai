@@ -81,7 +81,10 @@
             "defaultValue": "",   
             "type": "String"
         },
-
+        "ListOfCommaSeparatedURLs": {
+            "defaultValue": "",    
+            "type": "String"
+        },
         "RedisEnterprise": {
             "defaultValue":  "[concat('redisdb', parameters('ResourceSuffix'))]", 
             "type": "String"
@@ -837,7 +840,7 @@
                         },
                         {
                             "name": "RESTRICTIVE_PROMPT",
-                            "value": "[ parameters('UseRestrictivePrompt')]"
+                            "value": "[ parameters('UseRestrictivePrompt')]" 
                         },
                         {
                             "name": "AzureWebJobsStorage",
@@ -882,6 +885,10 @@
                         {
                             "name": "COG_SEARCH_ADMIN_KEY",
                             "value": "[listAdminKeys(parameters('CognitiveSearch'), '2022-09-01').primaryKey]"
+                        },
+                        {
+                            "name": "LIST_OF_COMMA_SEPARATED_URLS",
+                            "value": "[ parameters('ListOfCommaSeparatedURLs')]" 
                         }
                     ]
                 },

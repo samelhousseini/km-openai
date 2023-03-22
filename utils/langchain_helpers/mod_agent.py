@@ -48,11 +48,18 @@ MAX_HISTORY_TOKENS = int(os.environ.get("MAX_HISTORY_TOKENS"))
 MAX_SEARCH_TOKENS  = int(os.environ.get("MAX_SEARCH_TOKENS"))
 PRE_CONTEXT = int(os.environ.get("PRE_CONTEXT"))
 
+
 USE_BING = os.environ.get("USE_BING")
+BING_SUBSCRIPTION_KEY = os.environ.get("BING_SUBSCRIPTION_KEY")
+BING_SEARCH_URL = os.environ.get("BING_SEARCH_URL")
+LIST_OF_COMMA_SEPARATED_URLS = os.environ.get("LIST_OF_COMMA_SEPARATED_URLS")
+
 
 
 class ModBingSearchAPIWrapper(BingSearchAPIWrapper):
     
+    sites : str = None
+
     def _bing_search_results(self, search_term: str, count: int) -> List[dict]:
         
         headers = {"Ocp-Apim-Subscription-Key": self.bing_subscription_key}
@@ -75,8 +82,20 @@ class ModBingSearchAPIWrapper(BingSearchAPIWrapper):
 
     def run(self, query: str) -> str:
         """Run query through BingSearch and parse result."""
+
+        if self.sites is None:
+            self.sites = ""
+            arr = LIST_OF_COMMA_SEPARATED_URLS.split(",")
+            if len(arr) > 0:
+                sites_v = ["site:"+site.strip() for site in arr]
+                sites_v = " OR ".join(sites_v)
+                sites_v = f"({sites_v})"
+                self.sites = sites_v
+
+            print("Sites", self.sites)
+            
         snippets = []
-        results = self._bing_search_results(query, count=self.k)
+        results = self._bing_search_results(f"{self.sites} {query}", count=self.k)
         if len(results) == 0:
             return "No good Bing Search Result was found"
         for result in results:

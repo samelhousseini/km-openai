@@ -80,7 +80,7 @@ class KMOAI_Agent():
 
 
         if USE_BING == 'yes':
-            bing_search = ModBingSearchAPIWrapper()
+            bing_search = ModBingSearchAPIWrapper(k=30)
             zs_tools.append(Tool(name="Online Search", func=bing_search.run, description='useful for when you need to answer questions about current events from the internet'),)
 
         ds_tools = [
