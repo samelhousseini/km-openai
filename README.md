@@ -36,7 +36,7 @@ The below are the features of this solution:
  
 1. Using both Redis and Cognitive Search (Semantic Search) as tools for the LangChain Agent. Also, added Bing as a third tool, which can be enabled or disabled.
 
-1. Added filtering support in the Bot HTTP request API. This would be useful for things like multi-tenant demos, and filtering on docuemnts with an original source language. 
+1. Added filtering support in the Bot HTTP request API. This would be useful for things like multi-tenant demos, and filtering on docuemnts with an original source language. Use `"filter":"field:value"` in the HTTP request e.g. `"filter":"orig_lang:en"`.
 
 1. Automatic segmenting / chunking of documents with overlap based on the specified number(s) of tokens for each OpenAI model to generate embeddings.
  
