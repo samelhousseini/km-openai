@@ -30,15 +30,17 @@ This repo also includes a guide to build a Power Virtual Agent bot that could be
 # Features
 The below are the features of this solution:
 
-1. Support for ChatGPT (gpt-35-turbo)
+1. Support for ChatGPT (gpt-35-turbo), and keeping conversations (sessions) with a "session_id" key
 
-1. Improved prompts and workflow handling with LangChain
+1. Improved prompts and workflow handling with LangChain. The user should see improved search results in the form of better answers.
  
-1. Using both Redis and Cognitive Search (Semantic Search) as tools for the LangChain Agent
+1. Using both Redis and Cognitive Search (Semantic Search) as tools for the LangChain Agent. Also, added Bing as a third tool, which can be enabled or disabled.
+
+1. Added filtering support in the Bot HTTP request API. This would be useful for things like multi-tenant demos, and filtering on docuemnts with an original source language. 
 
 1. Automatic segmenting / chunking of documents with overlap based on the specified number(s) of tokens for each OpenAI model to generate embeddings.
  
-1. Calculating embeddings from multiple segment / chunk sizes for the same document in order to maximize vector matching. Through experimentation, we determined that having embeddings generated from the following chunk sizes (125, 250, 500 and 2047 tokens) of the same document would optimize accuracy (number of correctly answered queries). These experiments are however conducted on one specific dataset, and might change in the future as we experiment on more datasets.
+1. Calculating embeddings from multiple segment / chunk sizes for the same document in order to maximize vector matching. Through experimentation, we determined that having embeddings generated from the following chunk sizes (600 and 1200 tokens) of the same document would optimize accuracy (number of correctly answered queries). These experiments are however conducted on one specific dataset, and might change in the future as we experiment on more datasets.
 
 1. No maximum limit on document size except the limit imposed by Cognitive Search (4 million characters per document for the Standard Tier). If more is needed, then higher Search tiers can be used.
 
@@ -197,6 +199,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
 1. Upload the KB documents to the Blob Storage container “kmoaidemo”
     <br />
     <br />
+
 1. Before running the "experiments.ipynb" notebook, a Conda environment will need to be created. Python 3.8 and 3.9 were tested and worked fine. The packages can either be installed from within the first cell of the notebook, or run pip install after activating the new environment:
 
     `pip install -r requirements.txt`

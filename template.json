@@ -749,7 +749,7 @@
                         } ,
                         {
                             "name": "OVERLAP_TEXT",
-                            "value": "40"
+                            "value": "50"
                         } ,
                         {
                             "name": "ADA_002_EMBED_NUM_DIMS",
@@ -813,15 +813,15 @@
                         } ,
                         {
                             "name": "SMALL_EMB_TOKEN_NUM",
-                            "value": "300"
+                            "value": "400"
                         } ,
                         {
                             "name": "MEDIUM_EMB_TOKEN_NUM",
-                            "value": "600"
+                            "value": "800"
                         } ,
                         {
                             "name": "LARGE_EMB_TOKEN_NUM",
-                            "value": "900"
+                            "value": "1500"
                         } ,
                         {
                             "name": "X_LARGE_EMB_TOKEN_NUM",
