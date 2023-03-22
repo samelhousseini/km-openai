@@ -32,6 +32,10 @@ The below are the features of this solution:
 
 1. Support for ChatGPT (gpt-35-turbo)
 
+1. Improved prompts and workflow handling with LangChain
+ 
+1. Using both Redis and Cognitive Search (Semantic Search) as tools for the LangChain Agent
+
 1. Automatic segmenting / chunking of documents with overlap based on the specified number(s) of tokens for each OpenAI model to generate embeddings.
  
 1. Calculating embeddings from multiple segment / chunk sizes for the same document in order to maximize vector matching. Through experimentation, we determined that having embeddings generated from the following chunk sizes (125, 250, 500 and 2047 tokens) of the same document would optimize accuracy (number of correctly answered queries). These experiments are however conducted on one specific dataset, and might change in the future as we experiment on more datasets.
@@ -65,20 +69,20 @@ To hold a conversation with ChatGPT (the 'gpt-35-turbo' model), then the first c
 <br/>
 <br />
 <p align="center">
-<img src="images/firstquery.jpg" />
+<img src="images/first_req.jpg" width="800"/>
 </p>
 <br/>
 <br/>
-If the user wants to continue the conversation with a new question but not start from scratch with a new query, then the response to the initial request returns a "prompt" field in JSON, that the end user bot or application could just very simply copy, and re-send along the "query" in the follow-up API call. The below is the body of the POST request:
+If the user wants to continue the conversation with a new question but not start from scratch with a new query, then the response to the initial request returns a "session_id" key in JSON, that the end user bot or application could just very simply copy, and re-send along the "query" in the follow-up API call. The below is the body of the POST request:
 <br/>
 <br />
 <p align="center">
-<img src="images/subs_conv.jpg" />
+<img src="images/sec_req.jpg" width="800"/>
 </p>
 <br/>
 <br/>
 
-If the user doesn't to keep the conversation going, then the application should drop the "prompt" field in the next request.
+If the user doesn't to keep the conversation going, then the application should drop the "session_id" field in the next request.
 
 <br />
 <br />
