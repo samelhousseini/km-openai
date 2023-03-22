@@ -22,10 +22,11 @@ from langchain.tools.base import BaseTool
 from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.react.base import ReActDocstoreAgent
 from langchain.schema import AgentAction, AgentFinish
-
+from langchain.utilities import BingSearchAPIWrapper
 from utils.langchain_helpers.mod_wiki_prompt import mod_wiki_prompt
-from utils.langchain_helpers.mod_react_prompt import mod_react_prefix, mod_react_format_instructions_no_bing, mod_react_format_instructions_with_bing, mod_react_suffix
-
+# from utils.langchain_helpers.mod_react_prompt import mod_react_prefix, mod_react_format_instructions_no_bing, mod_react_format_instructions_with_bing, mod_react_suffix
+import utils.langchain_helpers.mod_react_prompt
+import requests
 from utils import openai_helpers
 
 
@@ -50,6 +51,42 @@ PRE_CONTEXT = int(os.environ.get("PRE_CONTEXT"))
 USE_BING = os.environ.get("USE_BING")
 
 
+class ModBingSearchAPIWrapper(BingSearchAPIWrapper):
+    
+    def _bing_search_results(self, search_term: str, count: int) -> List[dict]:
+        
+        headers = {"Ocp-Apim-Subscription-Key": self.bing_subscription_key}
+        params = {
+            "q": search_term,
+            "count": count,
+            "textDecorations": False,
+            "textFormat": "Raw",
+            "safeSearch": "Strict",
+        }
+
+        response = requests.get(
+            self.bing_search_url, headers=headers, params=params  # type: ignore
+        )
+        response.raise_for_status()
+        search_results = response.json()
+   
+        return search_results["webPages"]["value"]
+
+
+    def run(self, query: str) -> str:
+        """Run query through BingSearch and parse result."""
+        snippets = []
+        results = self._bing_search_results(query, count=self.k)
+        if len(results) == 0:
+            return "No good Bing Search Result was found"
+        for result in results:
+            snippets.append('['+result["url"] + ']: ' + result["snippet"])
+        
+        return "\n".join(snippets)
+
+
+
+
 
 class GPT35TurboAzureOpenAI(AzureOpenAI):
     stop: List[str] = None
@@ -59,6 +96,7 @@ class GPT35TurboAzureOpenAI(AzureOpenAI):
         params.pop('logprobs', None)
         params.pop('best_of', None)
         params.pop('echo', None)
+        # print(params)
         return params
 
 
@@ -68,8 +106,6 @@ class ModAgent(Agent):
     history_length: int = 0
     query_length: int = 0
     pre_context_length  : int = 0
-
-
 
     def _get_next_action(self, full_inputs: Dict[str, str]) -> AgentAction:
         # print("@@@@@ full_inputs", full_inputs)
@@ -84,7 +120,7 @@ class ModAgent(Agent):
         while parsed_output is None:
             full_output = self._fix_text(full_output)
             full_inputs["agent_scratchpad"] += full_output
-            # print("LOOOOPING", full_output)
+            print("LOOOOPING", full_output)
             output = self.llm_chain.predict(**full_inputs)
             full_output += output
             parsed_output = self._extract_tool_and_input(full_output)
@@ -123,7 +159,7 @@ class ModAgent(Agent):
             th_str = ""
             for action, observation in intermediate_steps:
                 th_str += action.log
-                th_str += f"\n{self.observation_prefix}\n{self.llm_prefix}"
+                th_str += f"\n{self.observation_prefix}\n\n\n\n{self.llm_prefix}"
             
             th_tokens = len(completion_enc.encode(th_str))
             
@@ -157,18 +193,24 @@ class ModAgent(Agent):
 
         # print(max_comp_model_tokens, th_tokens, empty_prompt_length, MAX_OUTPUT_TOKENS, self.history_length, self.query_length, self.pre_context_length)
 
+        thoughts = ""
+        for action, observation in intermediate_steps:
+            thoughts += action.log + f"\n{self.observation_prefix}{observation}\n{self.llm_prefix}" 
+
+        drop_first = False
+        if len(completion_enc.encode(thoughts)) > 0.8 * allowance:
+            drop_first = True
+
+        thoughts = ""
         i = 0
         for action, observation in intermediate_steps:
             thoughts += action.log
-            trunc_comp = completion_enc.decode(completion_enc.encode(observation)[:len_obs[i]])
-            thoughts += f"\n{self.observation_prefix}{trunc_comp}\n{self.llm_prefix}" 
+            if (i > 0) or (drop_first == False):
+                thoughts += f"\n{self.observation_prefix}{completion_enc.decode(completion_enc.encode(observation)[:len_obs[i]])}\n{self.llm_prefix}" 
             i += 1
 
         # print("\nNUM STEPS:",str(len_steps), "TH_TOKENS", th_tokens, "ALLOWANCE", allowance, "USED", len(completion_enc.encode(thoughts)), 'LEN_OBS', len_obs, "\n")            
         return thoughts
-
-
-
 
 
 
@@ -210,9 +252,9 @@ class ZSReAct(ZeroShotAgent, ModAgent):
     def create_prompt(
         cls,
         tools: Sequence[BaseTool],
-        prefix: str = mod_react_prefix,
-        suffix: str = mod_react_suffix,
-        format_instructions: str = mod_react_format_instructions_no_bing,
+        prefix: str = utils.langchain_helpers.mod_react_prompt.mod_react_prefix,
+        suffix: str = utils.langchain_helpers.mod_react_prompt.mod_react_suffix,
+        format_instructions: str = utils.langchain_helpers.mod_react_prompt.mod_react_format_instructions_no_bing,
         input_variables: Optional[List[str]] = None,
         ) -> PromptTemplate:
         
@@ -220,11 +262,12 @@ class ZSReAct(ZeroShotAgent, ModAgent):
         tool_names = ", ".join([tool.name for tool in tools])
 
         if USE_BING == 'yes':
-            format_instructions = mod_react_format_instructions_with_bing.format(tool_names=tool_names)
+            format_instructions = utils.langchain_helpers.mod_react_prompt.mod_react_format_instructions_with_bing.format(tool_names=tool_names)
         else:
-            format_instructions = mod_react_format_instructions_no_bing.format(tool_names=tool_names)
+            format_instructions = utils.langchain_helpers.mod_react_prompt.mod_react_format_instructions_no_bing.format(tool_names=tool_names)
 
-        template = "\n\n".join([mod_react_prefix, tool_strings, format_instructions, mod_react_suffix])
+        template = "\n\n".join([utils.langchain_helpers.mod_react_prompt.mod_react_prefix, tool_strings, format_instructions, 
+                                utils.langchain_helpers.mod_react_prompt.mod_react_suffix])
 
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad", "history", "pre_context"]
@@ -257,11 +300,7 @@ class ZSReAct(ZeroShotAgent, ModAgent):
         regex = r"Action:[\n\r\s]+(.*?)[\n]*Action Input:[\n\r\s](.*)"
         match = re.search(regex, llm_output, re.DOTALL)
         if not match:
-            regex = r"Action:[\n\r\s]+(.*?)[\n]*[\n\r\s](.*)"
-            match = re.search(regex, s, re.DOTALL)
-            print("MATCH", match)
-            # .replace("Action: None needed", '').replace("Action: None", "").replace("Action: N/A", "").replace("Action:", "")
-            return "Final Answer", llm_output.replace(match, '').replace('<|im_end|>', '').replace('\n\n', '') 
+            return "Final Answer", llm_output
             raise ValueError(f"Could not parse LLM output: `{llm_output}`")
         action = match.group(1).strip()
         action_input = match.group(2)

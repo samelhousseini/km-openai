@@ -87,7 +87,7 @@ class OldSchoolSearch():
         prompt = get_simple_prompt(context, query, history, pre_context)  
 
         print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-        print(prompt)         
+        # print(prompt)         
         print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 
         final_answer = openai_helpers.contact_openai(prompt, completion_model, MAX_OUTPUT_TOKENS)

@@ -50,7 +50,11 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
 
     #### FOR DEMO PURPOSES ONLY -- OF COURSE NOT SECURE
     access = 'public'
-    filename = os.path.basename(json_object['doc_url'])
+
+    if (json_object['filename'] is None) or (json_object['filename'] == ''):
+        filename = storage.get_filename(json_object['doc_url'])
+    else:
+        filename = json_object['filename']
 
     if filename.startswith('PRIVATE_'):
         access = 'private'
@@ -64,7 +68,7 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
     lang = language.detect_content_language(doc_text[:500])
 
     json_object['doc_url'] = storage.create_sas(json_object.get('doc_url', "https://microsoft.com"))
-    json_object['filename'] = filename
+    #  json_object['filename'] = filename
     json_object['access'] = access
     json_object['orig_lang'] = lang
 
@@ -211,7 +215,7 @@ def redis_search(query: str, filter_param: str):
     query_embedding = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
     results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
     
-    context = ' \n'.join([f"[{t['doc_url']}] " + t['text_en'].replace('\n', ' ') for t in results])
+    context = ' \n'.join([f"[{t['container']}/{t['filename']}] " + t['text_en'].replace('\n', ' ') for t in results])
 
     for re_str in re_strs:
         matches = re.findall(re_str, context, re.DOTALL)
@@ -229,7 +233,7 @@ def redis_lookup(query: str, filter_param: str):
     query_embedding = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
     results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=1, filter_param=filter_param)
 
-    context = ' \n'.join([f"[{t['doc_url']}] " + t['text_en'].replace('\n', ' ') for t in results])
+    context = ' \n'.join([f"[{t['container']}/{t['filename']}] " + t['text_en'].replace('\n', ' ') for t in results])
     
     for re_str in re_strs:
         matches = re.findall(re_str, context, re.DOTALL)

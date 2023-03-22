@@ -45,6 +45,7 @@ def analyze_doc(data_dict):
     data_dict['text'] = remove_urls(data_dict['content'].replace("\n\n", " ").replace("....", " ")).replace("\n\n", " ").replace("\n", " ")
 
     data_dict['container'] = storage.get_container_name(data_dict['doc_url'])
+    
 
     for re_str in re_strs:
         matches = re.findall(re_str, data_dict['text'], re.DOTALL)

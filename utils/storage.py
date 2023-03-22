@@ -33,12 +33,7 @@ def get_container_name(url):
     return url.split('.blob.core.windows.net/')[1].split('/')[0]
 
 
-
-def create_sas(blob_path):
-
-    blob_name = urllib.parse.unquote(os.path.basename(blob_path.split('?')[0]))
-    container = get_container_name(blob_path)
-
+def create_sas_from_container_and_blob(container, blob_name):
     blob_client = blob_service_client.get_blob_client(container=container, blob=blob_name)
 
     token = generate_blob_sas(
@@ -53,6 +48,17 @@ def create_sas(blob_path):
     sas_url = blob_client.url + '?' + token
     #print(f"Processing now '{blob_name}' with SAS URL {sas_url}")
     return sas_url
+
+
+def get_filename(blob_path):
+    return urllib.parse.unquote(os.path.basename(blob_path.split('?')[0]))
+
+
+def create_sas(blob_path):
+    blob_name = get_filename(blob_path)
+    container = get_container_name(blob_path)
+    return create_sas_from_container_and_blob(container, blob_name)
+
 
 
 

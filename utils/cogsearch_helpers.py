@@ -52,7 +52,8 @@ include_category = None
 KB_FIELDS_CONTENT = "content"
 KB_FIELDS_CATEGORY =  "category"
 KB_FIELDS_SOURCEFILE  = "sourcefile"
-
+KB_FIELDS_CONTAINER  = "container"
+KB_FIELDS_FILENAME  = "filename"
 
 
 def create_semantic_search_index():
@@ -71,6 +72,7 @@ def create_semantic_search_index():
             SimpleField(name="category", type="Edm.String", filterable=True, facetable=True),
             SimpleField(name="sourcefile", type="Edm.String", filterable=True, facetable=True),
             SimpleField(name="container", type="Edm.String", filterable=True, facetable=True),
+            SimpleField(name="filename", type="Edm.String", filterable=True, facetable=True),
             SimpleField(name="orig_lang", type="Edm.String", filterable=True, facetable=True),
         ],
         semantic_settings=SemanticSettings(
@@ -139,7 +141,8 @@ def index_semantic_sections(sections):
             "category": s['access'],
             "sourcefile": s['doc_url'],
             "orig_lang": s['orig_lang'],
-            "container": s['container']
+            "container": s['container'],
+            "filename": s['filename']
         }
 
         batch.append(dd) 
@@ -163,11 +166,12 @@ def create_skillset():
     id_input = InputFieldMappingEntry(name="id", source="/document/id")
     content_input = InputFieldMappingEntry(name="content", source="/document/content")
     ts_input = InputFieldMappingEntry(name="timestamp", source="/document/metadata_creation_date")
-    path_input = InputFieldMappingEntry(name="doc_url", source="/document/metadata_storage_path")
+    path_input = InputFieldMappingEntry(name="doc_url", source="/document/metadata_storage_path") 
+    filename_input = InputFieldMappingEntry(name="filename", source="/document/metadata_storage_name")
     ws_output = OutputFieldMappingEntry(name="status", target_name="status")
 
     oai_ws = WebApiSkill(name="custom_doc_cracking_skill", 
-                            inputs=[id_input, content_input, ts_input, path_input], 
+                            inputs=[id_input, content_input, ts_input, path_input, filename_input], 
                             outputs=[ws_output], 
                             context="/document", 
                             uri=COG_SEARCH_CUSTOM_FUNC, 
@@ -269,9 +273,12 @@ re_strs = [
 
 
 
+KB_FIELDS_CONTAINER  = "container"
+KB_FIELDS_FILENAME  = "filename"
+
 
 def cog_search(terms: str, filter_param = None):
-    print ("\nsearching: " + terms)
+    # print ("\nsearching: " + terms)
     completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
 
     # Optionally enable captions for summaries by adding optional arugment query_caption="extractive|highlight-false"
@@ -283,7 +290,7 @@ def cog_search(terms: str, filter_param = None):
         if len(filter_const) > 0:
             filter = f"{filter_const[0]} eq '{filter_const[1]}'"
     
-    print(f"CogSearch filter: {filter}")
+    # print(f"CogSearch filter: {filter}")
     
     r = sem_search_client.search(terms, 
                              filter=filter,
@@ -293,7 +300,7 @@ def cog_search(terms: str, filter_param = None):
                              query_speller="lexicon", 
                              semantic_configuration_name="default")
 
-    context = "\n".join([f"[{doc[KB_FIELDS_SOURCEFILE]}] " + (doc[KB_FIELDS_CONTENT][:500]).replace("\n", "").replace("\r", "") for doc in r])
+    context = "\n".join([f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] " + (doc[KB_FIELDS_CONTENT]).replace("\n", "").replace("\r", "") for doc in r])
     
     for re_str in re_strs:
         matches = re.findall(re_str, context, re.DOTALL)
@@ -304,9 +311,10 @@ def cog_search(terms: str, filter_param = None):
 
 
 
+
 def cog_lookup(terms: str, filter_param = None):
 
-    print ("\nlooking up: " + terms)
+    # print ("\nlooking up: " + terms)
     completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
 
     filter = None
@@ -315,7 +323,7 @@ def cog_lookup(terms: str, filter_param = None):
         if len(filter_const) > 0:
             filter = f"{filter_const[0]} eq '{filter_const[1]}'"
 
-    print(f"CogLookup terms: {terms} filter: {filter}")
+    # print(f"CogLookup terms: {terms} filter: {filter}")
     logging.info(f"CogLookup terms: {terms} filter: {filter}")
 
     r = sem_search_client.search(terms, 
@@ -336,12 +344,18 @@ def cog_lookup(terms: str, filter_param = None):
 
     if len(answers) > 0:
         context = answers[0].text
+        doc = sem_search_client.get_document(answers[0].key)
+        ref = f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] "
+        context = ref + context
         context = completion_enc.decode(completion_enc.encode(context)[:MAX_SEARCH_TOKENS])
         return context
 
         
     if r.get_count() > 0:
-        context = "\n".join(c.text for c in next(r)["@search.captions"])
+        doc = next(r)
+        context = "\n".join(c.text for c in doc["@search.captions"])
+        ref = f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] "
+        context = ref + context
         context = completion_enc.decode(completion_enc.encode(context)[:MAX_SEARCH_TOKENS]) 
         return context
         

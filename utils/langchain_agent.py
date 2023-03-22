@@ -19,14 +19,14 @@ from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Tuple
 from langchain.tools.base import BaseTool
 from langchain.schema import AgentAction, AgentFinish
 from langchain.memory import ConversationBufferMemory
-from langchain.utilities import BingSearchAPIWrapper
-
 
 from utils.langchain_helpers.oldschoolsearch import OldSchoolSearch
-from utils.langchain_helpers.mod_agent import GPT35TurboAzureOpenAI, ZSReAct, ReAct
+from utils.langchain_helpers.mod_agent import GPT35TurboAzureOpenAI, ZSReAct, ReAct, ModBingSearchAPIWrapper
 
 from utils import openai_helpers
 from utils.language import extract_entities
+from utils import redis_helpers
+from utils import storage
 
 from utils.helpers import redis_search, redis_lookup
 from utils.cogsearch_helpers import cog_search, cog_lookup
@@ -64,23 +64,23 @@ class KMOAI_Agent():
         self.redis_filter_param = '*'
         self.cogsearch_filter_param = None
 
-        turbo_llm = GPT35TurboAzureOpenAI(deployment_name=CHOSEN_COMP_MODEL, temperature=0.0, openai_api_key=openai.api_key, max_retries=20, stop=['<|im_end|>'], max_tokens=MAX_OUTPUT_TOKENS)
-        llm = AzureOpenAI(deployment_name=DAVINCI_003_COMPLETIONS_MODEL, temperature=0, openai_api_key=openai.api_key, max_retries=20, max_tokens=MAX_OUTPUT_TOKENS)
-        llm_math = AzureOpenAI(deployment_name=DAVINCI_003_COMPLETIONS_MODEL, temperature=0, openai_api_key=openai.api_key, max_retries=20, max_tokens=MAX_OUTPUT_TOKENS)
+        turbo_llm = GPT35TurboAzureOpenAI(deployment_name=CHOSEN_COMP_MODEL, temperature=0, openai_api_key=openai.api_key, max_retries=5, request_timeout=30, stop=['<|im_end|>'], max_tokens=MAX_OUTPUT_TOKENS)
+        # llm = AzureOpenAI(deployment_name=DAVINCI_003_COMPLETIONS_MODEL, temperature=0, openai_api_key=openai.api_key, max_retries=5, request_timeout=30, max_tokens=MAX_OUTPUT_TOKENS)
+        # llm_math = AzureOpenAI(deployment_name=DAVINCI_003_COMPLETIONS_MODEL, temperature=0, openai_api_key=openai.api_key, max_retries=5, request_timeout=30, max_tokens=MAX_OUTPUT_TOKENS)
 
-        llm_math_chain = LLMMathChain(llm=llm, verbose=True)
+        # llm_math_chain = LLMMathChain(llm=llm, verbose=True)
 
         zs_tools = [
             Tool(name="Redis Search", func=self.agent_redis_search, description="useful for when you need to answer questions from the Redis system"),
             Tool(name="Redis Lookup", func=self.agent_redis_lookup, description="useful for when you need to lookup terms from the the Redis system"),
             Tool(name="Cognitive Search", func=self.agent_cog_search, description="useful for when you need to answer questions from the Cognitive system"),
             Tool(name="Cognitive Lookup", func=self.agent_cog_lookup, description="useful for when you need to lookup terms from the the Cognitive system"),            
-            Tool(name="Calculator", func=llm_math_chain.run, description="useful for when you need to answer questions about math")
+            #Tool(name="Calculator", func=llm_math_chain.run, description="useful for when you need to answer questions about math")
         ]
 
 
         if USE_BING == 'yes':
-            bing_search = BingSearchAPIWrapper()
+            bing_search = ModBingSearchAPIWrapper()
             zs_tools.append(Tool(name="Online Search", func=bing_search.run, description='useful for when you need to answer questions about current events from the internet'),)
 
         ds_tools = [
@@ -93,11 +93,11 @@ class KMOAI_Agent():
 
         self.zs_agent = ZSReAct.from_llm_and_tools(turbo_llm, zs_tools)
         self.zs_chain = AgentExecutor.from_agent_and_tools(self.zs_agent, zs_tools, verbose=True, return_intermediate_steps = True, 
-                                                                                                max_iterations = 10, early_stopping_method="generate" )
+                                                                                                max_iterations = 7, early_stopping_method="generate" )
 
         self.ds_agent = ReAct.from_llm_and_tools(turbo_llm, ds_tools)
         self.ds_chain = AgentExecutor.from_agent_and_tools(self.ds_agent, ds_tools, verbose=True, return_intermediate_steps = True, 
-                                                                                                max_iterations = 10, early_stopping_method="generate" )
+                                                                                                max_iterations = 7, early_stopping_method="generate" )
 
         completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
 
@@ -138,6 +138,7 @@ class KMOAI_Agent():
             answer = response.get('output')
 
         occurences = [
+            "Action:[\n\r\s]+(.*?)[\n]*[\n\r\s](.*)"
             "Action Input:[\s\r\n]+",
             "Action:[\s\r\n]+None needed?.",
             "Action:[\s\r\n]+None?.",
@@ -160,14 +161,14 @@ class KMOAI_Agent():
         source_matches = re.findall(r'\[(.*?)\]', answer)  
         for s in source_matches:
             answer = answer.replace('['+s+']', '')
-            sources.append(urllib.parse.unquote(s))
+            try:
+                arr = s.split('/')
+                sas_link = storage.create_sas_from_container_and_blob(arr[0], arr[1])
+                sources.append(sas_link)
+            except:
+                sources.append(s)
 
-        source_matches = re.findall(r'\((.*?)\)', answer)  
-        for s in source_matches:
-            answer = answer.replace('('+s+')', '')
-            sources.append(s)
-
-        answer = answer.strip().replace("\n", "")
+        answer = answer.rstrip()
 
         if answer == '':
             answer = DEFAULT_RESPONSE
@@ -187,7 +188,7 @@ class KMOAI_Agent():
             # prompt_id = "prompt_id"
             print("PROMPT ID", prompt_id)
         else:
-            rhist = redis_conn.hget(prompt_id, 'history')
+            rhist = redis_helpers.redis_get(redis_conn, prompt_id, 'history')
             if rhist is None:
                 hist = ''
             else:
@@ -200,6 +201,8 @@ class KMOAI_Agent():
 
         new_hist = self.memory.load_memory_variables({})['history']
         hist = hist + '\n' + new_hist
+        hist = hist.replace("Human:", "user:").replace("AI:", "assistant:")
+
         
         completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
         hist_enc = completion_enc.encode(hist)
@@ -212,8 +215,7 @@ class KMOAI_Agent():
         if hist_enc_len > MAX_HISTORY_TOKENS:
             hist = completion_enc.decode(hist_enc[hist_enc_len - MAX_HISTORY_TOKENS :])
 
-        redis_conn.hset(prompt_id, 'history', hist)
-        redis_conn.expire(name=prompt_id, time=CONVERSATION_TTL_SECS)
+        redis_helpers.redis_set(redis_conn, prompt_id, 'history', hist, CONVERSATION_TTL_SECS)
 
 
 
@@ -269,6 +271,7 @@ class KMOAI_Agent():
 
         except Exception as e:
             e_str = str(e)
+            print("Exception 1st chain", e_str)
 
             if e_str.startswith("Could not parse LLM output:"):
                 response = e_str.replace("Action: None", "").replace("Action:", "").replace('<|im_end|>', '')
@@ -276,10 +279,12 @@ class KMOAI_Agent():
                 try:
                     response = self.ds_chain({'input':query, 'history':hist, 'pre_context':pre_context}) 
                 except Exception as e:
+                    print("Exception 2nd chain", e)
                     try:
                         oss = OldSchoolSearch()
                         response = oss.search(query, hist, pre_context)
                     except Exception as e:
+                        print("Exception 3rd chain", e)
                         response = DEFAULT_RESPONSE  
 
         answer, sources = self.process_final_response(query, response)
