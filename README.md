@@ -40,7 +40,7 @@ The below are the features of this solution:
 
 1. Automatic segmenting / chunking of documents with overlap based on the specified number(s) of tokens for each OpenAI model to generate embeddings.
  
-1. Calculating embeddings from multiple segment / chunk sizes for the same document in order to maximize vector matching. Through experimentation, we determined that having embeddings generated from the following chunk sizes (600 and 1200 tokens) of the same document would optimize accuracy (number of correctly answered queries). These experiments are however conducted on one specific dataset, and might change in the future as we experiment on more datasets.
+1. Calculating embeddings from multiple segment / chunk sizes for the same document in order to maximize vector matching. Through experimentation, we determined that having embeddings generated from the following chunk sizes of the same document would optimize accuracy (number of correctly answered queries). These experiments are however conducted on one specific dataset, and might change in the future as we experiment on more datasets. So it is highly encouraged to experiment with the following parameters in the Function App Configuration: `SMALL_EMB_TOKEN_NUM`, `MEDIUM_EMB_TOKEN_NUM`, `LARGE_EMB_TOKEN_NUM` and `X_LARGE_EMB_TOKEN_NUM`.
 
 1. No maximum limit on document size except the limit imposed by Cognitive Search (4 million characters per document for the Standard Tier). If more is needed, then higher Search tiers can be used.
 
