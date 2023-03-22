@@ -114,13 +114,7 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <img src="images/suffix.jpg" width="700" /> 
     </p>
     <br/>
-1. There is an option now to choose between restrictive and relaxed prompt for the OpenAI Completion in the Azure Function that interacts with the end user. If 'no' is selected as option, a less restrictive prompt is applied to the OpenAI Completion API. The GPT model is instructed to look for answers in the Knowledge Base, and will result in no answers coming back as 'Sorry, the query did not find a good match. Please rephrase your question'. If 'yes' is selected, then the existing restrictive prompt will be in place, as the GPT model is requested to look for answers only, and strictly only, in the Knowledge Base. 
-     <br/>
-    <br />
-    <p align="center">
-    <img src="images/prompt_choice.png" width="700" /> 
-    </p>
-    <br/>
+
 1. When it comes to the OpenAI resource, there are 3 choices:
     * The first option is to choose "no" in the "Deploy New OpenAI Resource", and then provide an existing OpenAI resource. In this case, please provide the endpoint and key values in the "Existing Open AI Resource" fields
 
