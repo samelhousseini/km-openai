@@ -12,7 +12,7 @@ from utils.langchain_helpers.simple_prompt import get_simple_prompt, append_tags
 
 from utils import openai_helpers
 from utils import redis_helpers
-
+from utils import cosmos_helpers
 
 DAVINCI_003_MODEL_MAX_TOKENS = int(os.environ["DAVINCI_003_MODEL_MAX_TOKENS"])
 ADA_002_MODEL_MAX_TOKENS     = int(os.environ["ADA_002_MODEL_MAX_TOKENS"])
