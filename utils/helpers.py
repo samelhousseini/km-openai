@@ -215,15 +215,24 @@ def redis_search(query: str, filter_param: str):
     query_embedding = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
     results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
     
-    context = ' \n'.join([f"[{t['container']}/{t['filename']}] " + t['text_en'].replace('\n', ' ') for t in results])
+    context = [f"[{t['container']}/{t['filename']}] " + t['text_en'].replace('\n', ' ') for t in results]
 
-    for re_str in re_strs:
-        matches = re.findall(re_str, context, re.DOTALL)
-        for m in matches: context = context.replace(m, '')
+    for i in range(len(context)):
+        for re_str in re_strs:
+            matches = re.findall(re_str, context[i], re.DOTALL)
+            for m in matches: context[i] = context[i].replace(m, '')
 
-    context = completion_enc.decode(completion_enc.encode(context)[:MAX_SEARCH_TOKENS])
-    
-    return context
+    final_context = []
+    total_tokens = 0
+
+    for i in range(len(context)):
+        total_tokens += len(completion_enc.encode(context[i]))
+        if  total_tokens < MAX_SEARCH_TOKENS:
+            final_context.append(context[i])
+        else:
+            break
+
+    return final_context
 
 
 def redis_lookup(query: str, filter_param: str):

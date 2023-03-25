@@ -76,7 +76,7 @@ class ModBingSearchAPIWrapper(BingSearchAPIWrapper):
         )
         response.raise_for_status()
         search_results = response.json()
-   
+
         return search_results["webPages"]["value"]
 
 
@@ -93,15 +93,20 @@ class ModBingSearchAPIWrapper(BingSearchAPIWrapper):
                 self.sites = sites_v
 
             print("Sites", self.sites)
-            
+
         snippets = []
-        results = self._bing_search_results(f"{self.sites} {query}", count=self.k)
+        try:
+            results = self._bing_search_results(f"{self.sites} {query}", count=self.k)
+        except Exception as e:
+            print("Error in bing search", e)
+            return snippets
+
         if len(results) == 0:
             return "No good Bing Search Result was found"
         for result in results:
-            snippets.append('['+result["url"] + ']: ' + result["snippet"])
+            snippets.append('['+result["url"] + '] ' + result["snippet"])
         
-        return "\n".join(snippets)
+        return snippets
 
 
 
@@ -210,7 +215,7 @@ class ModAgent(Agent):
             if allowance < 0: allowance = 0
             len_obs.append(allowance)
 
-        # print(max_comp_model_tokens, th_tokens, empty_prompt_length, MAX_OUTPUT_TOKENS, self.history_length, self.query_length, self.pre_context_length)
+        print(max_comp_model_tokens, th_tokens, empty_prompt_length, MAX_OUTPUT_TOKENS, self.history_length, self.query_length, self.pre_context_length)
 
         thoughts = ""
         for action, observation in intermediate_steps:
@@ -224,15 +229,48 @@ class ModAgent(Agent):
         i = 0
         for action, observation in intermediate_steps:
             thoughts += action.log
-            if (i > 0) or (drop_first == False):
-                thoughts += f"\n{self.observation_prefix}{completion_enc.decode(completion_enc.encode(observation)[:len_obs[i]])}\n{self.llm_prefix}" 
+            # if (i > 0) or (drop_first == False):
+            thoughts += f"\n{self.observation_prefix}{completion_enc.decode(completion_enc.encode(observation)[:len_obs[i]])}\n{self.llm_prefix}" 
             i += 1
 
-        # print("\nNUM STEPS:",str(len_steps), "TH_TOKENS", th_tokens, "ALLOWANCE", allowance, "USED", len(completion_enc.encode(thoughts)), 'LEN_OBS', len_obs, "\n")            
+        print("\nNUM STEPS:",str(len_steps), "TH_TOKENS", th_tokens, "ALLOWANCE", allowance, "USED", len(completion_enc.encode(thoughts)), 'LEN_OBS', len_obs, "\n")            
         return thoughts
 
 
-
+    def return_stopped_response(
+        self,
+        early_stopping_method: str,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        **kwargs: Any,
+    ) -> AgentFinish:
+        """Return response when agent has been stopped due to max iterations."""
+        if early_stopping_method == "force":
+            # `force` just returns a constant string
+            return AgentFinish({"output": "Agent stopped due to max iterations."}, "")
+        elif early_stopping_method == "generate":
+            # Generate does one final forward pass
+            thoughts = self._construct_scratchpad(intermediate_steps)
+            new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
+            full_inputs = {**kwargs, **new_inputs}
+            full_output = self.llm_chain.predict(**full_inputs)
+            # We try to extract a final answer
+            parsed_output = self._extract_tool_and_input(full_output)
+            if parsed_output is None:
+                # If we cannot extract, we just return the full output
+                return AgentFinish({"output": full_output}, full_output)
+            tool, tool_input = parsed_output
+            if tool == self.finish_tool_name:
+                # If we can extract, we send the correct stuff
+                return AgentFinish({"output": tool_input}, full_output)
+            else:
+                # If we can extract, but the tool is not the final tool,
+                # we just return the full output
+                return AgentFinish({"output": full_output}, full_output)
+        else:
+            raise ValueError(
+                "early_stopping_method should be one of `force` or `generate`, "
+                f"got {early_stopping_method}"
+            )
 
 
 class ReAct(ReActDocstoreAgent, ModAgent):
@@ -273,17 +311,14 @@ class ZSReAct(ZeroShotAgent, ModAgent):
         tools: Sequence[BaseTool],
         prefix: str = utils.langchain_helpers.mod_react_prompt.mod_react_prefix,
         suffix: str = utils.langchain_helpers.mod_react_prompt.mod_react_suffix,
-        format_instructions: str = utils.langchain_helpers.mod_react_prompt.mod_react_format_instructions_no_bing,
+        format_instructions: str = utils.langchain_helpers.mod_react_prompt.mod_react_format_instructions,
         input_variables: Optional[List[str]] = None,
         ) -> PromptTemplate:
         
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
 
-        if USE_BING == 'yes':
-            format_instructions = utils.langchain_helpers.mod_react_prompt.mod_react_format_instructions_with_bing.format(tool_names=tool_names)
-        else:
-            format_instructions = utils.langchain_helpers.mod_react_prompt.mod_react_format_instructions_no_bing.format(tool_names=tool_names)
+        format_instructions = utils.langchain_helpers.mod_react_prompt.mod_react_format_instructions.format(tool_names=tool_names)
 
         template = "\n\n".join([utils.langchain_helpers.mod_react_prompt.mod_react_prefix, tool_strings, format_instructions, 
                                 utils.langchain_helpers.mod_react_prompt.mod_react_suffix])

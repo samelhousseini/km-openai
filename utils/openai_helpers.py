@@ -86,6 +86,10 @@ def check_model_deployment(oai_model):
 
 
 
+completion_deployment_id = check_model_deployment(CHOSEN_COMP_MODEL)
+embedding_deployment_id = check_model_deployment(CHOSEN_EMB_MODEL)
+
+
 
 def experiment_prompt(context, query):
 
@@ -149,9 +153,10 @@ def get_encoder(embedding_model):
 @retry(wait=wait_random_exponential(min=1, max=120), stop=stop_after_attempt(20))
 def get_openai_embedding(query, embedding_model):
     #print(f"Generating Embeddings with {embedding_model}")
-    deployment_id = check_model_deployment(embedding_model)
-    logging.info(f"Get Embedding:: Found deployment {deployment_id}")
-    return openai.Embedding.create(input=query, engine=deployment_id)['data'][0]['embedding']
+    # deployment_id = check_model_deployment(embedding_model)
+    # logging.info(f"Get Embedding:: Found deployment {deployment_id}")
+    # print(f"Get Embedding:: Found deployment {deployment_id}  {embedding_deployment_id}")
+    return openai.Embedding.create(input=query, engine=embedding_deployment_id)['data'][0]['embedding']
 
 
 
@@ -166,15 +171,16 @@ def openai_summarize(text, completion_model, max_output_tokens = MAX_OUTPUT_TOKE
 def contact_openai(prompt, completion_model, max_output_tokens):
     #print("contacting oai")
     
-    deployment_id = check_model_deployment(completion_model)
+    
 
     return openai.Completion.create(
                     prompt=prompt,
                     temperature=TEMPERATURE,
                     max_tokens=max_output_tokens,
                     model=completion_model,
-                    deployment_id=deployment_id
+                    deployment_id=completion_deployment_id
                 )["choices"][0]["text"].strip(" \n")
+
 
 
 

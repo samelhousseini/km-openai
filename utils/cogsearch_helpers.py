@@ -300,14 +300,24 @@ def cog_search(terms: str, filter_param = None):
                              query_speller="lexicon", 
                              semantic_configuration_name="default")
 
-    context = "\n".join([f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] " + (doc[KB_FIELDS_CONTENT]).replace("\n", "").replace("\r", "") for doc in r])
+    context = [f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] " + (doc[KB_FIELDS_CONTENT]).replace("\n", "").replace("\r", "") for doc in r]
     
-    for re_str in re_strs:
-        matches = re.findall(re_str, context, re.DOTALL)
-        for m in matches: context = context.replace(m, '')
+    for i in range(len(context)):
+        for re_str in re_strs:
+            matches = re.findall(re_str, context[i], re.DOTALL)
+            for m in matches: context[i] = context[i].replace(m, '')
 
-    context = completion_enc.decode(completion_enc.encode(context)[:MAX_SEARCH_TOKENS])
-    return context
+    final_context = []
+    total_tokens = 0
+
+    for i in range(len(context)):
+        total_tokens += len(completion_enc.encode(context[i]))
+        if  total_tokens < MAX_SEARCH_TOKENS:
+            final_context.append(context[i])
+        else:
+            break
+
+    return final_context
 
 
 
@@ -340,7 +350,7 @@ def cog_lookup(terms: str, filter_param = None):
     answers = r.get_answers()
 
     if answers is None:
-        return ''
+        return ['']
 
     if len(answers) > 0:
         context = answers[0].text
@@ -348,7 +358,7 @@ def cog_lookup(terms: str, filter_param = None):
         ref = f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] "
         context = ref + context
         context = completion_enc.decode(completion_enc.encode(context)[:MAX_SEARCH_TOKENS])
-        return context
+        return [context]
 
         
     if r.get_count() > 0:
@@ -357,7 +367,7 @@ def cog_lookup(terms: str, filter_param = None):
         ref = f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] "
         context = ref + context
         context = completion_enc.decode(completion_enc.encode(context)[:MAX_SEARCH_TOKENS]) 
-        return context
+        return [context]
         
-    return ''    
+    return ['']    
 
