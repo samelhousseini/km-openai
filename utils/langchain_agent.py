@@ -398,28 +398,26 @@ class KMOAI_Agent():
         self.inform_agent_input_lengths(self.zs_chain.agent, query, hist, pre_context)
         self.inform_agent_input_lengths(self.ds_chain.agent, query, hist, pre_context)
 
-        response = self.zs_chain({'input':query, 'history':hist, 'pre_context':pre_context}) 
+        try:
+            response = self.zs_chain({'input':query, 'history':hist, 'pre_context':pre_context}) 
 
-        # try:
-        #     response = self.zs_chain({'input':query, 'history':hist, 'pre_context':pre_context}) 
+        except Exception as e:
+            e_str = str(e)
+            print("Exception 1st chain", e_str)
 
-        # except Exception as e:
-        #     e_str = str(e)
-        #     print("Exception 1st chain", e_str)
-
-        #     if e_str.startswith("Could not parse LLM output:"):
-        #         response = e_str.replace("Action: None", "").replace("Action:", "").replace('<|im_end|>', '')
-        #     else:
-        #         try:
-        #             response = self.ds_chain({'input':query, 'history':hist, 'pre_context':pre_context}) 
-        #         except Exception as e:
-        #             print("Exception 2nd chain", e)
-        #             try:
-        #                 oss = OldSchoolSearch()
-        #                 response = oss.search(query, hist, pre_context)
-        #             except Exception as e:
-        #                 print("Exception 3rd chain", e)
-        #                 response = DEFAULT_RESPONSE  
+            if e_str.startswith("Could not parse LLM output:"):
+                response = e_str.replace("Action: None", "").replace("Action:", "").replace('<|im_end|>', '')
+            else:
+                try:
+                    response = self.ds_chain({'input':query, 'history':hist, 'pre_context':pre_context}) 
+                except Exception as e:
+                    print("Exception 2nd chain", e)
+                    try:
+                        oss = OldSchoolSearch()
+                        response = oss.search(query, hist, pre_context)
+                    except Exception as e:
+                        print("Exception 3rd chain", e)
+                        response = DEFAULT_RESPONSE  
 
         answer, sources = self.process_final_response(query, response)
 
