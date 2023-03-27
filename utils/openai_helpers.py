@@ -150,36 +150,32 @@ def get_encoder(embedding_model):
 
 
 
-@retry(wait=wait_random_exponential(min=1, max=120), stop=stop_after_attempt(20))
+@retry(wait=wait_random_exponential(min=1, max=10), stop=stop_after_attempt(20))
 def get_openai_embedding(query, embedding_model):
-    #print(f"Generating Embeddings with {embedding_model}")
-    # deployment_id = check_model_deployment(embedding_model)
-    # logging.info(f"Get Embedding:: Found deployment {deployment_id}")
-    # print(f"Get Embedding:: Found deployment {deployment_id}  {embedding_deployment_id}")
     return openai.Embedding.create(input=query, engine=embedding_deployment_id)['data'][0]['embedding']
 
 
 
-@retry(wait=wait_random_exponential(min=1, max=120), stop=stop_after_attempt(20))
+@retry(wait=wait_random_exponential(min=1, max=10), stop=stop_after_attempt(20))
 def openai_summarize(text, completion_model, max_output_tokens = MAX_OUTPUT_TOKENS, lang='en'):
     prompt = get_summ_prompt(text)
     return contact_openai(prompt, completion_model, max_output_tokens)
 
 
 
-@retry(wait=wait_random_exponential(min=1, max=120), stop=stop_after_attempt(20))
+@retry(wait=wait_random_exponential(min=1, max=10), stop=stop_after_attempt(20))
 def contact_openai(prompt, completion_model, max_output_tokens):
-    #print("contacting oai")
-    
-    
-
-    return openai.Completion.create(
-                    prompt=prompt,
-                    temperature=TEMPERATURE,
-                    max_tokens=max_output_tokens,
-                    model=completion_model,
-                    deployment_id=completion_deployment_id
-                )["choices"][0]["text"].strip(" \n")
+    try:
+        return openai.Completion.create(
+                        prompt=prompt,
+                        temperature=TEMPERATURE,
+                        max_tokens=max_output_tokens,
+                        model=completion_model,
+                        deployment_id=completion_deployment_id
+                    )["choices"][0]["text"].strip(" \n")
+    except Exception as e:
+        print(e)
+        raise e
 
 
 

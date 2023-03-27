@@ -215,7 +215,7 @@ class ModAgent(Agent):
             if allowance < 0: allowance = 0
             len_obs.append(allowance)
 
-        print(max_comp_model_tokens, th_tokens, empty_prompt_length, MAX_OUTPUT_TOKENS, self.history_length, self.query_length, self.pre_context_length)
+        # print(max_comp_model_tokens, th_tokens, empty_prompt_length, MAX_OUTPUT_TOKENS, self.history_length, self.query_length, self.pre_context_length)
 
         thoughts = ""
         for action, observation in intermediate_steps:
@@ -233,7 +233,7 @@ class ModAgent(Agent):
             thoughts += f"\n{self.observation_prefix}{completion_enc.decode(completion_enc.encode(observation)[:len_obs[i]])}\n{self.llm_prefix}" 
             i += 1
 
-        print("\nNUM STEPS:",str(len_steps), "TH_TOKENS", th_tokens, "ALLOWANCE", allowance, "USED", len(completion_enc.encode(thoughts)), 'LEN_OBS', len_obs, "\n")            
+        # print("\nNUM STEPS:",str(len_steps), "TH_TOKENS", th_tokens, "ALLOWANCE", allowance, "USED", len(completion_enc.encode(thoughts)), 'LEN_OBS', len_obs, "\n")            
         return thoughts
 
 
@@ -304,6 +304,19 @@ class ReAct(ReActDocstoreAgent, ModAgent):
 
 
 class ZSReAct(ZeroShotAgent, ModAgent):
+
+
+    @property
+    def observation_prefix(self) -> str:
+        """Prefix to append the observation with."""
+        return "Observation: "
+
+    @property
+    def llm_prefix(self) -> str:
+        """Prefix to append the llm call with."""
+        return "Thought:"
+
+
 
     @classmethod
     def create_prompt(

@@ -12,6 +12,7 @@ from utils.langchain_helpers.simple_prompt import get_simple_prompt, append_tags
 
 from utils import openai_helpers
 from utils import redis_helpers
+from utils import helpers
 
 
 DAVINCI_003_MODEL_MAX_TOKENS = int(os.environ["DAVINCI_003_MODEL_MAX_TOKENS"])
@@ -38,7 +39,7 @@ redis_conn = redis_helpers.get_new_conn()
 class OldSchoolSearch():
 
 
-    def search(self, query, history, pre_context, topK=NUM_TOP_MATCHES):   
+    def search(self, query, history, pre_context, filter_param=None,  enable_unified_search=False, unified_search_owner = None, topK=NUM_TOP_MATCHES):   
 
         completion_model = CHOSEN_COMP_MODEL
         embedding_model = CHOSEN_EMB_MODEL
@@ -49,26 +50,12 @@ class OldSchoolSearch():
         max_comp_model_tokens = openai_helpers.get_model_max_tokens(completion_model)
         max_emb_model_tokens = openai_helpers.get_model_max_tokens(embedding_model)
 
-        max_emb_model_tokens = min(max_emb_model_tokens, MAX_QUERY_TOKENS)
-
-        query = embedding_enc.decode(embedding_enc.encode(query)[:max_emb_model_tokens])
-        query_embedding = openai_helpers.get_openai_embedding(query, embedding_model)
-        results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=topK)
-
-        if len(results) == 0:
-            logging.warning("No embeddings found in Redis, attempting to load embeddings from Cosmos")
-            cosmos_helpers.cosmos_restore_embeddings()
-            results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=topK)
-
-        if len(results) == 0:        
-            logging.warning("No embeddings found in Redis or Cosmos")
-            return "Sorry, no embeddings are loaded in Redis or Cosmos"
-
-        first_score = float(results[0]['vector_score'])    
-        context = ' '.join([t['text_en'].replace('\n', ' ') for t in results])
+        if not enable_unified_search:
+            context = helpers.redis_search(query, filter_param)
+        else: 
+            context = unified_search_owner.unified_search(query)
         
-        matches = re.findall("ppt\/[-a-zA-Z0-9+&@#\/%=~_|$?!:,.]*", context, re.DOTALL)
-        for m in matches: context = context.replace(m, '')
+        context = '\n'.join(context)
 
         query   = completion_enc.decode(completion_enc.encode(query)[:MAX_QUERY_TOKENS])
         history = completion_enc.decode(completion_enc.encode(history)[:MAX_HISTORY_TOKENS])
@@ -86,9 +73,9 @@ class OldSchoolSearch():
         
         prompt = get_simple_prompt(context, query, history, pre_context)  
 
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
         # print(prompt)         
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 
         final_answer = openai_helpers.contact_openai(prompt, completion_model, MAX_OUTPUT_TOKENS)
 

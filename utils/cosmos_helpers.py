@@ -90,7 +90,7 @@ def cosmos_backup_embeddings(emb_documents):
 def cosmos_store_contents(data_dict):
     ret_dict = {}
 
-    new_doc = copy.copy(data_dict)
+    new_doc = copy.deepcopy(data_dict)
 
     new_doc['id'] = new_doc.get('id', str(uuid.uuid4()))
     new_doc['categoryId'] = CATEGORYID

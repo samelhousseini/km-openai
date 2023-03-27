@@ -93,7 +93,7 @@ def redis_upsert_embedding(redis_conn, e_dict):
     try:
         #embeds = np.array(e[VECTOR_FIELD_IN_REDIS]).astype(np.float32).tobytes()
         #meta = {'text_en': e['text_en'], 'text':e['text'], 'doc_url': e['doc_url'], 'timestamp': e['timestamp'], VECTOR_FIELD_IN_REDIS:embeds}
-        e = copy.copy(e_dict)
+        e = copy.deepcopy(e_dict)
         e[VECTOR_FIELD_IN_REDIS] = np.array(e[VECTOR_FIELD_IN_REDIS]).astype(np.float32).tobytes()
 
         p = redis_conn.pipeline(transaction=False)
@@ -139,13 +139,14 @@ def redis_query_embedding_index(redis_conn, query_emb, t_id, topK=5, filter_para
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
 def redis_set(redis_conn, key, field, value, expiry = None):
     try:
+        key = key.replace('"', '')
         res = redis_conn.hset(key, field, value)
 
         if expiry is not None:
             redis_conn.expire(name=key, time=expiry)
-
+        print("Setting Redis Key: ", key, field, value, expiry)
         return res
-
+        
     except Exception as e:
         logging.error(f"Redis Set Except: {e}")
         print(f"Redis Set Except: {e}")
@@ -155,7 +156,10 @@ def redis_set(redis_conn, key, field, value, expiry = None):
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
 def redis_get(redis_conn, key, field):
     try:
+        key = key.replace('"', '')
+        print("Getting Redis Key: ", key, field)
         return redis_conn.hget(key, field)
+        
     except Exception as e:
         logging.error(f"Redis Get Except: {e}")
         print(f"Redis Get Except: {e}")

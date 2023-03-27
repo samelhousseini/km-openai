@@ -26,17 +26,17 @@ EXAMPLES = [
 # Observation 2: [historyref2.txt] (Result 1 / 1) Milhouse was named after U.S. president Richard Nixon, whose middle name was Milhous.
 # Thought 3: Milhouse was named after U.S. president Richard Nixon, so the answer is Richard Nixon.
 # Action 3: Finish[(historyref2.txt) Richard Nixon\n\n]""",
-#     """Question: Which documentary is about Finnish rock groups, Adam Clayton Powell or The Saimaa Gesture?
-# Thought 1: I need to search Adam Clayton Powell and The Saimaa Gesture, and find which documentary is about Finnish rock groups.
-# Action 1: Search[Adam Clayton Powell]
-# Observation 1: [info9.pdf] Could not find [Adam Clayton Powell]. Similar: ['Adam Clayton Powell III', 'Seventh Avenue (Manhattan)', 'Adam Clayton Powell Jr. State Office
-# Building', 'Isabel Washington Powell', 'Adam Powell', vAdam Clayton Powell (film)', 'Giancarlo Esposito'].
-# Thought 2: To find the documentary, I can search Adam Clayton Powell (film).
-# Action 2: Search[Adam Clayton Powell (film)]
-# Observation 2: [data123.txt] Adam Clayton Powell is a 1989 American documentary film directed by Richard Kilberg. The film is about the rise and fall of influential African-American politician Adam Clayton Powell Jr.[3][4] It was later aired as part of the PBS series The American Experience.
-# Thought 3: Adam Clayton Powell (film) is a documentary about an African-American
-# politician, not Finnish rock groups. So the documentary about Finnish rock groups must instead be The Saimaa Gesture.
-# Action 3: Finish[(data123.txt) The Saimaa Gesture\n\n]""",
+    """Question: Which documentary is about Finnish rock groups, Adam Clayton Powell or The Saimaa Gesture?
+Thought 1: I need to search Adam Clayton Powell and The Saimaa Gesture, and find which documentary is about Finnish rock groups.
+Action 1: Search[Adam Clayton Powell]
+Observation 1: [info9.pdf] Could not find [Adam Clayton Powell]. Similar: ['Adam Clayton Powell III', 'Seventh Avenue (Manhattan)', 'Adam Clayton Powell Jr. State Office
+Building', 'Isabel Washington Powell', 'Adam Powell', vAdam Clayton Powell (film)', 'Giancarlo Esposito'].
+Thought 2: To find the documentary, I can search Adam Clayton Powell (film).
+Action 2: Search[Adam Clayton Powell (film)]
+Observation 2: [data123.txt] Adam Clayton Powell is a 1989 American documentary film directed by Richard Kilberg. The film is about the rise and fall of influential African-American politician Adam Clayton Powell Jr.[3][4] It was later aired as part of the PBS series The American Experience.
+Thought 3: Adam Clayton Powell (film) is a documentary about an African-American
+politician, not Finnish rock groups. So the documentary about Finnish rock groups must instead be The Saimaa Gesture.
+Action 3: Finish[(data123.txt) The Saimaa Gesture]""",
     """Question: What profession does Nicholas Ray and Elia Kazan have in common?
 Thought 1: I need to search Nicholas Ray and Elia Kazan, find their professions, then find the profession they have in common.
 Action 1: Search[Nicholas Ray]
@@ -45,7 +45,7 @@ Thought 2: Professions of Nicholas Ray are director, screenwriter, and actor. I 
 Action 2: Search[Elia Kazan]
 Observation 2: [files-654.txt] Elia Kazan was an American film and theatre director, producer, screenwriter and actor.
 Thought 3: Professions of Elia Kazan are director, producer, screenwriter, and actor. So profession Nicholas Ray and Elia Kazan have in common is director, screenwriter, and actor.
-Action 3: Finish[(files-987.png)(files-654.txt) director, screenwriter, actor \n\n]""",
+Action 3: Finish[(files-987.png)(files-654.txt) director, screenwriter, actor]""",
     """Question: Which magazine was started first Arthur's Magazine or First for Women?
 Thought 1: I need to search Arthur's Magazine and First for Women, and find which was started first.
 Action 1: Search[Arthur's Magazine]
@@ -54,7 +54,7 @@ Thought 2: Arthur's Magazine was started in 1844. I need to search First for Wom
 Action 2: Search[First for Women]
 Observation 2: [magazines-1900.pdf] First for Women is a woman's magazine published by Bauer Media Group in the USA.[1] The magazine was started in 1989.
 Thought 3: First for Women was started in 1989. 1844 (Arthur's Magazine) < 1989 (First for Women), so Arthur's Magazine was started first.
-Action 3: Finish[(magazines-1850.pdf)(magazines-1900.pdf) Arthur's Magazine\n\n]""",
+Action 3: Finish[(magazines-1850.pdf)(magazines-1900.pdf) Arthur's Magazine]""",
     """Question: Were Pavel Urysohn and Leonid Levin known for the same type of work?
 Thought 1: I need to search Pavel Urysohn and Leonid Levin, find their types of work, then find if they are the same.
 Action 1: Search[Pavel Urysohn]
@@ -63,13 +63,12 @@ Thought 2: Pavel Urysohn is a mathematician. I need to search Leonid Levin next 
 Action 2: Search[Leonid Levin]
 Observation 2: [datapoints_aaa.txt] Leonid Anatolievich Levin is a Soviet-American mathematician and computer scientist.
 Thought 3: Leonid Levin is a mathematician and computer scientist. So Pavel Urysohn and Leonid Levin have the same type of work.
-Action 3: Finish[(info4444.pdf) yes ]\n\n""",
+Action 3: Finish[(info4444.pdf) yes ]""",
 ]
 
 
 SUFFIX = """
-<|im_end|>
-<|im_start|>user 
+
 
 Initial Context:
 ####
@@ -103,7 +102,12 @@ All questions must be answered from the results from search or look up actions, 
 Answer questions as truthfully as possible, and ONLY answer the questions using the information from observations, do not speculate or your own knowledge.
 If the question is not clear or further clarifications are needed, the AI assistant MUST use the search or lookup actions to get the context and information. The AI assistant MUST use one of the tools AT LEAST ONCE. 
 At each Observation, the assistant shall ponder carefully whether it has the final answer or not. If the assistant does, then the assistant can stop searching and provide the final answer. If the assistant does not, then the assistant must continue searching until all search sources are exhausted.
-Do NOT answer based on your knowledge of Wikipedia."""
+Do NOT answer based on your knowledge of Wikipedia.
+
+<|im_end|>
+<|im_start|>user 
+
+"""
 
 
 

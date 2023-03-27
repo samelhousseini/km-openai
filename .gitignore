@@ -165,3 +165,9 @@ agent copy.ipynb
 .env copy 2
 demo.ipynb
 evaluate.ipynb
+eval_results.csv
+all_predictions.pkl
+test_openai.ipynb
+eval_results_cont.csv
+eval.csv
+agent_name.csv

@@ -16,6 +16,8 @@ from utils import redis_helpers
 from utils import openai_helpers
 from utils.kb_doc import KB_Doc
 
+from utils import cosmos_helpers
+
 
 OVERLAP_TEXT = int(os.environ["OVERLAP_TEXT"])
 NUM_TOP_MATCHES = int(os.environ['NUM_TOP_MATCHES'])
@@ -23,7 +25,7 @@ CHOSEN_EMB_MODEL   = os.environ['CHOSEN_EMB_MODEL']
 CHOSEN_QUERY_EMB_MODEL   = os.environ['CHOSEN_QUERY_EMB_MODEL']
 CHOSEN_COMP_MODEL   = os.environ['CHOSEN_COMP_MODEL']
 MAX_SEARCH_TOKENS  = int(os.environ.get("MAX_SEARCH_TOKENS"))
-
+MAX_QUERY_TOKENS = int(os.environ.get("MAX_QUERY_TOKENS"))
 
 
 
@@ -91,7 +93,7 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
         else:
             embedding = ''
 
-        dd = copy.copy(json_object)
+        dd = copy.deepcopy(json_object)
         dd['id'] = f"{doc_id}_{text_suffix}_{suff}"
         dd['text_en'] = translated_chunk
         dd['text'] = decoded_chunk
@@ -137,16 +139,16 @@ def generate_embeddings_from_json_docs(json_folder, embedding_model, max_emb_tok
 
 
 
-def save_embedding_docs_to_pkl(emb_documents, emb_filename):
-    with open(emb_filename, 'wb') as pickle_out:
-        pickle.dump(emb_documents, pickle_out)
+def save_object_to_pkl(object, filename):
+    with open(filename, 'wb') as pickle_out:
+        pickle.dump(object, pickle_out)
 
 
-def load_embedding_docs_from_pkl(emb_filename):
-    with open(emb_filename, 'rb') as pickle_in:
-        emb_documents = pickle.load(pickle_in)
+def load_object_from_pkl(filename):
+    with open(filename, 'rb') as pickle_in:
+        object = pickle.load(pickle_in)
 
-    return emb_documents  
+    return object  
 
 
 def load_embedding_docs_in_redis(emb_documents, emb_filename = '', document_name = ''):
@@ -211,10 +213,18 @@ re_strs = [
 def redis_search(query: str, filter_param: str):
     redis_conn = redis_helpers.get_new_conn()
     completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
+    embedding_enc = openai_helpers.get_encoder(CHOSEN_EMB_MODEL)
+
+    query = embedding_enc.decode(embedding_enc.encode(query)[:MAX_QUERY_TOKENS])
 
     query_embedding = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
     results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
     
+    if len(results) == 0:
+        logging.warning("No embeddings found in Redis, attempting to load embeddings from Cosmos")
+        cosmos_helpers.cosmos_restore_embeddings()
+        results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
+
     context = [f"[{t['container']}/{t['filename']}] " + t['text_en'].replace('\n', ' ') for t in results]
 
     for i in range(len(context)):
@@ -238,10 +248,18 @@ def redis_search(query: str, filter_param: str):
 def redis_lookup(query: str, filter_param: str):
     redis_conn = redis_helpers.get_new_conn()
     completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
-    
+
+    embedding_enc = openai_helpers.get_encoder(CHOSEN_EMB_MODEL)
+    query = embedding_enc.decode(embedding_enc.encode(query)[:MAX_QUERY_TOKENS])
+
     query_embedding = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
     results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=1, filter_param=filter_param)
 
+    if len(results) == 0:
+        logging.warning("No embeddings found in Redis, attempting to load embeddings from Cosmos")
+        cosmos_helpers.cosmos_restore_embeddings()
+        results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
+        
     context = ' \n'.join([f"[{t['container']}/{t['filename']}] " + t['text_en'].replace('\n', ' ') for t in results])
     
     for re_str in re_strs:

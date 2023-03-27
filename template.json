@@ -751,10 +751,6 @@
                             "value": "500"
                         } ,
                         {
-                            "name": "OVERLAP_TEXT",
-                            "value": "50"
-                        } ,
-                        {
                             "name": "ADA_002_EMBED_NUM_DIMS",
                             "value": "1536"
                         } ,
@@ -815,12 +811,16 @@
                             "value": "text-embedding-ada-002"
                         } ,
                         {
+                            "name": "OVERLAP_TEXT",
+                            "value": "150"
+                        } ,
+                        {
                             "name": "SMALL_EMB_TOKEN_NUM",
-                            "value": "400"
+                            "value": "600"
                         } ,
                         {
                             "name": "MEDIUM_EMB_TOKEN_NUM",
-                            "value": "800"
+                            "value": "900"
                         } ,
                         {
                             "name": "LARGE_EMB_TOKEN_NUM",
@@ -880,7 +880,7 @@
                         },
                         {
                             "name": "PRE_CONTEXT",
-                            "value": "250"
+                            "value": "500"
                         },
                         {
                             "name": "COG_SEARCH_ADMIN_KEY",
