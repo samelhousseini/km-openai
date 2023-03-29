@@ -39,7 +39,7 @@ redis_conn = redis_helpers.get_new_conn()
 class OldSchoolSearch():
 
 
-    def search(self, query, history, pre_context, filter_param=None,  enable_unified_search=False, unified_search_owner = None, topK=NUM_TOP_MATCHES):   
+    def search(self, query, history, pre_context, filter_param=None,  enable_unified_search=False, lc_agent = None, enable_cognitive_search=False, evaluate_step=True, topK=NUM_TOP_MATCHES):   
 
         completion_model = CHOSEN_COMP_MODEL
         embedding_model = CHOSEN_EMB_MODEL
@@ -50,13 +50,18 @@ class OldSchoolSearch():
         max_comp_model_tokens = openai_helpers.get_model_max_tokens(completion_model)
         max_emb_model_tokens = openai_helpers.get_model_max_tokens(embedding_model)
 
-        if not enable_unified_search:
-            context = helpers.redis_search(query, filter_param)
+        if enable_unified_search:
+            context = lc_agent.unified_search(query)
+        elif enable_cognitive_search:
+            context = lc_agent.agent_cog_search(query, filter_param)
         else: 
-            context = unified_search_owner.unified_search(query)
+            context = lc_agent.agent_redis_search(query)
         
-        context = '\n'.join(context)
 
+        if (lc_agent is not None) and evaluate_step:
+            context = lc_agent.evaluate(query, context)
+
+        # print(context)
         query   = completion_enc.decode(completion_enc.encode(query)[:MAX_QUERY_TOKENS])
         history = completion_enc.decode(completion_enc.encode(history)[:MAX_HISTORY_TOKENS])
         pre_context = completion_enc.decode(completion_enc.encode(pre_context)[:PRE_CONTEXT])

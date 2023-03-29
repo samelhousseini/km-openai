@@ -53,7 +53,7 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
     #### FOR DEMO PURPOSES ONLY -- OF COURSE NOT SECURE
     access = 'public'
 
-    if (json_object['filename'] is None) or (json_object['filename'] == ''):
+    if (json_object['filename'] is None) or (json_object['filename'] == '')  or (json_object['filename'] == 'null'):
         filename = storage.get_filename(json_object['doc_url'])
     else:
         filename = json_object['filename']
@@ -220,12 +220,27 @@ def redis_search(query: str, filter_param: str):
     query_embedding = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
     results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
     
+    
     if len(results) == 0:
         logging.warning("No embeddings found in Redis, attempting to load embeddings from Cosmos")
         cosmos_helpers.cosmos_restore_embeddings()
         results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
 
-    context = [f"[{t['container']}/{t['filename']}] " + t['text_en'].replace('\n', ' ') for t in results]
+    context = []
+
+    # r = [t['web_url'] + ' ' + t['container'] + ' ' + t['filename'] for t in results]
+    # print(r)
+
+    for t in results:
+        try:
+            if ('web_url' in t.keys()) and (t['web_url'] is not None) and (t['web_url'] != ''):
+                context.append(f"[{t['web_url']}] " + t['text_en'].replace('\n', ' ') )
+            else:
+                context.append(f"[{t['container']}/{t['filename']}] " + t['text_en'].replace('\n', ' ') )
+        except Exception as e:
+            print("Exception in redis_search: ", e)
+            context.append(t['text_en'].replace('\n', ' ') )
+
 
     for i in range(len(context)):
         for re_str in re_strs:

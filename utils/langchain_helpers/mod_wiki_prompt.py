@@ -36,7 +36,7 @@ Action 2: Search[Adam Clayton Powell (film)]
 Observation 2: [data123.txt] Adam Clayton Powell is a 1989 American documentary film directed by Richard Kilberg. The film is about the rise and fall of influential African-American politician Adam Clayton Powell Jr.[3][4] It was later aired as part of the PBS series The American Experience.
 Thought 3: Adam Clayton Powell (film) is a documentary about an African-American
 politician, not Finnish rock groups. So the documentary about Finnish rock groups must instead be The Saimaa Gesture.
-Action 3: Finish[(data123.txt) The Saimaa Gesture]""",
+Action 3: Finish[[data123.txt] The Saimaa Gesture]""",
     """Question: What profession does Nicholas Ray and Elia Kazan have in common?
 Thought 1: I need to search Nicholas Ray and Elia Kazan, find their professions, then find the profession they have in common.
 Action 1: Search[Nicholas Ray]
@@ -45,7 +45,7 @@ Thought 2: Professions of Nicholas Ray are director, screenwriter, and actor. I 
 Action 2: Search[Elia Kazan]
 Observation 2: [files-654.txt] Elia Kazan was an American film and theatre director, producer, screenwriter and actor.
 Thought 3: Professions of Elia Kazan are director, producer, screenwriter, and actor. So profession Nicholas Ray and Elia Kazan have in common is director, screenwriter, and actor.
-Action 3: Finish[(files-987.png)(files-654.txt) director, screenwriter, actor]""",
+Action 3: Finish[[files-987.png](files-654.txt] director, screenwriter, actor]""",
     """Question: Which magazine was started first Arthur's Magazine or First for Women?
 Thought 1: I need to search Arthur's Magazine and First for Women, and find which was started first.
 Action 1: Search[Arthur's Magazine]
@@ -54,7 +54,7 @@ Thought 2: Arthur's Magazine was started in 1844. I need to search First for Wom
 Action 2: Search[First for Women]
 Observation 2: [magazines-1900.pdf] First for Women is a woman's magazine published by Bauer Media Group in the USA.[1] The magazine was started in 1989.
 Thought 3: First for Women was started in 1989. 1844 (Arthur's Magazine) < 1989 (First for Women), so Arthur's Magazine was started first.
-Action 3: Finish[(magazines-1850.pdf)(magazines-1900.pdf) Arthur's Magazine]""",
+Action 3: Finish[[magazines-1850.pdf)(magazines-1900.pdf) Arthur's Magazine]""",
     """Question: Were Pavel Urysohn and Leonid Levin known for the same type of work?
 Thought 1: I need to search Pavel Urysohn and Leonid Levin, find their types of work, then find if they are the same.
 Action 1: Search[Pavel Urysohn]
@@ -63,34 +63,24 @@ Thought 2: Pavel Urysohn is a mathematician. I need to search Leonid Levin next 
 Action 2: Search[Leonid Levin]
 Observation 2: [datapoints_aaa.txt] Leonid Anatolievich Levin is a Soviet-American mathematician and computer scientist.
 Thought 3: Leonid Levin is a mathematician and computer scientist. So Pavel Urysohn and Leonid Levin have the same type of work.
-Action 3: Finish[(info4444.pdf) yes ]""",
+Action 3: Finish[[info4444.pdf] yes ]""",
 ]
 
 
 SUFFIX = """
 
+Initial Context:{pre_context}
 
-Initial Context:
-####
-{pre_context}
-####
+Current Conversation: {history}
 
-\nCurrent Conversation: 
-###
-{history}
-###
-
-\nQuestion: 
-###
-{input}
-###
+Question: {input}
 
 <|im_end|>
 <|im_start|>assistant
-###
-{agent_scratchpad}
 
---
+Begin:
+
+{agent_scratchpad}
 """
 
 
@@ -103,7 +93,10 @@ Answer questions as truthfully as possible, and ONLY answer the questions using 
 If the question is not clear or further clarifications are needed, the AI assistant MUST use the search or lookup actions to get the context and information. The AI assistant MUST use one of the tools AT LEAST ONCE. 
 At each Observation, the assistant shall ponder carefully whether it has the final answer or not. If the assistant does, then the assistant can stop searching and provide the final answer. If the assistant does not, then the assistant must continue searching until all search sources are exhausted.
 Do NOT answer based on your knowledge of Wikipedia.
-
+For example, if the question is \"What color is the sky?\" and one of the information sources says \"info123: the sky is blue whenever it's not cloudy\", then answer with \"The sky is blue [info123]\" 
+It's important to strictly follow the format where the name of the source is in brackets at the end of the sentence, and only up to the prefix before the colon [\":\"]. 
+If there are multiple sources, cite each one in their own square brackets. For example, use \"[info343][ref-76]\" and not \"[info343,ref-76]\". 
+Never quote tool names as sources.
 <|im_end|>
 <|im_start|>user 
 
@@ -112,7 +105,7 @@ Do NOT answer based on your knowledge of Wikipedia.
 
 
 mod_wiki_prompt = PromptTemplate.from_examples(
-    EXAMPLES, SUFFIX, ["input", "agent_scratchpad", "history", "pre_context"], PREFIX
+    EXAMPLES, SUFFIX, ["input", "agent_scratchpad", "history", "pre_context"], '\n', PREFIX
 )
 
 

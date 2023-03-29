@@ -21,6 +21,7 @@ class KB_Doc():
         self.client = KB_INDEX_NAME
         self.container = KB_BLOB_CONTAINER
         self.filename = ''
+        self.web_url = ''
 
 
     def load(self, data):

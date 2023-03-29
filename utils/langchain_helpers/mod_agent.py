@@ -293,7 +293,12 @@ class ReAct(ReActDocstoreAgent, ModAgent):
         # Parse out the action and the directive.
         re_matches = re.search(r"(.*?)\[(.*?)\]", action_str)
 
-        # print('re_matches', re_matches.group(1), re_matches.group(2), '\n')
+        print('re_matches', re_matches.group(1), re_matches.group(2), '\n')
+
+        if re_matches.group(1) == 'Finish':
+            output = action_str.replace(action_prefix, '').replace('Finish', '').replace('<|im_end|>', '').strip()[1:-1]
+            # print('output', output, '\n')
+            return re_matches.group(1), output
 
         if re_matches is None:
             raise ValueError(f"Could not parse action directive: {action_str}")

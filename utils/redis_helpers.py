@@ -144,7 +144,7 @@ def redis_set(redis_conn, key, field, value, expiry = None):
 
         if expiry is not None:
             redis_conn.expire(name=key, time=expiry)
-        print("Setting Redis Key: ", key, field, value, expiry)
+        print("Setting Redis Key: ", key, field, expiry)
         return res
         
     except Exception as e:

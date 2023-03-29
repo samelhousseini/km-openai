@@ -73,6 +73,7 @@ def create_semantic_search_index():
             SimpleField(name="sourcefile", type="Edm.String", filterable=True, facetable=True),
             SimpleField(name="container", type="Edm.String", filterable=True, facetable=True),
             SimpleField(name="filename", type="Edm.String", filterable=True, facetable=True),
+            SimpleField(name="web_url", type="Edm.String", filterable=True, facetable=True),
             SimpleField(name="orig_lang", type="Edm.String", filterable=True, facetable=True),
         ],
         semantic_settings=SemanticSettings(
@@ -142,7 +143,8 @@ def index_semantic_sections(sections):
             "sourcefile": s['doc_url'],
             "orig_lang": s['orig_lang'],
             "container": s['container'],
-            "filename": s['filename']
+            "filename": s['filename'],
+            "web_url": s['web_url']
         }
 
         batch.append(dd) 
@@ -161,7 +163,6 @@ def index_semantic_sections(sections):
 
 
 def create_skillset():
-
 
     id_input = InputFieldMappingEntry(name="id", source="/document/id")
     content_input = InputFieldMappingEntry(name="content", source="/document/content")
@@ -300,8 +301,15 @@ def cog_search(terms: str, filter_param = None):
                              query_speller="lexicon", 
                              semantic_configuration_name="default")
 
-    context = [f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] " + (doc[KB_FIELDS_CONTENT]).replace("\n", "").replace("\r", "") for doc in r]
-    
+    context = []
+
+    for doc in r:
+        if ('web_url' in doc.keys()) and (doc['web_url'] is not None) and (doc['web_url'] != ''):
+            context.append(f"[{doc['web_url']}] " + (doc[KB_FIELDS_CONTENT]).replace("\n", "").replace("\r", ""))
+        else:
+            context.append(f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] " + (doc[KB_FIELDS_CONTENT]).replace("\n", "").replace("\r", "") )
+
+
     for i in range(len(context)):
         for re_str in re_strs:
             matches = re.findall(re_str, context[i], re.DOTALL)
@@ -350,12 +358,15 @@ def cog_lookup(terms: str, filter_param = None):
     answers = r.get_answers()
 
     if answers is None:
-        return ['']
+        return ["Sorry, I couldn't find any information related to the question."]
 
     if len(answers) > 0:
         context = answers[0].text
         doc = sem_search_client.get_document(answers[0].key)
-        ref = f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] "
+        if ('web_url' in doc.keys()) and (doc['web_url'] is not None) and (doc['web_url'] != ''):
+            ref = f"[{doc['web_url']}] "
+        else:
+            ref = f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] "
         context = ref + context
         context = completion_enc.decode(completion_enc.encode(context)[:MAX_SEARCH_TOKENS])
         return [context]
@@ -364,10 +375,13 @@ def cog_lookup(terms: str, filter_param = None):
     if r.get_count() > 0:
         doc = next(r)
         context = "\n".join(c.text for c in doc["@search.captions"])
-        ref = f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] "
+        if ('web_url' in doc.keys()) and (doc['web_url'] is not None) and (doc['web_url'] != ''):
+            ref = f"[{doc['web_url']}] "
+        else:
+            ref = f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] "
         context = ref + context
         context = completion_enc.decode(completion_enc.encode(context)[:MAX_SEARCH_TOKENS]) 
         return [context]
         
-    return ['']    
+    return ["Sorry, I couldn't find any information related to the question."]
 

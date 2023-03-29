@@ -35,6 +35,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     query = get_param(req, 'query')
     session_id = get_param(req, 'session_id')
     filter_param = get_param(req, 'filter')
+    search_method = get_param(req, 'search_method')
     
     if filter_param is None:
         os.environ['redis_filter_param'] = '*'
@@ -42,7 +43,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         os.environ['redis_filter_param'] = filter_param
 
     if query:
-        str = bot_helpers.openai_interrogate_text(query, session_id=session_id, filter_param=filter_param)
+        str = bot_helpers.openai_interrogate_text(query, session_id=session_id, filter_param=filter_param, agent_name=search_method)
         return func.HttpResponse(str)
     else:
         return func.HttpResponse(

@@ -7,8 +7,6 @@ GPT35_TURBO_COMPLETIONS_MODEL = os.environ['GPT35_TURBO_COMPLETIONS_MODEL']
 CHOSEN_COMP_MODEL = os.environ['CHOSEN_COMP_MODEL']
 
 
-
-
 ## Original Prompt - too strict for OpenAI
 ## Answer the question using the above Context only, and if the answer is not contained within the Context above, say "Sorry, the query did not find a good match. Please rephrase your question":
 
@@ -22,83 +20,88 @@ append_tags = """
 <|im_start|>assistant
 """
 
+strict_prompt = "If the facts below do not answer the question, say you don't know."
+
+instruction_template = """The system is an AI assistant that helps people find information in the provided Context below. Only answer questions based on the facts listed below. {strict}
+Facts have sources, you MUST include the source name in the answer at the beginning before any text. If there are multiple sources, cite each one in their own square brackets. For example, use \"[folder3/info343][http://wikipedia.com]\" and not \"[folder3/info343,http://wikipedia.com]\". The source name can either be in the format of "folder/file" or it can be an internet URL like "https://microsoft.com". You must follow the following format strictly for the final answer: 
+Answer: [folder1/file1][http://wikipedia.com][http://dubai.com] the answer based on the facts or information. 
+
+The below are examples of final answers:
+
+Question: "what is mentioned about the Lost City hotel?"
+Answer: "[dubai.com] The Lost City Hotel is a luxurious accommodation in Dubai with an onsite waterpark and aquarium."
+
+Question: "what hotels are recommended in Las Vegas?"
+Answer: "[folder/Las Vegas.pdf] Margie’s Travel offers the following hotels in Las Vegas: The Volcano Hotel, The Fountain Hotel, The Canal Hotel. To book your trip to Las Vegas, visit www.margiestravel.com."
+
+Question: "who is Barack Obama?"
+Answer: '[http://wikipedia.com] Barack Obama is the 44th President of the United States of America.'
+
+Question: "who is Barack Obama?"
+Answer: '[] Unfortunately, none of the sources I searched provided any specific information about Barack Obama.'
+
+Question: "how much are the one day pass tickets for Ferrari world?"
+Answer: "[] I'm sorry, I could not find the ticket prices for Ferrari World."
+
+"""
+
+instruction_strict = instruction_template.format(strict=strict_prompt)
+instruction_simple = instruction_template.format(strict="")
+
+
 
 def get_simple_prompt(context, query, history, pre_context):
 
     logging.info(f"{CHOSEN_COMP_MODEL}, {GPT35_TURBO_COMPLETIONS_MODEL}, {CHOSEN_COMP_MODEL == GPT35_TURBO_COMPLETIONS_MODEL}")
 
-    if CHOSEN_COMP_MODEL == GPT35_TURBO_COMPLETIONS_MODEL:
+    if RESTRICTIVE_PROMPT == 'yes':
+        instruction = instruction_strict
+    else:
+        instruction = instruction_simple
 
-        if RESTRICTIVE_PROMPT == 'yes':
-            instruction = """The system is an AI assistant that helps people find information in the provided Context below. Only answer questions based on the facts listed below. If the Initial Context and Context below doesn't answer the question, say you don't know. 
-            Facts have sources, you MUST include the source name in the answer at the beginning before any text. If there are multiple sources, cite each one in their own square brackets. For example, use \"[folder3/info343][dir4/ref-76]\" and not \"[folder3/info343,dir4/ref-76]\". You must follow the following format strictly for the final answer:
-            [folder1/file1] the answer based on the facts or information
-            """
-        else:
-            instruction = """The system is an AI assistant that helps people find information in the provided context below. Only answer questions based on the facts listed below.
-            Facts have sources, you MUST include the source name in the answer at the beginning before any text. If there are multiple sources, cite each one in their own square brackets. For example, use \"[folder3/info343][dir4/ref-76]\" and not \"[folder3/info343,dir4/ref-76]\". You must follow the following format strictly for the final answer:
-            [folder1/file1] the answer based on the facts or information
-            """
+    if CHOSEN_COMP_MODEL == GPT35_TURBO_COMPLETIONS_MODEL:
 
         prompt = f"""
 <|im_start|>system
 {instruction}
 
-Initial Context:
-####
-{pre_context}
-####
-
-Context: 
-####
-{context}
-####
-
 <|im_end|>
 <|im_start|>user
+
+Initial Context: 
+{pre_context}
+
 Current Conversation: 
-####
 {history}
-####
+
+Context: 
+{context}
 
 Question: {query}       
+Answer:
 <|im_end|>
 <|im_start|>assistant
         """
 
     else:
 
-        if RESTRICTIVE_PROMPT == 'yes':
-            instruction = "Answer the question using the above Initial Context and Context only, and if the answer is not contained within the Initial Context and Context above, say 'Sorry, the query did not find a good match. Please rephrase your question':"
-        else:
-            instruction = "Answer the question using the above Initial Context and Context:"
+        prompt =f"""{instruction}
 
-
-        prompt =f"""
-Initial Context:
-####
+Initial Context: 
 {pre_context}
-####
 
 Current Conversation: 
-####
 {history}
-####
-
 
 Context: 
-####
 {context}
-####
-
-
 
 Question: {query}       
+Answer:
 
-{instruction}
         """
     
-    logging.info(f"Using as prompt instruction: {instruction}")
+    # logging.info(f"Using as prompt instruction: {instruction}")
     # print(f"Using as prompt instruction: {instruction}")
 
     return prompt

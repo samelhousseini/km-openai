@@ -4,7 +4,7 @@ from langchain.prompts import PromptTemplate, BasePromptTemplate
 mod_react_prefix = """<|im_start|>Answer the following questions as best you can. You have access to the following tools:"""
 
 mod_react_format_instructions = """
-The assistant must start by using the Unified Search tool if available in the list of tools. After each time you use a tool, the assistant shall inspect the tool results one by one very closely and ponder carefully whether the results have enough information to get a final answer or not BEFORE proceeding to try another tool again with a different action input. If you find an answer, you must stop searching, and proceed to return a clear and elaborated final answer to user. If you don't find an answer, you must continue searching with different action inputs until each tool is tried exactly once. You MUST change the Action Input with every tool. Observations have sources, you MUST include the source name in the final answer. If there are multiple sources, cite each one in their own square brackets. For example, use \"[folder3/info343][dir4/ref-76]\" and not \"[folder3/info343,dir4/ref-76]\". 
+The assistant must start by using the Unified Search tool if available in the list of tools. After each time you use a tool, the assistant shall inspect the tool results one by one very closely and ponder carefully whether the results have enough information to get a final answer or not BEFORE proceeding to try another tool again with a different action input. If you find an answer, you must stop searching, and proceed to return a clear and elaborated final answer to user. If you don't find an answer, you must continue searching with different action inputs until each tool is tried exactly once. You MUST change the Action Input with every tool. Observations have sources, you MUST include the source name in the final answer. If there are multiple sources, cite each one in their own square brackets. For example, use \"[folder3/info343][http://wikipedia.com]\" and not \"[folder3/info343,http://wikipedia.com]\". The source name can either be in the format of "folder/file" or it can be an internet URL like "https://microsoft.com".
 YOU MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FROM THE INITIAL CONTEXT OR FROM PREVIOUS CONVERSATION, DO NOT ANSWER FROM MEMORY.
 You MUST NOT use the same Action Input more than once. 
 If there are lots of facts or information options, the assistant MUST try its best to summarize the information in the final answer, and must stop searching.
@@ -21,10 +21,10 @@ Question: the input question you must answer
 Thought: you should always think about what to do
 Action: the action to take, should be one of [{tool_names}]
 Action Input: the input to the action
-Observation: [folder1/file1] the result of the action.\n [folder2/file2] second result of the action
+Observation: [folder1/file1] the result of the action.\n[http://wikipedia.com] second result of the action\n[dubai.com] third result of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
 Thought: I now know the final answer
-Final Answer: [folder1/file1][folder2/file2] the final answer to the original input question
+Final Answer: [folder1/file1][http://wikipedia.com][dubai.com] the final answer to the original input question
 
 YOU MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FROM THE INITIAL CONTEXT OR FROM PREVIOUS CONVERSATION, DO NOT ANSWER FROM MEMORY.
 
@@ -58,13 +58,18 @@ Context:
 <|im_start|>user 
 
 Instruction: Identify in the above facts or information that can help in answering the following question: "{question}" and list them in bullet point format. YOU MUST STRICTLY USE THE CONTEXT TO IDENTIFY FACTS OR INFORMATION, DO NOT ANSWER FROM MEMORY.
-Facts have sources, you MUST include the source name in the EACH bullet point at the beginning before any text. If there are multiple sources, cite each one in their own square brackets. For example, use \"[folder3/info343][dir4/ref-76]\" and not \"[folder3/info343,dir4/ref-76]\". 
+Facts have sources, you MUST include the source name in the EACH bullet point at the beginning before any text. If there are multiple sources, cite each one in their own square brackets. For example, use \"[folder3/info343][http://wikipedia.com]\" and not \"[folder3/info343,http://wikipedia.com]\". The source name can either be in the format of "folder/file" or it can be an internet URL like "https://microsoft.com".
 
 Use the following format:
 - [folder1/file1] the first fact or information
-- [folder2/file2] the second fact or information
-- [folder3/file3] the third fact or information
-- [folder4/file4] (and so on ...)
+- [http://dubai.com] the second fact or information
+- [http://wikipedia.com] the third fact or information
+- [folder3/file3] the fourth fact or information
+- [http://microsoft.com] the fifth fact or information
+- [folder4/file4] the sixth fact or information
+- [http://outlook.com] the seventh fact or information
+- [https://linkedin.com] the eighth fact or information
+- (and so on ...)
 
 
 Begin:
@@ -149,7 +154,7 @@ Question: "{question}"
 
 
 mod_qc_instructions = """<|im_start|>
-The assistant is a super helpful assistant that plays the role of a quality control engineer and has ultra high attention to details. The assistant must go through the below question and think whether the answer is an adequate response to the question. Inadequate answers appear to be incomplete as they mention that the assistant must try another action, or try a different tool. You MUST answer by "Yes" or "No" ONLY. No additional explanation is required.
+The assistant is a super helpful assistant that plays the role of a quality control engineer and has ultra high attention to details. The assistant must go through the below question and think whether the answer is an adequate response to the question. Inadequate answers appear to be incomplete as they mention that the assistant must try another action, or try a different tool. Inadequate answers also suggest the answer is not final and that the user must perform an extra action of checking pages in the reference source You MUST answer by "Yes" or "No" ONLY. No additional explanation is required.
 
 <|im_end|>
 <|im_start|>user 
@@ -211,6 +216,10 @@ Adequate: Yes
 Question: "what is mentioned about the Volcano hotel?"
 Answer: "The Volcano Hotel is a stylish casino hotel with live entertainment and an extensive pool area, located in the heart of The Strip. To book a trip to Las Vegas, visit www.margiestravel.com."
 Adequate: Yes
+
+Question: "what is the contact info of IPA?"
+Answer: "The contact information for IPA Qatar is provided on page 26 of the guide."
+Adequate: No
 
 
 

@@ -69,6 +69,9 @@ class KMOAI_Agent():
                        agent_name = "zs", check_adequacy=True, verbose=True):
 
         self.enable_unified_search = enable_unified_search
+        self.enable_cognitive_search = enable_cognitive_search
+        self.enable_redis_search = enable_redis_search
+        self.evaluate_step = evaluate_step
         self.redis_filter_param = '*'
         self.cogsearch_filter_param = None
         self.evaluate_step = evaluate_step
@@ -211,6 +214,8 @@ class KMOAI_Agent():
         else:
             response = context
 
+        response = response.replace("<|im_end|>", '')
+
         return response 
 
     def qc(self, query, answer):
@@ -288,6 +293,9 @@ class KMOAI_Agent():
         return answer
 
     def process_final_response(self, query, response):
+
+        # print("Unprocessed response", response)
+
         if isinstance(response, str):
             answer = response
         else:    
@@ -328,6 +336,7 @@ class KMOAI_Agent():
             answer = answer.replace(occ, 'the knowledge base')
 
         sources = []
+        likely_sources = []
 
         source_matches = re.findall(r'\((.*?)\)', answer)  
         source_matches += re.findall(r'\[(.*?)\]', answer)
@@ -341,6 +350,8 @@ class KMOAI_Agent():
                 sources.append(sas_link)
             except:
                 if s.startswith("https://"): sources.append(s)
+                elif s.startswith("http://"): sources.append(s)
+                else: likely_sources.append(s)
 
           
         # for s in source_matches:
@@ -352,14 +363,14 @@ class KMOAI_Agent():
         #     except:
         #         if s.startswith("https://"): sources.append(s)
 
-        answer = answer.replace('[', '').replace(']','').rstrip()
+        answer = answer.replace('[', '').replace(']','').strip().rstrip()
 
         if answer == '':
             answer = DEFAULT_RESPONSE
 
         self.memory.save_context({"input": query}, {"output": answer})
 
-        return answer, sources
+        return answer, sources, likely_sources
 
 
 
@@ -421,6 +432,7 @@ class KMOAI_Agent():
 
 
     def process_request(self, query, hist, pre_context):
+
         
         try:
             if self.agent_name == 'zs':
@@ -428,7 +440,9 @@ class KMOAI_Agent():
             elif self.agent_name == 'ds':                
                 response = self.ds_chain({'input':query, 'history':hist, 'pre_context':pre_context})
             elif self.agent_name == 'os':   
-                response = OldSchoolSearch().search(query, hist, pre_context, filter_param=self.redis_filter_param, enable_unified_search=self.enable_unified_search, unified_search_owner=self)             
+                response = OldSchoolSearch().search(query, hist, pre_context, filter_param=self.redis_filter_param, 
+                                                    enable_unified_search=self.enable_unified_search, lc_agent=self, 
+                                                    enable_cognitive_search=self.enable_cognitive_search, evaluate_step=self.evaluate_step)             
             else:
                 response = self.zs_chain({'input':query, 'history':hist, 'pre_context':pre_context}) 
 
@@ -446,8 +460,10 @@ class KMOAI_Agent():
                 except Exception as e:
                     try:
                         oss = OldSchoolSearch()
-                        response = oss.search(query, hist, pre_context, filter_param=self.redis_filter_param, enable_unified_search=self.enable_unified_search, unified_search_owner=self)
-                        
+                        response = oss.search(query, hist, pre_context, filter_param=self.redis_filter_param, 
+                                                enable_unified_search=self.enable_unified_search, lc_agent=self, 
+                                                enable_cognitive_search=self.enable_cognitive_search, evaluate_step=self.evaluate_step)   
+                    
                     except Exception as e:
                         print("Exception 3rd chain", e)
                         try:
@@ -456,9 +472,9 @@ class KMOAI_Agent():
                             print("Exception 4th chain", e)
                             response = DEFAULT_RESPONSE  
 
-        answer, sources = self.process_final_response(query, response)
+        answer, sources, likely_sources = self.process_final_response(query, response)
 
-        return answer, sources
+        return answer, sources, likely_sources
 
 
     def get_pre_context(self, intent):
@@ -491,7 +507,7 @@ class KMOAI_Agent():
             intent = re.search(intent_regex, output, re.DOTALL)
             keywords = re.search(output_regex, output, re.DOTALL)
             intent, keywords = intent.group(0).replace('\n', '').replace('Intent:', '').strip(), keywords.group(0).replace('\n', '').replace('Keywords:', '').strip()
-            intent, keywords = intent.replace(',', '').replace('.', '').strip(), keywords.replace(',', '').replace('.', '').strip()
+            intent, keywords = intent.replace(',', '').strip(), keywords.replace(',', '').strip()
 
             print('\n', 'Intent:', intent.strip(), '\n', 'Response:', keywords)
 
@@ -509,7 +525,7 @@ class KMOAI_Agent():
         print("Intent:", intent, '-', intent_output)
 
         if intent == "chit chat":
-            return self.chichat(query), "", prompt_id
+            return self.chichat(query), [], [], prompt_id
 
         pre_context = self.get_pre_context(intent_output)
         print(f"Inserting history: {hist}")
@@ -519,10 +535,15 @@ class KMOAI_Agent():
         self.inform_agent_input_lengths(self.zs_chain.agent, query, hist, pre_context)
         self.inform_agent_input_lengths(self.ds_chain.agent, query, hist, pre_context)
 
-        answer, sources = self.process_request(query, hist, pre_context)
+        answer, sources, likely_sources = self.process_request(query, hist, pre_context)
+
+        print("************************")
+        print("Final Answer:", answer)
+        print("Sources:", sources)
+        print("************************")
 
         if not self.check_adequacy:
-            return answer, sources, prompt_id
+            return answer, sources, likely_sources, prompt_id
         
         tries = 3
         adequate = "no"
@@ -531,16 +552,16 @@ class KMOAI_Agent():
             adequate = self.qc(query, answer)
 
             if adequate == "no":
-                answer, sources = self.process_request(query, hist, pre_context)
+                answer, sources, likely_sources = self.process_request(query, hist, pre_context)
                 tries -= 1
             else:
                 self.manage_history(hist, prompt_id)
                 redis_helpers.redis_set(self.redis_conn, intent_output, 'answer', answer, CONVERSATION_TTL_SECS)
                 redis_helpers.redis_set(self.redis_conn, intent_output, 'sources', ','.join(sources), CONVERSATION_TTL_SECS)
 
-                return answer, sources, prompt_id
+                return answer, sources, likely_sources, prompt_id
 
-        return DEFAULT_RESPONSE, [], prompt_id
+        return DEFAULT_RESPONSE, [], [], prompt_id
 
 
         

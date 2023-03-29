@@ -51,7 +51,11 @@ def create_sas_from_container_and_blob(container, blob_name):
 
 
 def get_filename(blob_path):
-    return urllib.parse.unquote(os.path.basename(blob_path.split('?')[0]))
+    try:
+        return urllib.parse.unquote(os.path.basename(blob_path.split('?')[0]))
+    except:
+        return 'default_file_name_exception'
+    
 
 
 def create_sas(blob_path):
