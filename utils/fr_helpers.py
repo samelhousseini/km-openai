@@ -27,7 +27,10 @@ def process_forms(in_container = FR_CONTAINER, out_container = OUTPUT_BLOB_CONTA
 
         new_json = {
             'text': result,
-            'doc_url': b
+            'doc_url': b,
+            'container': in_container,
+            'filename': storage.get_filename(b),
+            'web_url': ''
         }
 
         storage.save_json_document(new_json, container = out_container )
