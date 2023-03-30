@@ -150,20 +150,20 @@ def get_encoder(embedding_model):
 
 
 
-@retry(wait=wait_random_exponential(min=1, max=10), stop=stop_after_attempt(20))
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(20))
 def get_openai_embedding(query, embedding_model):
     return openai.Embedding.create(input=query, engine=embedding_deployment_id)['data'][0]['embedding']
 
 
 
-@retry(wait=wait_random_exponential(min=1, max=10), stop=stop_after_attempt(20))
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(20))
 def openai_summarize(text, completion_model, max_output_tokens = MAX_OUTPUT_TOKENS, lang='en'):
     prompt = get_summ_prompt(text)
     return contact_openai(prompt, completion_model, max_output_tokens)
 
 
 
-@retry(wait=wait_random_exponential(min=1, max=10), stop=stop_after_attempt(20))
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(20))
 def contact_openai(prompt, completion_model, max_output_tokens):
     try:
         return openai.Completion.create(
