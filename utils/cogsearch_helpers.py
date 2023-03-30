@@ -150,7 +150,7 @@ def index_semantic_sections(sections):
         batch.append(dd) 
         i += 1
         if i % 1000 == 0:
-            results = sem_search_client.index_documents(batch=batch)
+            results = sem_search_client.upload_documents(documents=batch)
             succeeded = sum([1 for r in results if r.succeeded])
             print(f"\tIndexed {len(results)} sections, {succeeded} succeeded")
             batch = []

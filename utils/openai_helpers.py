@@ -174,6 +174,7 @@ def contact_openai(prompt, completion_model, max_output_tokens):
                         deployment_id=completion_deployment_id
                     )["choices"][0]["text"].strip(" \n")
     except Exception as e:
+        # logging.warning(f"Error in contact_openai: {e}")
         print(e)
         raise e
 
