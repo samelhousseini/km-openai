@@ -38,7 +38,7 @@ redis_conn = redis_helpers.get_new_conn()
 
 
 
-def openai_interrogate_text(query, session_id=None, filter_param=None, agent_name=None):
+def openai_interrogate_text(query, session_id=None, filter_param=None, agent_name=None, params_dict={}):
 
     lang = language.detect_content_language(query)
     if lang != 'en': query = language.translate(query, lang, 'en')
@@ -46,7 +46,7 @@ def openai_interrogate_text(query, session_id=None, filter_param=None, agent_nam
     if (agent_name is None) or (agent_name not in ['zs', 'ds', 'os']):
         agent_name = 'zs'
 
-    agent = langchain_agent.KMOAI_Agent(agent_name = agent_name)
+    agent = langchain_agent.KMOAI_Agent(agent_name = agent_name, params_dict=params_dict)
 
     final_answer, sources, likely_sources, session_id = agent.run(query, session_id, redis_conn, filter_param)
 

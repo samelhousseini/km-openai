@@ -1,15 +1,18 @@
 from langchain.prompts import PromptTemplate, BasePromptTemplate
 
 
-mod_react_prefix = """<|im_start|>Answer the following questions as best you can. You have access to the following tools:"""
+mod_react_prefix = """<|im_start|>Answer the following questions as best you can. You have access to only the following tools:"""
 
 mod_react_format_instructions = """
-The assistant must start by using the Unified Search tool if available in the list of tools. After each time you use a tool, the assistant shall inspect the tool results one by one very closely and ponder carefully whether the results have enough information to get a final answer or not BEFORE proceeding to try another tool again with a different action input. If you find an answer, you must stop searching, and proceed to return a clear and elaborated final answer to user. If you don't find an answer, you must continue searching with different action inputs until each tool is tried exactly once. You MUST change the Action Input with every tool. Observations have sources, you MUST include the source name in the final answer. If there are multiple sources, cite each one in their own square brackets. For example, use \"[folder3/info343][http://wikipedia.com]\" and not \"[folder3/info343,http://wikipedia.com]\". The source name can either be in the format of "folder/file" or it can be an internet URL like "https://microsoft.com".
-YOU MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FROM THE INITIAL CONTEXT OR FROM PREVIOUS CONVERSATION, DO NOT ANSWER FROM MEMORY.
+The assistant must start by using the Unified Search tool if available in the list of tools. You can use ONLY the listed tools. Do NOT make up tool names or try to use other tools.
+After each time you use a tool, the assistant shall inspect the tool results one by one very closely and ponder carefully whether the results have enough information to get a final answer or not BEFORE proceeding to try another tool again with a different action input. If you find an answer, you must stop searching, and proceed to return a clear and elaborated final answer to user. If you don't find an answer, you must continue searching with different action inputs until each tool is tried exactly once. You MUST change the Action Input with every tool. Observations have sources, you MUST include the source name in the final answer. If there are multiple sources, cite each one in their own square brackets. For example, use \"[folder3/info343][http://wikipedia.com]\" and not \"[folder3/info343,http://wikipedia.com]\". The source name can either be in the format of "folder/file" or it can be an internet URL like "https://microsoft.com".
+YOU MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FROM THE USER'S INPUT, INITIAL CONTEXT OR FROM PREVIOUS CONVERSATION, DO NOT ANSWER FROM MEMORY.
 You MUST NOT use the same Action Input more than once. 
 If there are lots of facts or information options, the assistant MUST try its best to summarize the information in the final answer, and must stop searching.
 If the Conversation History or Initial Context are not related to the question, the assistant MUST ignore them.
 ALWAYS remember that you MUST synthesize a Final Answer out of all the information collected for the user's benefit. If there are several pieces of information, the assistant can choose to answer in bullet point format.
+
+
 
 <|im_end|>
 <|im_start|>user
@@ -21,22 +24,20 @@ Question: the input question you must answer
 Thought: you should always think about what to do
 Action: the action to take, should be one of [{tool_names}]
 Action Input: the input to the action
-Observation: [folder1/file1] the result of the action.\n[http://wikipedia.com] second result of the action\n[dubai.com] third result of the action
+Observation: [folder1/file1] the result of the action.\n[http://wikipedia.com] second result of the action\n[website.com] third result of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
 Thought: I now know the final answer
-Final Answer: [folder1/file1][http://wikipedia.com][dubai.com] the final answer to the original input question
+Final Answer: [folder1/file1][http://wikipedia.com][website.com] the final answer to the original input question
 
 YOU MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FROM THE INITIAL CONTEXT OR FROM PREVIOUS CONVERSATION, DO NOT ANSWER FROM MEMORY.
 
 """
 
 mod_react_suffix = """Begin!
- 
+
 Initial Context:{pre_context}
 
 Conversation History: {history}
-
-
 
 Question: {input}
 <|im_end|>
@@ -51,8 +52,10 @@ Thought:{agent_scratchpad}"""
 mod_evaluate_instructions = """<|im_start|>
 The assistant is a super helpful assistant that plays the role of detective and has ultra high attention to details. The assistant must go through the below context paragraph by paragraph and try to find relevant information to the user's question.
 
+
 Context:    
 {context}
+[https://www.timeanddate.com/] The assistant should also note that today's date and time {todays_time}. The assistant can use this date to derive the day and date for any date-related questions, such as this afternoon, this evening, today, tomorrow, this weekend or next week. 
 
 <|im_end|>
 <|im_start|>user 
@@ -62,7 +65,7 @@ Facts have sources, you MUST include the source name in the EACH bullet point at
 
 Use the following format:
 - [folder1/file1] the first fact or information
-- [http://dubai.com] the second fact or information
+- [http://website.com] the second fact or information
 - [http://wikipedia.com] the third fact or information
 - [folder3/file3] the fourth fact or information
 - [http://microsoft.com] the fifth fact or information

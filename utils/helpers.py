@@ -96,7 +96,8 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
         dd = copy.deepcopy(json_object)
         dd['id'] = f"{doc_id}_{text_suffix}_{suff}"
         dd['text_en'] = translated_chunk
-        dd['text'] = decoded_chunk
+        if lang != 'en': dd['text'] = decoded_chunk
+        else: dd['text'] = ''
         dd['item_vector'] = embedding
 
         chunk_kbd_doc = KB_Doc()
@@ -229,7 +230,7 @@ def redis_search(query: str, filter_param: str):
     context = []
 
     # r = [t['web_url'] + ' ' + t['container'] + ' ' + t['filename'] for t in results]
-    # print(r)
+    # print(results)
 
     for t in results:
         try:

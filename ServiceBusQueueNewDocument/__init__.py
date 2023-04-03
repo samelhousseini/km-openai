@@ -30,7 +30,7 @@ MEDIUM_EMB_TOKEN_NUM  = int(os.environ['MEDIUM_EMB_TOKEN_NUM'])
 LARGE_EMB_TOKEN_NUM  = int(os.environ['LARGE_EMB_TOKEN_NUM'])
 X_LARGE_EMB_TOKEN_NUM = int(os.environ['X_LARGE_EMB_TOKEN_NUM'])
 
-
+DATABASE_MODE = int(os.environ['DATABASE_MODE'])
 
 
 def main(msg: func.ServiceBusMessage):
@@ -67,7 +67,9 @@ def main(msg: func.ServiceBusMessage):
     if X_LARGE_EMB_TOKEN_NUM != 0:
         emb_documents += helpers.generate_embeddings(full_kbd_doc, CHOSEN_EMB_MODEL, X_LARGE_EMB_TOKEN_NUM,  text_suffix = 'XL', previous_max_tokens=LARGE_EMB_TOKEN_NUM)
 
-    cosmos_helpers.cosmos_backup_embeddings(emb_documents)
+    if DATABASE_MODE == 1:
+        cosmos_helpers.cosmos_backup_embeddings(emb_documents)
+        
     cogsearch_helpers.index_semantic_sections(emb_documents)
 
     logging.info(f"Generated {len(emb_documents)} emb chunks from doc {json_filename}")

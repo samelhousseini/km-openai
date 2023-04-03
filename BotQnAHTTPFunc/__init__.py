@@ -28,6 +28,15 @@ def get_param(req, param_name):
 
 
 
+def check_param(param):
+    if param == 'false':
+        param = False
+    else:
+        param = True
+
+    return param
+
+
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
@@ -36,6 +45,23 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     session_id = get_param(req, 'session_id')
     filter_param = get_param(req, 'filter')
     search_method = get_param(req, 'search_method')
+
+    enable_unified_search = get_param(req, 'enable_unified_search')
+    enable_redis_search = get_param(req, 'enable_redis_search')
+    enable_cognitive_search = get_param(req, 'enable_cognitive_search')
+    evaluate_step = get_param(req, 'evaluate_step')
+    check_adequacy = get_param(req, 'check_adequacy')
+    check_intent = get_param(req, 'check_intent') 
+
+    params_dict = {
+        'enable_unified_search': check_param(enable_unified_search),
+        'enable_redis_search': check_param(enable_redis_search),
+        'enable_cognitive_search': check_param(enable_cognitive_search),
+        'evaluate_step': check_param(evaluate_step),
+        'check_adequacy': check_param(check_adequacy),
+        'check_intent': check_param(check_intent)
+    }
+
     
     if filter_param is None:
         os.environ['redis_filter_param'] = '*'
@@ -43,7 +69,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         os.environ['redis_filter_param'] = filter_param
 
     if query:
-        str = bot_helpers.openai_interrogate_text(query, session_id=session_id, filter_param=filter_param, agent_name=search_method)
+        str = bot_helpers.openai_interrogate_text(query, session_id=session_id, filter_param=filter_param, agent_name=search_method, params_dict=params_dict)
         return func.HttpResponse(str)
     else:
         return func.HttpResponse(

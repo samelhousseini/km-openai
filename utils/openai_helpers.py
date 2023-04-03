@@ -41,6 +41,8 @@ RESTRICTIVE_PROMPT    = os.environ['RESTRICTIVE_PROMPT']
 
 TEMPERATURE = 0
 
+GPT4_COMPLETIONS_MODEL_MAX_TOKENS = 8192
+GPT4_32K_COMPLETIONS_MODEL_MAX_TOKENS = 32768
 
 
 
@@ -119,6 +121,8 @@ def get_summ_prompt(text):
 
     return prompt
 
+	
+
 
 
 def get_model_max_tokens(model):
@@ -132,19 +136,27 @@ def get_model_max_tokens(model):
         return ADA_002_MODEL_MAX_TOKENS
     elif model == "gpt-35-turbo":
         return GPT35_TURBO_COMPLETIONS_MAX_TOKENS        
+    elif model == "gpt-4-32k":
+        return GPT4_32K_COMPLETIONS_MODEL_MAX_TOKENS     
+    elif model == "gpt-4":
+        return GPT4_COMPLETIONS_MODEL_MAX_TOKENS             
     else:
         return ADA_002_MODEL_MAX_TOKENS
 
 
 
 
-def get_encoder(embedding_model):
-    if embedding_model == "text-search-davinci-doc-001":
+def get_encoder(model):
+    if model == "text-search-davinci-doc-001":
         return tiktoken.get_encoding("p50k_base")
-    elif embedding_model == "text-embedding-ada-002":
+    elif model == "text-embedding-ada-002":
         return tiktoken.get_encoding("cl100k_base")
-    elif embedding_model == "gpt-3.5-turbo": 
+    elif model == "gpt-3.5-turbo": 
         return tiktoken.get_encoding("cl100k_base")
+    elif model == "gpt-4-32k":
+        return tiktoken.get_encoding("cl100k_base")
+    elif model == "gpt-4":
+        return tiktoken.get_encoding("cl100k_base")                
     else:
         return tiktoken.get_encoding("gpt2")
 

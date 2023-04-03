@@ -97,6 +97,7 @@ For example, if the question is \"What color is the sky?\" and one of the inform
 It's important to strictly follow the format where the name of the source is in brackets at the end of the sentence, and only up to the prefix before the colon [\":\"]. 
 If there are multiple sources, cite each one in their own square brackets. For example, use \"[info343][ref-76]\" and not \"[info343,ref-76]\". 
 Never quote tool names as sources.
+
 <|im_end|>
 <|im_start|>user 
 
