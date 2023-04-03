@@ -86,8 +86,6 @@ Current Conversation:
 Context: 
 {context}
 
-The assistant should also note that today's date and time {todays_time}. The assistant can use this date to derive the day and date for any date-related questions, such as this afternoon, this evening, today, tomorrow, this weekend or next week.
-
 Question: {query}       
 Answer:
 <|im_end|>
@@ -107,7 +105,6 @@ Current Conversation:
 Context: 
 {context}
 
-The assistant should also note that today's date and time {todays_time}. The assistant can use this date to derive the day and date for any date-related questions, such as this afternoon, this evening, today, tomorrow, this weekend or next week.
 
 Question: {query}       
 Answer:

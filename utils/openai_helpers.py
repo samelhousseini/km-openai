@@ -68,13 +68,13 @@ def check_model_deployment(oai_model):
         counter = 0
         deployed = False
 
-        while counter < 10:
-            time.sleep(3)
+        while counter < 2:
+            time.sleep(2)
             result = openai.Deployment.list()
             print(f"Found {len(result.data)} deployments")
 
             for deployment in result.data:
-                #logging.info(f"Found deployment {deployment}")
+                logging.info(f"OpenAI Deployment Exception --- Found deployment {deployment}")
                 if (deployment["status"] == "succeeded") and (deployment["model"] == oai_model):
                     deployed = True
                     print(f"The right model {deployment['model']} was found")

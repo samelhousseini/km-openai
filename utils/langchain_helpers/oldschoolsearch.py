@@ -34,13 +34,15 @@ MAX_SEARCH_TOKENS  = int(os.environ.get("MAX_SEARCH_TOKENS"))
 PRE_CONTEXT = int(os.environ['PRE_CONTEXT'])
 
 
-redis_conn = redis_helpers.get_new_conn()
+
 
 class OldSchoolSearch():
 
 
     def search(self, query, history, pre_context, filter_param=None,  enable_unified_search=False, lc_agent = None, enable_cognitive_search=False, evaluate_step=True, topK=NUM_TOP_MATCHES):   
 
+        redis_conn = redis_helpers.get_new_conn()
+        
         completion_model = CHOSEN_COMP_MODEL
         embedding_model = CHOSEN_EMB_MODEL
 

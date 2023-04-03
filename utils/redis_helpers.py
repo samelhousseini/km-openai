@@ -119,50 +119,35 @@ def redis_query_embedding_index(redis_conn, query_emb, t_id, topK=5, filter_para
 
     filter_param = filter_param.replace('-', '\-')
     fields = list(KB_Doc().get_fields()) + ['vector_score']
-    
     query_vector = np.array(query_emb).astype(np.float32).tobytes()
-    
     query_string = f'({filter_param})=>[KNN {topK} @{VECTOR_FIELD_IN_REDIS} $vec_param AS vector_score]'
-    # print('\n', query_string, filter_param, '\n')
 
     q = Query(query_string).sort_by('vector_score').paging(0,topK).return_fields(*fields).dialect(2)
     params_dict = {"vec_param": query_vector}
-    
     results = redis_conn.ft(REDIS_INDEX_NAME).search(q, query_params = params_dict)
     
     return [{k: match.__dict__[k] for k in (set(list(match.__dict__.keys())) - set([VECTOR_FIELD_IN_REDIS]))} for match in results.docs if match.id != t_id]
 
 
 
-
-
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
 def redis_set(redis_conn, key, field, value, expiry = None):
-    try:
-        key = key.replace('"', '')
-        res = redis_conn.hset(key, field, value)
+    key = key.replace('"', '')
+    res = redis_conn.hset(key, field, value)
 
-        if expiry is not None:
-            redis_conn.expire(name=key, time=expiry)
-        print("Setting Redis Key: ", key, field, expiry)
-        return res
+    if expiry is not None:
+        redis_conn.expire(name=key, time=expiry)
+    print("Setting Redis Key: ", key, field, expiry)
+    return res
         
-    except Exception as e:
-        logging.error(f"Redis Set Except: {e}")
-        print(f"Redis Set Except: {e}")
-        return 0
 
 
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
 def redis_get(redis_conn, key, field):
-    try:
-        key = key.replace('"', '')
-        print("Getting Redis Key: ", key, field)
-        return redis_conn.hget(key, field)
-        
-    except Exception as e:
-        logging.error(f"Redis Get Except: {e}")
-        print(f"Redis Get Except: {e}")
-        return None
+    key = key.replace('"', '')
+    print("Getting Redis Key: ", key, field)
+    return redis_conn.hget(key, field)
+    
+
 
  
