@@ -568,7 +568,8 @@ class KMOAI_Agent():
         self.intent_output = self.agent_name + ': ' + query
 
         if self.check_intent:
-            intent, self.intent_output = self.agent_name + ': ' + self.get_intent(query)
+            intent, intent_output = self.get_intent(query)
+            self.intent_output = self.agent_name + ': ' + intent_output
             print("Intent:", intent, '-', self.intent_output)
 
             if intent == "chit chat":
