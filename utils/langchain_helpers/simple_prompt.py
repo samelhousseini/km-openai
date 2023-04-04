@@ -107,6 +107,8 @@ Current Conversation:
 {history}
 
 Context: 
+[https://www.timeanddate.com] The current date and time are {datetime.now().strftime('%A %B %d, %Y %H:%M:%S')}. 
+
 {context}
 
 
