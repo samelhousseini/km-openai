@@ -162,7 +162,7 @@ def get_encoder(model):
 
 
 
-@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(20))
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(30))
 def get_openai_embedding(query, embedding_model):
     return openai.Embedding.create(input=query, engine=embedding_deployment_id)['data'][0]['embedding']
 
@@ -175,21 +175,25 @@ def openai_summarize(text, completion_model, max_output_tokens = MAX_OUTPUT_TOKE
 
 
 
-@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(20))
+@retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(7))
 def contact_openai(prompt, completion_model, max_output_tokens):
+    print("\n########################### Calling OAI Completion API - start call")
     try:
-        return openai.Completion.create(
+        b = time.time()
+        resp = openai.Completion.create(
                         prompt=prompt,
                         temperature=TEMPERATURE,
                         max_tokens=max_output_tokens,
                         model=completion_model,
                         deployment_id=completion_deployment_id
                     )["choices"][0]["text"].strip(" \n")
+        a = time.time()
+        print(f"OpenAI response time: {a-b}")
+        return resp
     except Exception as e:
         # logging.warning(f"Error in contact_openai: {e}")
         print(e)
         raise e
-
 
 
 

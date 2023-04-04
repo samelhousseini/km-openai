@@ -42,7 +42,7 @@ class OldSchoolSearch():
     def search(self, query, history, pre_context, filter_param=None,  enable_unified_search=False, lc_agent = None, enable_cognitive_search=False, evaluate_step=True, topK=NUM_TOP_MATCHES):   
 
         redis_conn = redis_helpers.get_new_conn()
-        
+
         completion_model = CHOSEN_COMP_MODEL
         embedding_model = CHOSEN_EMB_MODEL
 
@@ -59,9 +59,9 @@ class OldSchoolSearch():
         else: 
             context = lc_agent.agent_redis_search(query)
         
-
-        if (lc_agent is not None) and evaluate_step:
-            context = lc_agent.evaluate(query, context)
+        # if (lc_agent is not None) and evaluate_step:
+        #     print("Evaluating")
+        #     context = lc_agent.evaluate(query, context)
 
         # print(context)
         query   = completion_enc.decode(completion_enc.encode(query)[:MAX_QUERY_TOKENS])
@@ -80,10 +80,11 @@ class OldSchoolSearch():
         
         prompt = get_simple_prompt(context, query, history, pre_context)  
 
-        # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-        # print(prompt)         
-        # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        print(prompt)         
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 
+        print("OSS OAI Call")
         final_answer = openai_helpers.contact_openai(prompt, completion_model, MAX_OUTPUT_TOKENS)
 
         return final_answer

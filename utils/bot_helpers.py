@@ -37,7 +37,6 @@ redis_conn = redis_helpers.get_new_conn()
 
 
 
-
 def openai_interrogate_text(query, session_id=None, filter_param=None, agent_name=None, params_dict={}):
 
     lang = language.detect_content_language(query)
