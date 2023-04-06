@@ -252,7 +252,7 @@ def run_indexer():
 
 
 def ingest_kb(container = KB_BLOB_CONTAINER):
-    create_semantic_search_index()
+    # create_semantic_search_index()
     create_index()
     create_skillset()
     create_indexer(container)
