@@ -176,7 +176,7 @@ def openai_summarize(text, completion_model, max_output_tokens = MAX_OUTPUT_TOKE
 
 
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(7))
-def contact_openai(prompt, completion_model, max_output_tokens):
+def contact_openai(prompt, completion_model = CHOSEN_COMP_MODEL, max_output_tokens = MAX_OUTPUT_TOKENS):
     print("\n########################### Calling OAI Completion API - start call")
     try:
         b = time.time()
@@ -197,3 +197,24 @@ def contact_openai(prompt, completion_model, max_output_tokens):
 
 
 
+@retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(7))
+def contact_openai_stream(prompt, completion_model = CHOSEN_COMP_MODEL, max_output_tokens = MAX_OUTPUT_TOKENS):
+    print("\n########################### Calling OAI Completion API - start call")
+    try:
+        b = time.time()
+        resp = openai.Completion.create(
+                        prompt=prompt,
+                        temperature=TEMPERATURE,
+                        max_tokens=max_output_tokens,
+                        model=completion_model,
+                        deployment_id=completion_deployment_id,
+                        stream = True
+
+                    )
+        a = time.time()
+        print(f"OpenAI response time: {a-b}")
+        return resp
+    except Exception as e:
+        # logging.warning(f"Error in contact_openai: {e}")
+        print(e)
+        raise e

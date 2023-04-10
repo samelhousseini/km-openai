@@ -8,7 +8,7 @@ import logging
 import re
 
 
-from utils.langchain_helpers.simple_prompt import get_simple_prompt, append_tags, end_of_prev_prompt_tags
+import utils.langchain_helpers.simple_prompt  
 
 from utils import openai_helpers
 from utils import redis_helpers
@@ -39,7 +39,7 @@ PRE_CONTEXT = int(os.environ['PRE_CONTEXT'])
 class OldSchoolSearch():
 
 
-    def search(self, query, history, pre_context, filter_param=None,  enable_unified_search=False, lc_agent = None, enable_cognitive_search=False, evaluate_step=True, topK=NUM_TOP_MATCHES):   
+    def search(self, query, history, pre_context, filter_param=None,  enable_unified_search=False, lc_agent = None, enable_cognitive_search=False, evaluate_step=True, topK=NUM_TOP_MATCHES, stream = False):   
 
         redis_conn = redis_helpers.get_new_conn()
 
@@ -68,7 +68,7 @@ class OldSchoolSearch():
         history = completion_enc.decode(completion_enc.encode(history)[:MAX_HISTORY_TOKENS])
         pre_context = completion_enc.decode(completion_enc.encode(pre_context)[:PRE_CONTEXT])
 
-        empty_prompt_length = len(completion_enc.encode(get_simple_prompt('', '', '', '')))
+        empty_prompt_length = len(completion_enc.encode(utils.langchain_helpers.simple_prompt.get_simple_prompt('', '', '', '')))
         context_length      = len(completion_enc.encode(context))
         query_length        = len(completion_enc.encode(query))
         history_length      = len(completion_enc.encode(history))
@@ -78,13 +78,16 @@ class OldSchoolSearch():
 
         context = completion_enc.decode(completion_enc.encode(context)[:max_context_len])
         
-        prompt = get_simple_prompt(context, query, history, pre_context)  
+        prompt = utils.langchain_helpers.simple_prompt.get_simple_prompt(context, query, history, pre_context)  
 
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-        print(prompt)         
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        # print(prompt)         
+        # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 
         print("OSS OAI Call")
-        final_answer = openai_helpers.contact_openai(prompt, completion_model, MAX_OUTPUT_TOKENS)
+        if stream:
+            answer = openai_helpers.contact_openai_stream(prompt, completion_model, MAX_OUTPUT_TOKENS)
+        else:
+            answer = openai_helpers.contact_openai(prompt, completion_model, MAX_OUTPUT_TOKENS)
 
-        return final_answer
+        return answer

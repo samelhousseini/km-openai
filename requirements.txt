@@ -23,3 +23,5 @@ beautifulsoup4
 lxml
 azure-ai-textanalytics
 langchain
+flask
+flask-socketio
