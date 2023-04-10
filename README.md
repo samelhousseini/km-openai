@@ -67,7 +67,7 @@ The below are the features of this solution:
 
 
 # Search Parameters
-Multiple Search Parameters have been added to control the behavior of the agent. 
+Multiple Search Parameters have been added to control the behavior of the agent. The below values are all `true` **by default**. This can be tested in Postman or the interacting bot:
 
 1. `search_method`: this parameter can take 2 values `'os'` and `'zs'`. `'os'` stands for 'one-pass' agent, and is a straight-forward prompt. `'zs'` stands for Zero-shot-ReAct agent, and uses the LangChain agent. The LangChain agent should give better quality of results than the on-pass agent.
 
