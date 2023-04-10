@@ -36,7 +36,7 @@ The below are the features of this solution:
  
 1. Using both Redis and Cognitive Search (Semantic Search) as tools for the LangChain Agent. Also, added Bing as a third tool, which can be enabled or disabled.
 
-1. Added filtering support in the Bot HTTP request API. This would be useful for things like multi-tenant demos, and filtering on docuemnts with an original source language. Use `"filter":"field:value"` in the HTTP request e.g. `"filter":"orig_lang:en"`.
+1. Added filtering support in the Bot HTTP request API. This would be useful for things like multi-tenant demos, and filtering on docuemnts with an original source language. Use `"filter":"@field:value"` in the HTTP request e.g. `"filter":"@orig_lang:en"`.
 
 1. Automatic segmenting / chunking of documents with overlap based on the specified number(s) of tokens for each OpenAI model to generate embeddings.
  
@@ -62,6 +62,38 @@ The below are the features of this solution:
 
 <br />
 <br />
+
+
+
+
+# Search Parameters
+Multiple Search Parameters have been added to control the behavior of the agent. 
+
+1. `search_method`: this parameter can take 2 values `'os'` and `'zs'`. `'os'` stands for 'one-pass' agent, and is a straight-forward prompt. `'zs'` stands for Zero-shot-ReAct agent, and uses the LangChain agent. The LangChain agent should give better quality of results than the on-pass agent.
+
+1. `enable_unified_search`: Unified Search searches Redis and Cognitive Search at the same time with parallel calls, and interleaves the results.
+
+1. `enable_redis_search`: enables search with embeddings in Redis
+
+1. `enable_unified_search`: enables semantic search and lookup in Cognitive Search
+
+1. `evaluate_step`: search text results sometimes have the answer to the question but the results might be so long that OpenAI completion call might miss that information (too much noise). `evaluate_step` was created to address this problem. This is a separate call to the OpenAI Completion API to identify the facts that are relevant only to the question. 
+
+1. `check_adequacy`: checks the adequacy of the answer and if the answer does look ok (sometimes a problem with LangChain agents), this step will retry for an answer, up to 3 retries.
+
+1. `check_intent`: checks the intent of the question. If this is a question that is more 'chit-chatty', like 'hi' or 'how are you?' then answer it immediately without going through the search tools of the knowledge base.
+
+
+<p align="center">
+<img src="images/search_params.jpg" width="600"/>
+</p>
+<br />
+
+In general, `zs` will get you better results but is considerably slower than `os` since the LangChain agent might make several calls to the OpenAI APIs with the different tools that it has.
+
+<br />
+<br />
+
 
 
 # Interacting with ChatGPT 
