@@ -9,17 +9,15 @@ The following features are added to the wishlist to be implemented:
 1. ARM: Implementing Dedicated Plan with B1 for the Function App, instead of the Premium Plan
 1. Code: Adding Form Recognizer either as a new data source to the "kmoaiprocessed" container, or as a new Custom Skill
 1. Code: Storing contents, embeddings, and queries in Cosmos. It's important to know which are the most asked queries.
-
+1. ARM: Adding Application Insights to the ARM template
+1. Code: Adding a custom skill that processes csv files
+1. GUI for triggering Cognitive Search and Form Recognizer document ingestion - streamlit
 
 ### TBD
 1. ARM: Adding Application Insights to the ARM template
-1. Automated Azure Functions deployment through ARM template
 1. Code: Adding a custom skill that processes csv files
-1. Code: Adding a demo for HTML crawling
-1. Code: Adding an embedding match filtering (in Redis) for filtering on metadata 
 1. GUI for triggering Cognitive Search and Form Recognizer document ingestion - streamlit
 
 
 ### Future
-1. ChatGPT integration (when released on Azure)
 1. Code: Adding support for fine-tuned models.

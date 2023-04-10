@@ -61,6 +61,7 @@ openai.api_version = "2022-12-01"
 DEFAULT_RESPONSE = "Sorry, the question was not clear, or the information is not in the knowledge base. Please rephrase your question."
 
 
+
 pool = ThreadPool(6)
 
 
@@ -98,6 +99,7 @@ class KMOAI_Agent():
         self.cogsearch_filter_param = None
         self.agent_name = agent_name
         self.verbose = verbose
+        self.history = ""
         
 
         self.turbo_llm = GPT35TurboAzureOpenAI(deployment_name=CHOSEN_COMP_MODEL, temperature=0, openai_api_key=openai.api_key, max_retries=5, request_timeout=30, stop=['<|im_end|>'], max_tokens=MAX_OUTPUT_TOKENS, verbose = True)
@@ -138,10 +140,10 @@ class KMOAI_Agent():
         self.memory = ConversationBufferMemory(memory_key="history")
 
         self.zs_agent = ZSReAct.from_llm_and_tools(self.turbo_llm, zs_tools)
-        self.zs_chain = AgentExecutor.from_agent_and_tools(self.zs_agent, zs_tools, verbose=verbose, return_intermediate_steps = verbose, max_iterations = 8, early_stopping_method="generate" )
+        self.zs_chain = AgentExecutor.from_agent_and_tools(self.zs_agent, zs_tools, verbose=verbose, return_intermediate_steps = verbose, max_iterations = 6, early_stopping_method="generate" )
 
         self.ds_agent = ReAct.from_llm_and_tools(self.turbo_llm, ds_tools)
-        self.ds_chain = AgentExecutor.from_agent_and_tools(self.ds_agent, ds_tools, verbose=verbose, return_intermediate_steps = verbose, max_iterations = 8, early_stopping_method="generate" )
+        self.ds_chain = AgentExecutor.from_agent_and_tools(self.ds_agent, ds_tools, verbose=verbose, return_intermediate_steps = verbose, max_iterations = 6, early_stopping_method="generate" )
 
         completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
 
@@ -158,12 +160,12 @@ class KMOAI_Agent():
 
 
     def agent_redis_search(self, query):
-        response = redis_helpers.redis_get(self.redis_conn, self.intent_output, 'redis_search_response')
+        response = redis_helpers.redis_get(self.redis_conn, query, 'redis_search_response')
 
         if response is None:
             response = '\n\n'.join(redis_search(query, self.redis_filter_param))
             response = self.evaluate(query, response)
-            redis_helpers.redis_set(self.redis_conn, self.intent_output, 'redis_search_response', response, CONVERSATION_TTL_SECS)
+            redis_helpers.redis_set(self.redis_conn, query, 'redis_search_response', response, CONVERSATION_TTL_SECS)
         else:
             response = response.decode('UTF-8')
 
@@ -171,12 +173,12 @@ class KMOAI_Agent():
 
 
     def agent_redis_lookup(self, query):
-        response = redis_helpers.redis_get(self.redis_conn, self.intent_output, 'redis_lookup_response')
+        response = redis_helpers.redis_get(self.redis_conn, query, 'redis_lookup_response')
 
         if response is None:
             response = '\n\n'.join(redis_lookup(query, self.redis_filter_param))
             response = self.evaluate(query, response)
-            redis_helpers.redis_set(self.redis_conn, self.intent_output, 'redis_lookup_response', response, CONVERSATION_TTL_SECS)
+            redis_helpers.redis_set(self.redis_conn, query, 'redis_lookup_response', response, CONVERSATION_TTL_SECS)
         else:
             response = response.decode('UTF-8')
 
@@ -184,12 +186,12 @@ class KMOAI_Agent():
 
 
     def agent_cog_search(self, query):
-        response = redis_helpers.redis_get(self.redis_conn, self.intent_output, 'cog_search_response')
+        response = redis_helpers.redis_get(self.redis_conn, query, 'cog_search_response')
 
         if response is None:
             response = '\n\n'.join(cog_search(query, self.cogsearch_filter_param))
             response = self.evaluate(query, response)
-            redis_helpers.redis_set(self.redis_conn, self.intent_output, 'cog_search_response', response, CONVERSATION_TTL_SECS)
+            redis_helpers.redis_set(self.redis_conn, query, 'cog_search_response', response, CONVERSATION_TTL_SECS)
         else:
             response = response.decode('UTF-8')
 
@@ -198,12 +200,12 @@ class KMOAI_Agent():
 
 
     def agent_cog_lookup(self, query):
-        response = redis_helpers.redis_get(self.redis_conn, self.intent_output, 'cog_lookup_response')
+        response = redis_helpers.redis_get(self.redis_conn, query, 'cog_lookup_response')
 
         if response is None:
             response = '\n\n'.join(cog_lookup(query, self.cogsearch_filter_param))
             response = self.evaluate(query, response)
-            redis_helpers.redis_set(self.redis_conn, self.intent_output, 'cog_lookup_response', response, CONVERSATION_TTL_SECS)
+            redis_helpers.redis_set(self.redis_conn, query, 'cog_lookup_response', response, CONVERSATION_TTL_SECS)
         else:
             response = response.decode('UTF-8')
 
@@ -212,12 +214,12 @@ class KMOAI_Agent():
 
     def agent_bing_search(self, query):
         if USE_BING == 'yes':
-            response = redis_helpers.redis_get(self.redis_conn, self.intent_output, 'bing_search_response')
+            response = redis_helpers.redis_get(self.redis_conn, query, 'bing_search_response')
 
             if response is None:
                 response = '\n\n'.join(self.bing_search.run(query))
                 response = self.evaluate(query, response)
-                redis_helpers.redis_set(self.redis_conn, self.intent_output, 'bing_search_response', response, CONVERSATION_TTL_SECS)
+                redis_helpers.redis_set(self.redis_conn, query, 'bing_search_response', response, CONVERSATION_TTL_SECS)
             else:
                 response = response.decode('UTF-8')
 
@@ -229,29 +231,21 @@ class KMOAI_Agent():
     def evaluate(self, query, context):
 
         if self.evaluate_step:
-            response = redis_helpers.redis_get(self.redis_conn, self.intent_output, 'evaluate')
+            completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
+            max_comp_model_tokens = openai_helpers.get_model_max_tokens(CHOSEN_COMP_MODEL)
 
-            if response is None:
-                completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
-                max_comp_model_tokens = openai_helpers.get_model_max_tokens(CHOSEN_COMP_MODEL)
-
-                query_len = len(completion_enc.encode(query))
-                empty_prompt = len(completion_enc.encode(utils.langchain_helpers.mod_react_prompt.mod_evaluate_instructions.format(context = "", question = "", todays_time="")))
-                allowance = max_comp_model_tokens - empty_prompt - MAX_OUTPUT_TOKENS - query_len
-                print("Evaluate Call Tokens:", len(completion_enc.encode(context)), allowance)
-                context = completion_enc.decode(completion_enc.encode(context)[:allowance]) 
-                prompt = utils.langchain_helpers.mod_react_prompt.mod_evaluate_instructions.format(context = context, question = query, todays_time=self.get_date(""))
-                # print(prompt)
-                print("Evaluate OAI Call")
-                response = openai_helpers.contact_openai(prompt, CHOSEN_COMP_MODEL, MAX_OUTPUT_TOKENS)
-                response = response.replace("<|im_end|>", '')
-                # print('\n\n', response, '\n\n')
-                redis_helpers.redis_set(self.redis_conn, self.intent_output, 'evaluate', response, CONVERSATION_TTL_SECS)
-            else:
-                response = response.decode('UTF-8')                
+            query_len = len(completion_enc.encode(query))
+            empty_prompt = len(completion_enc.encode(utils.langchain_helpers.mod_react_prompt.mod_evaluate_instructions.format(context = "", question = "", todays_time="", history="")))
+            allowance = max_comp_model_tokens - empty_prompt - MAX_OUTPUT_TOKENS - query_len
+            print("Evaluate Call Tokens:", len(completion_enc.encode(context)), allowance)
+            context = completion_enc.decode(completion_enc.encode(context)[:allowance]) 
+            prompt = utils.langchain_helpers.mod_react_prompt.mod_evaluate_instructions.format(context = context, question = query, todays_time=self.get_date(""), history=self.history)
+            print(prompt)
+            print("Evaluate OAI Call")
+            response = openai_helpers.contact_openai(prompt, CHOSEN_COMP_MODEL, MAX_OUTPUT_TOKENS)
+            response = response.replace("<|im_end|>", '')
         else:
             response = context
-
 
         response = response.replace("<|im_end|>", '')
 
@@ -475,6 +469,7 @@ class KMOAI_Agent():
         
         print("agent_name", self.agent_name)
 
+        
         try:
             if self.agent_name == 'zs':
                 response = self.zs_chain({'input':query, 'history':hist, 'pre_context':pre_context}) 
@@ -549,11 +544,14 @@ class KMOAI_Agent():
             intent = re.search(intent_regex, output, re.DOTALL)
             keywords = re.search(output_regex, output, re.DOTALL)
             intent, keywords = intent.group(0).replace('\n', '').replace('Intent:', '').strip(), keywords.group(0).replace('\n', '').replace('Keywords:', '').strip()
-            intent, keywords = intent.replace(',', '').strip(), keywords.replace(',', '').strip()
+            intent, keywords = intent.replace(',', '').strip(), keywords.replace(',', '').replace('.', '').strip()
 
             print('\n', 'Intent:', intent.strip(), '\n', 'Response:', keywords)
+            keywords = keywords.lower().split(' ')
+            keywords = list(set(keywords))
+            keywords = ' '.join(keywords)
 
-            return intent.strip().lower(), keywords.lower()
+            return intent.strip().lower(), keywords
         except:
             return 'knowledge base', None
 
@@ -563,12 +561,17 @@ class KMOAI_Agent():
         self.redis_conn = redis_conn
         
         hist, prompt_id = self.get_history(prompt_id)
+        self.history = hist.replace('\n', ' ')
         print(f"Inserting history: {hist}")
         pre_context = ''
         self.intent_output = self.agent_name + ': ' + query
 
         if self.check_intent:
-            intent, intent_output = self.get_intent(query)
+            if hist == '':
+                intent, intent_output = self.get_intent(query)
+            else:
+                intent, intent_output = self.get_intent(self.history + '. ' + query)
+
             self.intent_output = self.agent_name + ': ' + intent_output
             print("Intent:", intent, '-', self.intent_output)
 
@@ -591,8 +594,8 @@ class KMOAI_Agent():
 
         if not self.check_adequacy:
             self.manage_history(hist, prompt_id)
-            redis_helpers.redis_set(self.redis_conn, self.intent_output, 'answer', answer, CONVERSATION_TTL_SECS)
-            redis_helpers.redis_set(self.redis_conn, self.intent_output, 'sources', ','.join(sources), CONVERSATION_TTL_SECS)
+            # redis_helpers.redis_set(self.redis_conn, self.intent_output, 'answer', answer, CONVERSATION_TTL_SECS)
+            # redis_helpers.redis_set(self.redis_conn, self.intent_output, 'sources', ','.join(sources), CONVERSATION_TTL_SECS)
             return answer, sources, likely_sources, prompt_id
         
         tries = 3
@@ -613,16 +616,68 @@ class KMOAI_Agent():
 
 
         self.manage_history(hist, prompt_id)
-        redis_helpers.redis_set(self.redis_conn, self.intent_output, 'answer', answer, CONVERSATION_TTL_SECS)
-        redis_helpers.redis_set(self.redis_conn, self.intent_output, 'sources', ','.join(sources), CONVERSATION_TTL_SECS)
+        # redis_helpers.redis_set(self.redis_conn, self.intent_output, 'answer', answer, CONVERSATION_TTL_SECS)
+        # redis_helpers.redis_set(self.redis_conn, self.intent_output, 'sources', ','.join(sources), CONVERSATION_TTL_SECS)
 
         return answer, sources, likely_sources, prompt_id
         
 
 
+    def process_stream_response(self, resp):
+        return resp
+
+
+    def run_stream(self, query, prompt_id, redis_conn, filter_param, connection_id):
+
+        self.redis_conn = redis_conn
         
+        hist, prompt_id = self.get_history(prompt_id)
+        self.history = hist.replace('\n', ' ')
+        print(f"Inserting history: {hist}")
+        pre_context = ''
+        self.intent_output = self.agent_name + ': ' + query
 
+        if self.check_intent:
+            intent, intent_output = self.get_intent(query)
+            self.intent_output = self.agent_name + ': ' + intent_output
+            print("Intent:", intent, '-', self.intent_output)
 
+            if intent == "chit chat":
+                return self.chichat(query), [], [], prompt_id
+
+            pre_context = self.get_pre_context(self.intent_output)
+            print(f"Inserting pre-context: {pre_context}")
+
+        self.assign_filter_param(filter_param)
+
+        service = WebPubSubServiceClient.from_connection_string(connection_string=PUB_SUB_ENDPOINT, hub='oaiqnachat')
+
+        
+        response = OldSchoolSearch().search(query, hist, pre_context, filter_param=self.redis_filter_param, 
+                                                    enable_unified_search=self.enable_unified_search, lc_agent=self, 
+                                                    enable_cognitive_search=self.enable_cognitive_search, evaluate_step=self.evaluate_step,
+                                                    stream = True)             
+
+        answer = ""
+        for resp in response:
+            resp = self.process_stream_response(resp["choices"][0]["text"])
+            answer += resp
+            service.send_to_connection( message = resp, connection_id = connection_id)
+
+        answer, sources, likely_sources = self.process_final_response(query, answer) 
+
+        print("************************")
+        print("Final Answer:", answer)
+        print("Sources:", sources)
+        print("************************")
+
+        self.manage_history(hist, prompt_id)
+        # redis_helpers.redis_set(self.redis_conn, self.intent_output, 'answer', answer, CONVERSATION_TTL_SECS)
+        # redis_helpers.redis_set(self.redis_conn, self.intent_output, 'sources', ','.join(sources), CONVERSATION_TTL_SECS)
+
+        service.send_to_connection( message = sources, connection_id = connection_id)
+        
+        #return answer, sources, likely_sources, prompt_id
 
 
         

@@ -146,6 +146,7 @@ def redis_set(redis_conn, key, field, value, expiry = None):
 def redis_get(redis_conn, key, field):
     key = key.replace('"', '')
     print("Getting Redis Key: ", key, field)
+    # return None
     return redis_conn.hget(key, field)
     
 

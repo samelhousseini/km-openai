@@ -219,28 +219,30 @@ def redis_search(query: str, filter_param: str):
     query = embedding_enc.decode(embedding_enc.encode(query)[:MAX_QUERY_TOKENS])
 
     query_embedding = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
-    results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
+    results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=25, filter_param=filter_param)
     
     
     if len(results) == 0:
         logging.warning("No embeddings found in Redis, attempting to load embeddings from Cosmos")
         cosmos_helpers.cosmos_restore_embeddings()
-        results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
+        results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=25, filter_param=filter_param)
 
     context = []
 
     # r = [t['web_url'] + ' ' + t['container'] + ' ' + t['filename'] for t in results]
-    # print(results)
+    # [print(r['vector_score']) for r in results]
 
     for t in results:
+        t['text_en'] = t['text_en'].replace('\n', ' ').replace('\r', ' ') 
+
         try:
             if ('web_url' in t.keys()) and (t['web_url'] is not None) and (t['web_url'] != ''):
-                context.append(f"[{t['web_url']}] " + t['text_en'].replace('\n', ' ') )
+                context.append(f"[{t['web_url']}] " + t['text_en'])
             else:
-                context.append(f"[{t['container']}/{t['filename']}] " + t['text_en'].replace('\n', ' ') )
+                context.append(f"[{t['container']}/{t['filename']}] " + t['text_en'])
         except Exception as e:
-            print("Exception in redis_search: ", e)
-            context.append(t['text_en'].replace('\n', ' ') )
+            print("------------------- Exception in redis_search: ", e)
+            context.append(t['text_en'] )
 
 
     for i in range(len(context)):
@@ -253,6 +255,7 @@ def redis_search(query: str, filter_param: str):
 
     for i in range(len(context)):
         total_tokens += len(completion_enc.encode(context[i]))
+        print(total_tokens)
         if  total_tokens < MAX_SEARCH_TOKENS:
             final_context.append(context[i])
         else:
