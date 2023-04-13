@@ -190,7 +190,7 @@ class ModAgent(Agent):
             
             th_tokens = len(completion_enc.encode(th_str))
             
-            allowance = max_comp_model_tokens - th_tokens - empty_prompt_length - MAX_OUTPUT_TOKENS - self.history_length - self.query_length - self.pre_context_length
+            allowance = max_comp_model_tokens - th_tokens - empty_prompt_length - MAX_OUTPUT_TOKENS - self.history_length - self.query_length - self.pre_context_length - len_steps * 30
             if allowance < 0: allowance = 0
             allowance_per_step = allowance // len_steps
 

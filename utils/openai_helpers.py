@@ -151,12 +151,14 @@ def get_encoder(model):
         return tiktoken.get_encoding("p50k_base")
     elif model == "text-embedding-ada-002":
         return tiktoken.get_encoding("cl100k_base")
-    elif model == "gpt-3.5-turbo": 
+    elif model == "gpt-35-turbo": 
         return tiktoken.get_encoding("cl100k_base")
     elif model == "gpt-4-32k":
         return tiktoken.get_encoding("cl100k_base")
     elif model == "gpt-4":
         return tiktoken.get_encoding("cl100k_base")                
+    elif model == "text-davinci-003":
+        return tiktoken.get_encoding("p50k_base")           
     else:
         return tiktoken.get_encoding("gpt2")
 
