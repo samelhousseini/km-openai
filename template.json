@@ -748,7 +748,7 @@
                         } ,
                         {
                             "name": "MAX_OUTPUT_TOKENS",
-                            "value": "500"
+                            "value": "750"
                         } ,
                         {
                             "name": "ADA_002_EMBED_NUM_DIMS",
@@ -820,7 +820,7 @@
                         } ,
                         {
                             "name": "MEDIUM_EMB_TOKEN_NUM",
-                            "value": "1500"
+                            "value": "0"
                         } ,
                         {
                             "name": "LARGE_EMB_TOKEN_NUM",

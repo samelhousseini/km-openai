@@ -1,0 +1,50 @@
+<html>
+    <body>
+        <h1>Chat App</h1>
+        <form id="message-form">
+          <input type="text" id="message-input" placeholder="Type your message">
+          <button type="submit">Send</button>
+        </form>
+        <div id="messages"></div>
+    </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+<script type="text/javascript" charset="utf-8">
+    var socket = io();
+    const messages = document.querySelector('#messages');
+    const messageForm = document.querySelector('#message-form');
+    const messageInput = document.querySelector('#message-input');
+    var latest_div = document.getElementById("messages").lastChild;
+    
+    console.log("starting")
+
+    messageForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const message = messageInput.value;
+        socket.emit('message', message);
+        messageInput.value = '';
+    });
+
+    socket.on('message', (message) => {
+        // const messageElement = document.createElement('div');
+        console.log(message)
+        console.log(document.getElementById("messages").lastChild.innerHTML )
+        document.getElementById("messages").lastChild.innerHTML   = document.getElementById("messages").lastChild.innerHTML  + '<br/>' + message + '<br/><br/>';
+        // messages.appendChild(messageElement);
+    });
+
+    socket.on('new_message', (message) => {
+        const messageElement = document.createElement('div');
+        messageElement.textContent  = message 
+        messageElement.innerHTML = messageElement.innerHTML + '<br/>';
+        messages.appendChild(messageElement);
+    });
+
+    socket.on('token', (message) => {
+        document.getElementById("messages").lastChild.textContent  = document.getElementById("messages").lastChild.textContent + message;
+    });
+
+    socket.on('connect', function() {
+        socket.emit('connect_message', {data: 'Im connected!'});
+    });
+</script>
+</html>

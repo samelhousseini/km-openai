@@ -75,7 +75,7 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
     json_object['orig_lang'] = lang
 
 
-    print("Comparing lengths", len(tokens) , previous_max_tokens-OVERLAP_TEXT)
+    # print("Comparing lengths", len(tokens) , previous_max_tokens-OVERLAP_TEXT)
 
     if (len(tokens) < previous_max_tokens-OVERLAP_TEXT) and (previous_max_tokens > 0):
         print("Skipping generating embeddings as it is optional for this text")
@@ -255,7 +255,7 @@ def redis_search(query: str, filter_param: str):
 
     for i in range(len(context)):
         total_tokens += len(completion_enc.encode(context[i]))
-        print(total_tokens)
+        # print(total_tokens)
         if  total_tokens < MAX_SEARCH_TOKENS:
             final_context.append(context[i])
         else:

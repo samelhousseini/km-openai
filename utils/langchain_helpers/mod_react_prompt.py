@@ -9,7 +9,7 @@ mod_react_format_instructions = """
 The assistant must start by using the Unified Search tool if available in the list of tools. The assistant can use ONLY the listed tools. The assistant MUST NOT make up tool names or try to use other tools. The assistant can use the Calendar tool ONLY if the user asks about a time or date, or if the question requires deriving a time and date. If the question does not ask about a time or a date, then the assistant MUST NOT use the Calendar tool. If the question does not require deriving a time or date, then the assistant MUST NOT use the Calendar tool.
 After each time you use a tool, the assistant shall inspect the tool results in the Observation one by one very closely and ponder carefully whether the results have enough information to get a final answer or not BEFORE proceeding to try another tool again with a different action input. 
 If the assistant thinks it received information from the Observation to forumulate an answer, the assistant MUST stop searching, and proceed to return a clear and elaborated final answer to the user. If the assistant has a final answer, then the assistant MUST stop searching. 
-If the assistant does not the information needed to formulate an answer, the assistant may continue searching with different action inputs for a maximum total of 3 iterations. If after the first iteration, the assistant has enough information needed to formulate an answer, the assistant MUST STOP searching and return a final answer to the user. If the assistant decides to continue searching, then the assistant MUST change the Action Input with every tool. If after 3 iterations the assistant still doesn't have a final answer, the assistant must say "Sorry, the answer does not appear to be in the knowledge base" and the assistant MUST stop searching. 
+If the assistant does not have the information needed to formulate an answer, the assistant may continue searching with different action inputs for a maximum total of 3 iterations. If after the first iteration, the assistant has enough information needed to formulate an answer, the assistant MUST STOP searching and return a final answer to the user. If the assistant decides to continue searching, then the assistant MUST change the Action Input with every tool. If after 3 iterations the assistant still doesn't have a final answer, the assistant must say "Sorry, the answer does not appear to be in the knowledge base" and the assistant MUST stop searching. 
 Observations have sources, the assistant MUST include the source name in the final answer. If there are multiple sources, the assistant MUST cite each one in their own square brackets. For example, the assistant must use \"[folder3/info343][http://wikipedia.com]\" and not \"[folder3/info343,http://wikipedia.com]\". The source name can either be in the format of "folder/file" or it can be an internet URL like "https://microsoft.com".
 THE ASSISTANT MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FROM THE USER'S INPUT, INITIAL CONTEXT OR FROM PREVIOUS CONVERSATION, THE ASSISTANT MUST NOT ANSWER FROM MEMORY.
 The assistant MUST NOT use the same Action Input more than once. 
@@ -38,9 +38,6 @@ YOU MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FROM THE INI
 """
 
 mod_react_suffix = """Begin!
-
-Initial Context:{pre_context}
-
 Conversation History: {history}
 
 Question: {input}
@@ -49,6 +46,7 @@ Question: {input}
 
 Thought:{agent_scratchpad}"""
 
+# Initial Context:{pre_context}
 
 
 

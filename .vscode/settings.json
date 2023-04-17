@@ -1,6 +1,6 @@
 {
     "azureFunctions.deploySubpath": ".",
-    "azureFunctions.scmDoBuildDuringDeployment": true,
+    "azureFunctions.scmDoBuildDuringDeployment": true, 
     "azureFunctions.pythonVenv": ".venv",
     "azureFunctions.projectLanguage": "Python",
     "azureFunctions.projectRuntime": "~4",
@@ -13,7 +13,17 @@
         "build{,/**}",
         "develop-eggs{,/**}",
         "dist{,/**}",
+        "backup{,/**}",
+        "AzCogSearchDocCrackingFunc{,/**}",
+        "BotQnAHTTPFunc{,/**}",
+        "ServiceBusQueueNewDocument{,/**}",
+        "kb_docs_samples{,/**}",
+        "notebooks{,/**}",
+        "dump{,/**}",
+        ".env copy{,/**}",
+        ".env copy 2{,/**}",
         "downloads{,/**}",
+        ".git{,/**}",
         "eggs{,/**}",
         ".eggs{,/**}",
         "lib{,/**}",
@@ -37,5 +47,5 @@
         ".vscode{,/**}"
     ],
     "appService.defaultWebAppToDeploy": "/subscriptions/2a7eed04-714e-4ba9-96ba-47355c32a8d6/resourceGroups/km-demo/providers/Microsoft.Web/sites/kmaoiwebappdemo0001",
-    "appService.deploySubpath": "app"
+    "appService.deploySubpath": "."
 }
