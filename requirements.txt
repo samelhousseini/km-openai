@@ -22,6 +22,6 @@ azure-ai-formrecognizer
 beautifulsoup4
 lxml
 azure-ai-textanalytics
-langchain
+langchain==0.0.139
 flask
 flask-socketio
