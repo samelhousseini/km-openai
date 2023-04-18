@@ -15,23 +15,24 @@
         <h3>Search Methods</h3>
         <ul>
             <li>
-                <input type="radio" name="search-method" id="method-1" value="method-1">
-                <label for="method-1">Method 1</label>
+                <input type="radio" name="search-method" id="method-1" value="os" >
+                <label for="method-1">One-Pass Agent</label>
             </li>
             <li>
-                <input type="radio" name="search-method" id="method-2" value="method-2">
-                <label for="method-2">Method 2</label>
+                <input type="radio" name="search-method" id="method-2" value="ccr" checked>
+                <label for="method-2">Conversational Chat ReAct Agent</label>
             </li>
             <li>
-                <input type="radio" name="search-method" id="method-3" value="method-3">
-                <label for="method-3">Method 3</label>
+                <input type="radio" name="search-method" id="method-3" value="zs" >
+                <label for="method-3">Zero-Shot ReAct Agent</label>
             </li>
         </ul>
-      </div>
-      
-      <div id="main">
-        <button class="openbtn" onclick="openNav()">&#9776; Options</button>
-      </div>
+        <button type="button" class="savebtn" onclick="saveSelection()">Save</button>
+    </div>
+
+    <div id="main">
+    <button class="openbtn" onclick="openNav()">&#9776; Options</button>
+    </div>
 
     <div id="chat-container">
         <!-- Chat messages will be appended here -->
@@ -41,6 +42,6 @@
         <input type="text" id="input-message" placeholder="Type your message...">
         <button id="send-button">Send</button>
     </div>
-  
+
 </body>
 </html>

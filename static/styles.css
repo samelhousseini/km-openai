@@ -13,10 +13,21 @@
 }
 
 /* The sidebar links */
-.sidebar a {
+
+.sidebar h3 {
     padding: 8px 8px 8px 32px;
     text-decoration: none;
-    font-size: 25px;
+    font-size: 18px;
+    color: #818181;
+    display: block;
+    transition: 0.3s;
+}
+
+
+.sidebar li {
+    padding: 8px 8px 8px 32px;
+    text-decoration: none;
+    font-size: 16px;
     color: #818181;
     display: block;
     transition: 0.3s;
@@ -35,6 +46,17 @@
     font-size: 36px;
     margin-left: 50px;
 }
+
+.sidebar .savebtn {
+    font-size: 15px;
+    cursor: pointer;
+    background-color: #8b8b8b;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    margin-left: 70px;
+}
+
 
 /* The button used to open the sidebar */
 .openbtn {
@@ -88,6 +110,7 @@ body {
     border-radius: 20px;
     margin-bottom: 10px;
     max-width: 80%;
+    width: 100%;
     display: inline-block;
     clear: both;
 }
@@ -107,7 +130,7 @@ body {
     justify-content: center;
     margin-top: 20px;
     padding: 10px;
-    background-color: #fff;
+    background-color: #ffffff;
     border-top: 1px solid #ccc;
 }
 

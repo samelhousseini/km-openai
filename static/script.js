@@ -1,9 +1,42 @@
 var socket = io();
+let selectedOption = 'ccr';
+
+
+function saveSelection() {
+    const radioButtons = document.getElementsByName('search-method');
+
+    for (let i = 0; i < radioButtons.length; i++) {
+        if (radioButtons[i].checked) {
+            selectedOption = radioButtons[i].value;
+            break;
+        }
+    }
+
+    if (selectedOption == 'os') {
+        socket.emit('config', 'os');
+    } 
+    else if (selectedOption == 'ccr') {
+        socket.emit('config', 'ccr');
+    }
+    else if (selectedOption == 'zs') {
+        socket.emit('config', 'zs');
+    }
+    else {
+        socket.emit('config', 'os');
+    }
+
+    console.log("New Config: " + selectedOption)
+
+    closeNav();
+}
+
+
+
 
 /* Set the width of the sidebar to 250px and the left margin of the page content to 250px */
 function openNav() {
-    document.getElementById("mySidebar").style.width = "250px";
-    document.getElementById("main").style.marginLeft = "250px";
+    document.getElementById("mySidebar").style.width = "450px";
+    document.getElementById("main").style.marginLeft = "450px";
 }
 
 /* Set the width of the sidebar to 0 and the left margin of the page content to 0 */
@@ -32,6 +65,7 @@ document.getElementById("send-button").addEventListener("click", function () {
 
 socket.on('message', (message) => {
     document.getElementById("chat-container").lastChild.innerHTML   = document.getElementById("chat-container").lastChild.innerHTML  + '<br>' + message + '<br><br>';
+    document.getElementById("chat-container").scrollTop = document.getElementById("chat-container").scrollHeight;
 });
 
 socket.on('new_message', (message) => {
@@ -46,10 +80,12 @@ socket.on('new_message', (message) => {
 socket.on('token', (message) => {
     console.log(message)
     document.getElementById("chat-container").lastChild.innerHTML  = document.getElementById("chat-container").lastChild.innerHTML + message;
+    document.getElementById("chat-container").scrollTop = document.getElementById("chat-container").scrollHeight;
 });
 
 socket.on('connect', function() {
-    console.log('Im connected!');
+    console.log('Im connected! ' + selectedOption);
+    socket.emit('config', selectedOption);
 });
 
 // Send message with Enter key

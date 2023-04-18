@@ -8,6 +8,8 @@ import re
 import copy
 import uuid
 import urllib
+import sys
+
 
 from langchain.llms.openai import AzureOpenAI
 from langchain.agents import initialize_agent, Tool, load_tools, AgentExecutor
@@ -117,7 +119,9 @@ class KMOAI_Agent():
         if self.verbose: print("use_calendar", self.use_calendar)
         if self.verbose: print("use_bing", self.use_bing)
 
-
+        self.buffer = ''
+        self.partial_answer = ''
+        self.num_partial_answer = 0
 
         if force_redis:
             if (self.enable_unified_search == False) and (self.enable_cognitive_search == False) and (self.enable_redis_search == False):
@@ -624,11 +628,40 @@ class KMOAI_Agent():
                 if word != '<|im_end|>':
                     if self.verbose: print(word, end='')
                     ans += word
-                    if self.connection is not None:
-                        self.connection['socketio'].emit('token', word.replace('\n', '<br>'), to=self.connection['connection_id'])
+                    self.process_new_token(word)
+
+            self.output_partial_answer()
             response = ans
 
         return self.process_final_response(query, response)
+
+
+
+
+    def output_partial_answer(self):
+        self.partial_answer = self.partial_answer.replace('":', '').replace('"', '').replace('}', '').replace('```', '').replace(':', '')
+        sys.stdout.write(self.partial_answer)
+        sys.stdout.flush()
+        if self.connection is not None:                            
+            self.connection['socketio'].emit('token', self.partial_answer.replace('\n', '<br>'), to=self.connection['connection_id'])
+        self.partial_answer = ''
+        self.num_partial_answer = 0
+
+
+    def process_new_token(self, token):
+        self.partial_answer += token 
+        self.num_partial_answer += 1
+
+        source_matches = re.findall(r'\[(.*?)\]', self.partial_answer)
+        for s in source_matches:
+            self.partial_answer = self.partial_answer.replace('['+s+']', '')
+
+        if ('[' in self.partial_answer) and (']' not in self.partial_answer):
+            return
+        else:
+            if self.num_partial_answer >= 5:
+                self.output_partial_answer()
+
 
 
     def get_pre_context(self, intent):

@@ -52,8 +52,13 @@ def static_file(path):
 @socketio.on('connect')
 def on_connect():
     print(f"connected {request.sid}")
+
+
+@socketio.on('config')
+def on_config(agent_type):
+    print(f"config {request.sid} - {agent_type}")
     connection = {'socketio': socketio, 'connection_id':request.sid}
-    ccr_agent = langchain_agent.KMOAI_Agent(agent_name = 'os', params_dict=global_params_dict, stream = True, connection=connection)
+    ccr_agent = langchain_agent.KMOAI_Agent(agent_name = agent_type, params_dict=global_params_dict,  stream = True, connection=connection)
     agents_sid[request.sid] = ccr_agent
 
 
