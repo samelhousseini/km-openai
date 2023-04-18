@@ -467,27 +467,32 @@ class KMOAI_Agent():
 
     def get_history(self, prompt_id):
         
-        if len(self.memory.buffer) > 0:
-            if (prompt_id is None) or (prompt_id == ''):
-                prompt_id = str(uuid.uuid4())
-            return self.load_history_from_memory(), prompt_id
+        try:
 
-        if (prompt_id is None) or (prompt_id == ''):
+            if len(self.memory.buffer) > 0:
+                if (prompt_id is None) or (prompt_id == ''):
+                    prompt_id = str(uuid.uuid4())
+                return self.load_history_from_memory(), prompt_id
+
+            if (prompt_id is None) or (prompt_id == ''):
+                hist = ''
+                prompt_id = str(uuid.uuid4())
+            else:
+                rhist = redis_helpers.redis_get(self.redis_conn, prompt_id, 'history', verbose = self.verbose)
+                if rhist is None:
+                    hist = ''
+                else:
+                    hist = rhist.decode('utf-8')
+                    new_hist = hist.split('\n')
+                    for i in range(len(new_hist)):
+                        if new_hist[i] == '': continue
+                        if new_hist[i].startswith('System: '): continue
+                        if new_hist[i].startswith('AI: '): continue
+                        self.memory.save_context({"input": new_hist[i].replace('Human: ', '')}, {"output": new_hist[i+1].replace('AI: ', '')})
+                        if self.verbose: print("Saving Context:", ({"input": new_hist[i].replace('Human: ', '')}, {"output": new_hist[i+1].replace('AI: ', '')}))
+        except:
             hist = ''
             prompt_id = str(uuid.uuid4())
-        else:
-            rhist = redis_helpers.redis_get(self.redis_conn, prompt_id, 'history', verbose = self.verbose)
-            if rhist is None:
-                hist = ''
-            else:
-                hist = rhist.decode('utf-8')
-                new_hist = hist.split('\n')
-                for i in range(len(new_hist)):
-                    if new_hist[i] == '': continue
-                    if new_hist[i].startswith('System: '): continue
-                    if new_hist[i].startswith('AI: '): continue
-                    self.memory.save_context({"input": new_hist[i].replace('Human: ', '')}, {"output": new_hist[i+1].replace('AI: ', '')})
-                    if self.verbose: print("Saving Context:", ({"input": new_hist[i].replace('Human: ', '')}, {"output": new_hist[i+1].replace('AI: ', '')}))
 
         return hist, prompt_id
     
