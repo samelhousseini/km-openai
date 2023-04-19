@@ -5,6 +5,8 @@ from flask_socketio import SocketIO
 from flask_socketio import send, emit
 import urllib
 
+
+
 from utils import bot_helpers
 from utils import langchain_helpers
 from utils import langchain_agent
@@ -32,12 +34,25 @@ DAVINCI_003_COMPLETIONS_MODEL = os.environ['DAVINCI_003_COMPLETIONS_MODEL']
 NUM_TOP_MATCHES = int(os.environ['NUM_TOP_MATCHES'])
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins='*') 
 app.config['SECRET_KEY'] = 'secret!'
 
 
-# source venv/bin/activate
+
+##############################################################
+##############################################################
+# IMPORTANT
+# To run this web server, use the following command:
 # flask --app app.py --debug run
+# To be able to run this, activate the venv first using the
+# following command on Windows:
+# .\.venv\Scripts\activate
+# Then install the required packages using the following command:
+# pip install -r requirements.txt
+##############################################################
+##############################################################
+
+
 
 agents_sid = {}
 
@@ -64,7 +79,11 @@ def on_config(agent_type):
 
 @socketio.on('disconnect')
 def on_disconnect():
-    del agents_sid[request.sid]
+    try:
+        del agents_sid[request.sid]
+    except Exception as e:
+        print(f"Client not found: {e}")
+
 
 
 
@@ -152,4 +171,5 @@ def process_kmoai_request(req):
 
 if __name__ == '__main__':
     app.run()
-    socketio.run(app, allow_unsafe_werkzeug=True)   
+    socketio.run(app, allow_unsafe_werkzeug=True)
+    print('socket io start')

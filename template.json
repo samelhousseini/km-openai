@@ -876,7 +876,7 @@
                         } ,
                         {
                             "name": "MAX_SEARCH_TOKENS",
-                            "value": "2000"
+                            "value": "2500"
                         },
                         {
                             "name": "PRE_CONTEXT",

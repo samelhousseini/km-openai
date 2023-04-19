@@ -3,6 +3,11 @@
 
 <br/>
 
+> **Note:**
+> This repo now supports GPT-4
+
+<br/>
+
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsamelhousseini%2Fkm-openai%2Fmain%2Ftemplate.json)
 <br />
 <br />
@@ -67,9 +72,9 @@ The below are the features of this solution:
 
 
 # Search Parameters
-Multiple Search Parameters have been added to control the behavior of the agent. The below values are all `true` **by default**. This can be tested in Postman or the interacting bot:
+Multiple Search Parameters have been added to control the behavior of the agent. The below values are all `false` **by default**. This can be tested in Postman or the interacting bot:
 
-1. `search_method`: this parameter can take 2 values `'os'` and `'zs'`. `'os'` stands for 'one-pass' agent, and is a straight-forward prompt. `'zs'` stands for Zero-shot-ReAct agent, and uses the LangChain agent. The LangChain agent should give better quality of results than the on-pass agent.
+1. `search_method`: this parameter can take 3 values `'os'`, `'ccr'` and `'zs'`. `'os'` corresponding to the 3 available agents. `'os'` stands for 'one-pass' agent, `'ccr'` stands for Concersational-Chat-ReAct agent, `'zs'` stands for Zero-shot-ReAct agent. Both `'ccr'` and `'zs'` use LangChain agents. In terms of performance, `'os'` is fast but with the lowest quality of answers. `'zs'` is the slowest but with the highest quality of anwers, and `'ccr'` is right in the middle in terms of answer quality and latency. For interactive chat bots, `'ccr'` is recommended.
 
 1. `enable_unified_search`: Unified Search searches Redis and Cognitive Search at the same time with parallel calls, and interleaves the results.
 
@@ -83,22 +88,34 @@ Multiple Search Parameters have been added to control the behavior of the agent.
 
 1. `check_intent`: checks the intent of the question. If this is a question that is more 'chit-chatty', like 'hi' or 'how are you?' then answer it immediately without going through the search tools of the knowledge base.
 
+1. `use_calendar`: it is a tool to be added to the LangChain agents to use insert the date and time into the prompt. This is handy if the solution is expecting any questions like "what are the offers tomorrow?"
+
+1. `use_bing`: enables the use of Bing Search in the results. Bing Search will result snippets from the highest matching websites (or only from the supplied restricted list), and those snippets will be inserted in the Completion API prompt.
+
 
 <p align="center">
-<img src="images/search_params.jpg" width="600"/>
+<img src="images/search_params.jpg" width="500"/>
 </p>
 <br />
 
-In general, `zs` will get you better results but is considerably slower than `os` since the LangChain agent might make several calls to the OpenAI APIs with the different tools that it has.
+In general, `zs` will get you better results but is considerably slower than `os` since the LangChain agent might make several calls to the OpenAI APIs with the different tools that it has, and `'ccr'` is right in the middle in terms of answer quality and latency. 
+
+The below is the  Architecture of the bot-serving function, including all options:
+<br />
+<br />
+<p align="center">
+<img src="images/agent-arch.jpg" width="700"/>
+</p>
+<br />
 
 <br />
 <br />
 
 
 
-# Interacting with ChatGPT 
+# Conversation Sessions with GPT-4, ChatGPT, and DaVinci 
 
-To hold a conversation with ChatGPT (the 'gpt-35-turbo' model), then the first communication is sent to the Azure Function as usual in the form of JSON, with the query key:
+To hold a conversation, then the first communication is sent to the Azure Function as usual in the form of JSON, with the query key:
 
 <br/>
 <br />
@@ -121,6 +138,35 @@ If the user doesn't to keep the conversation going, then the application should 
 <br />
 <br />
 
+
+
+
+
+# Streaming Answers and Latency
+
+The repo now comes with its own Flask web server that could be run locally on any laptop on port 5000. The Flask server implements SocketIO and showcases the streaming capabilities of OpenAI. This hugely helps with the **latency problem**. Instead of waiting for 10-15 seconds for the final generated answers, the user can start reading the first few words of the answer after a few seconds, without waiting for the fully generated answer.
+
+To run this web server, use the following command in the root folder of the project: 
+
+`flask --app app.py --debug run`
+
+To be able to run this, activate the venv first using the following command on Windows:
+
+`.\.venv\Scripts\activate`
+
+Then install the required packages using the following command:
+
+`pip install -r requirements.txt`
+
+<br />
+<p align="center">
+<img src="images/stream-client.jpg" width="800"/>
+</p>
+<br/>
+<br/>
+
+<br />
+<br />
 
 # Upcoming Features
 
