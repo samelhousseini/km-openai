@@ -88,7 +88,7 @@ Multiple Search Parameters have been added to control the behavior of the agent.
 
 1. `check_intent`: checks the intent of the question. If this is a question that is more 'chit-chatty', like 'hi' or 'how are you?' then answer it immediately without going through the search tools of the knowledge base.
 
-1. `use_calendar`: it is a tool to be added to the LangChain agents to use insert the date and time into the prompt. This is handy if the solution is expecting any questions like "what are the offers tomorrow?"
+1. `use_calendar`: it is a tool to be added to the LangChain agents to insert the date and time into the prompt. This is handy if the solution is expecting any questions like "what are the offers tomorrow?"
 
 1. `use_bing`: enables the use of Bing Search in the results. Bing Search will result snippets from the highest matching websites (or only from the supplied restricted list), and those snippets will be inserted in the Completion API prompt.
 
