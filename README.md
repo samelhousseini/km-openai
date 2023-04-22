@@ -74,7 +74,7 @@ The below are the features of this solution:
 # Search Parameters
 Multiple Search Parameters have been added to control the behavior of the agent. The below values are all `false` **by default**. This can be tested in Postman or the interacting bot:
 
-1. `search_method`: this parameter can take 3 values `'os'`, `'ccr'` and `'zs'`. `'os'` corresponding to the 3 available agents. `'os'` stands for 'one-pass' agent, `'ccr'` stands for Concersational-Chat-ReAct agent, `'zs'` stands for Zero-shot-ReAct agent. Both `'ccr'` and `'zs'` use LangChain agents. In terms of performance, `'os'` is fast but with the lowest quality of answers. `'zs'` is the slowest but with the highest quality of anwers, and `'ccr'` is right in the middle in terms of answer quality and latency. For interactive chat bots, `'ccr'` is recommended.
+1. `search_method`: this parameter can take 3 values `'os'`, `'ccr'` and `'zs'`. `'os'` corresponding to the 3 available agents. `'os'` stands for 'One-Pass' agent, `'ccr'` stands for Concersational-Chat-ReAct agent, `'zs'` stands for Zero-Shot-ReAct agent. Both `'ccr'` and `'zs'` use LangChain agents. In terms of performance, `'os'` is fast but with the lowest quality of answers. `'zs'` is the slowest but with the highest quality of anwers, and `'ccr'` is right in the middle in terms of answer quality and latency. For interactive chat bots, `'ccr'` is recommended.
 
 1. `enable_unified_search`: Unified Search searches Redis and Cognitive Search at the same time with parallel calls, and interleaves the results.
 
@@ -99,6 +99,29 @@ Multiple Search Parameters have been added to control the behavior of the agent.
 <br />
 
 In general, `zs` will get you better results but is considerably slower than `os` since the LangChain agent might make several calls to the OpenAI APIs with the different tools that it has, and `'ccr'` is right in the middle in terms of answer quality and latency. 
+
+<br />
+<br />
+
+## Comparative Example of the 3 Agents with GPT-4
+
+All 3 agents do well when the queries are simple and / or the information can be retrieved from a single document. However, where the Zero-Shot-ReAct Agent really shines is when the query is complicated with multiple parts to it, and the information is spread over multiple documents in the Knowledge Base. 
+
+The below is a simple illustrative example. The knowledge base consists of the sample documents around "Margie's Travel" agency and thus include 6 brochures about fictional hotels. The Wikipedia page about Sherlock Holmes has also been downloaded and ingested. To run this test, we came up with a question of 2 parts that are not directly related: `"did Sherlock Holmes live in the same country as where the Volcano hotel is located?"`. From the question, the first part asks about Sherlock Holmes, the second asks about the Volcano Hotel, and the LLM needs to deduce whether they have both lived or are located in the same country. 
+
+Here are the results:
+
+1. The One-Pass Agent searched Redis (or Cognitive Search) for the full question, and got all the top ranking results about Sherlock Holmes. The final answer is `"I'm sorry, I could not find any information about the Volcano Hotel in the provided context."`
+
+1. The Conversational-Chat-ReAct Agent gave a mixed bag of results. Because it has not been explicitly instructed in the prompt how many iterations it can do, sometimes it did one search in Redis (or Cognitive Search), and sometimes two searches. The first search is almost always about Sherlock Holmes, with the search string `"Sherlock Holmes country"`. If it did go for a second search iteration, then it looks for `"Volcano hotel country"`. The final answer is either `"Sherlock Holmes is a fictional character from the United Kingdom. However, I do not have information about the location of the Volcano hotel."` or, when it does 2 searches, then it gets `"The Volcano Hotel is located in Las Vegas, United States. Sherlock Holmes lived in London, England . Therefore, Sherlock Holmes did not live in the same country as the Volcano Hotel."`.
+
+1. The Zero-Shot-ReAct Agent really shines here because it is explicitly told that it can do multiple searches in the context of answering a single query. It first searches Redis (or Cognitive Search) for `"Sherlock Holmes country"`, and then searches again for `"Volcano hotel location"`, and gives the right answer every time: `"Sherlock Holmes lived in London, England, while the Volcano Hotel is located in Las Vegas, United States. They are not in the same country."`.
+
+
+<br />
+<br />
+
+## Architecture
 
 The below is the  Architecture of the bot-serving function, including all options:
 <br />

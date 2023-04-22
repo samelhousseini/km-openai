@@ -203,6 +203,21 @@ def get_model_max_tokens(model):
         return ADA_002_MODEL_MAX_TOKENS
 
 
+def get_encoding_name(model):
+    if model == "text-search-davinci-doc-001":
+        return "p50k_base"
+    elif model == "text-embedding-ada-002":
+        return "cl100k_base"
+    elif model == "gpt-35-turbo": 
+        return "cl100k_base"
+    elif model == "gpt-4-32k":
+        return "cl100k_base"
+    elif model == "gpt-4":
+        return "cl100k_base"               
+    elif model == "text-davinci-003":
+        return "p50k_base"  
+    else:
+        return "gpt2"
 
 
 def get_encoder(model):
@@ -220,6 +235,11 @@ def get_encoder(model):
         return tiktoken.get_encoding("p50k_base")           
     else:
         return tiktoken.get_encoding("gpt2")
+
+
+def get_token_length(text, model = CHOSEN_COMP_MODEL):
+    enc = get_encoder(model)
+    return len(enc.encode(text))
 
 
 

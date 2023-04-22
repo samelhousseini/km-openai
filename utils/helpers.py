@@ -9,14 +9,16 @@ from azure.storage.blob import BlobServiceClient, BlobClient
 from azure.storage.blob import ContainerClient, __version__
 from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 import copy
+from langchain.chat_models import ChatOpenAI
+from langchain.callbacks.base import CallbackManager
 
 from utils import language
 from utils import storage
 from utils import redis_helpers
 from utils import openai_helpers
 from utils.kb_doc import KB_Doc
-
 from utils import cosmos_helpers
+from utils.langchain_helpers import mod_agent
 
 
 OVERLAP_TEXT = int(os.environ["OVERLAP_TEXT"])
@@ -26,7 +28,7 @@ CHOSEN_QUERY_EMB_MODEL   = os.environ['CHOSEN_QUERY_EMB_MODEL']
 CHOSEN_COMP_MODEL   = os.environ['CHOSEN_COMP_MODEL']
 MAX_SEARCH_TOKENS  = int(os.environ.get("MAX_SEARCH_TOKENS"))
 MAX_QUERY_TOKENS = int(os.environ.get("MAX_QUERY_TOKENS"))
-
+MAX_OUTPUT_TOKENS   = int(os.environ["MAX_OUTPUT_TOKENS"])
 
 
 
@@ -287,3 +289,32 @@ def redis_lookup(query: str, filter_param: str):
 
     context = completion_enc.decode(completion_enc.encode(context)[:MAX_SEARCH_TOKENS])
     return context
+
+
+
+import openai
+openai.api_type = "azure"
+openai.api_key = os.environ["OPENAI_API_KEY"]
+openai.api_base = os.environ["OPENAI_RESOURCE_ENDPOINT"]
+
+
+def get_llm(model, temperature=0, max_output_tokens=MAX_OUTPUT_TOKENS, stream=False, callbacks=[]):
+    gen = openai_helpers.get_generation(model)
+
+    if (gen == 3) or (gen == 3.5):
+            openai.api_version = "2022-12-01"    
+            llm = mod_agent.GPT35TurboAzureOpenAI(deployment_name=model, temperature=temperature, 
+                                                    openai_api_key=openai.api_key, max_retries=30, 
+                                                    request_timeout=120, stop=['<|im_end|>'], streaming=stream,
+                                                    callback_manager=CallbackManager(callbacks),
+                                                    max_tokens=max_output_tokens, verbose = True)
+    elif gen == 4:
+        openai.api_version = "2023-03-15-preview"
+        llm = ChatOpenAI(model_name=model, model=model, engine=model, 
+                                temperature=0, openai_api_key=openai.api_key, max_retries=30, streaming=stream,
+                                callback_manager=CallbackManager(callbacks),
+                                request_timeout=120, max_tokens=max_output_tokens, verbose = True)    
+    else:
+        assert False, f"Generation unknown for model {model}"                                
+
+    return llm                                  

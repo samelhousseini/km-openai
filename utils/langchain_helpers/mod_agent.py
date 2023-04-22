@@ -334,7 +334,6 @@ class ZSReAct(ZeroShotAgent, ModAgent):
         return "Thought:"
 
 
-
     @classmethod
     def create_prompt(
         cls,
@@ -390,6 +389,7 @@ class ZSReAct(ZeroShotAgent, ModAgent):
         action = match.group(1).strip()
         action_input = match.group(2)
         return action, action_input.strip(" ").strip('"')
+
 
 
 from langchain.agents.conversational_chat.prompt import (

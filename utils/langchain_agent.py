@@ -139,7 +139,7 @@ class KMOAI_Agent():
         if (gen == 3) or (gen == 3.5):
             openai.api_version = "2022-12-01"    
             self.llm = GPT35TurboAzureOpenAI(deployment_name=CHOSEN_COMP_MODEL, temperature=0, openai_api_key=openai.api_key, max_retries=10, 
-                                             request_timeout=30, stop=['<|im_end|>'], streaming=self.stream,
+                                             request_timeout=120, stop=['<|im_end|>'], streaming=self.stream,
                                              callback_manager=CallbackManager(callbacks),
                                              max_tokens=MAX_OUTPUT_TOKENS, verbose = True)
         elif gen == 4:
@@ -147,7 +147,7 @@ class KMOAI_Agent():
             self.llm = ChatOpenAI(model_name=CHOSEN_COMP_MODEL, model=CHOSEN_COMP_MODEL, engine=CHOSEN_COMP_MODEL, 
                                   temperature=0, openai_api_key=openai.api_key, max_retries=10, streaming=self.stream,
                                   callback_manager=CallbackManager(callbacks),
-                                  request_timeout=30, max_tokens=MAX_OUTPUT_TOKENS, verbose = True)
+                                  request_timeout=120, max_tokens=MAX_OUTPUT_TOKENS, verbose = True)
         else:
             assert False, f"Generation unknown for model {CHOSEN_COMP_MODEL}"
 
