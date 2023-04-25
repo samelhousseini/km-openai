@@ -188,9 +188,12 @@ class ModAgent(Agent):
             
             th_tokens = len(completion_enc.encode(th_str))
             
-            allowance = max_comp_model_tokens - th_tokens - empty_prompt_length - MAX_OUTPUT_TOKENS - self.history_length - self.query_length - self.pre_context_length - len_steps * 30
+            allowance = max_comp_model_tokens - 2 * th_tokens - empty_prompt_length - MAX_OUTPUT_TOKENS - self.history_length - self.query_length - self.pre_context_length - len_steps * 35
             if allowance < 0: allowance = 0
             allowance_per_step = allowance // len_steps
+
+            if allowance_per_step > MAX_SEARCH_TOKENS:
+                allowance_per_step = MAX_SEARCH_TOKENS
 
             for action, observation in intermediate_steps:
                 obs_str += observation
@@ -212,12 +215,12 @@ class ModAgent(Agent):
                         len_obs[i] = allowance_per_step + avail_allowance 
 
         else:
-            allowance = max_comp_model_tokens - empty_prompt_length - MAX_OUTPUT_TOKENS - self.query_length - self.history_length - self.pre_context_length
+            allowance = max_comp_model_tokens - th_tokens - empty_prompt_length - MAX_OUTPUT_TOKENS - self.query_length - self.history_length - self.pre_context_length - len_steps * 35
             if allowance < 0: allowance = 0
             len_obs.append(allowance)
 
 
-        # print(max_comp_model_tokens, th_tokens, empty_prompt_length, MAX_OUTPUT_TOKENS, self.history_length, self.query_length, self.pre_context_length)
+        print(max_comp_model_tokens, th_tokens, empty_prompt_length, MAX_OUTPUT_TOKENS, self.history_length, self.query_length, self.pre_context_length)
 
         thoughts = ""
         for action, observation in intermediate_steps:
@@ -245,7 +248,7 @@ class ModAgent(Agent):
             thoughts += f"\n{self.observation_prefix}{completion_enc.decode(completion_enc.encode(observation)[:len_obs[i]])}\n{self.llm_prefix}" 
             i += 1
 
-        # print("\nNUM STEPS:",str(len_steps), "TH_TOKENS", th_tokens, "ALLOWANCE", allowance, "USED", len(completion_enc.encode(thoughts)), 'LEN_OBS', len_obs, "\n")            
+        print("\nNUM STEPS:",str(len_steps), "TH_TOKENS", th_tokens, "ALLOWANCE", allowance, "USED", len(completion_enc.encode(thoughts)), 'LEN_OBS', len_obs, "\n")            
         return thoughts
 
 

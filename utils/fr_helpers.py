@@ -8,6 +8,15 @@ import numpy as np
 from azure.core.credentials import AzureKeyCredential
 from azure.ai.formrecognizer import DocumentAnalysisClient
 
+
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+)
+
+
+
 from utils import storage
 
 COG_SERV_ENDPOINT = os.environ['COG_SERV_ENDPOINT']
@@ -78,6 +87,8 @@ def fr_analyze_doc(url):
     return contents
 
 
+
+@retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(10))
 def fr_analyze_local_doc_with_dfs(path, verbose = True):
 
     with open(path, "rb") as f:

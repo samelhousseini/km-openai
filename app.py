@@ -15,8 +15,8 @@ from utils import redis_helpers
 
  
 global_params_dict = {
-    'enable_unified_search': True,
-    'enable_redis_search': False,
+    'enable_unified_search': False,
+    'enable_redis_search': True,
     'enable_cognitive_search': False,
     'evaluate_step': False,
     'check_adequacy': False,
@@ -73,8 +73,8 @@ def on_connect():
 def on_config(agent_type):
     print(f"config {request.sid} - {agent_type}")
     connection = {'socketio': socketio, 'connection_id':request.sid}
-    ccr_agent = langchain_agent.KMOAI_Agent(agent_name = agent_type, params_dict=global_params_dict,  stream = True, connection=connection)
-    agents_sid[request.sid] = ccr_agent
+    agent = langchain_agent.KMOAI_Agent(agent_name = agent_type, params_dict=global_params_dict,  stream = True, connection=connection)
+    agents_sid[request.sid] = agent
 
 
 @socketio.on('disconnect')

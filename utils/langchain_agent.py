@@ -63,6 +63,8 @@ MAX_QUERY_TOKENS = int(os.environ.get("MAX_QUERY_TOKENS"))
 MAX_HISTORY_TOKENS = int(os.environ.get("MAX_HISTORY_TOKENS"))
 USE_BING = os.environ.get("USE_BING")
 CONVERSATION_TTL_SECS = int(os.environ.get("CONVERSATION_TTL_SECS"))
+MAX_SEARCH_TOKENS  = int(os.environ.get("MAX_SEARCH_TOKENS"))
+
 
 import openai
 
@@ -329,7 +331,7 @@ class KMOAI_Agent():
 
     def unified_search(self, query):
 
-        response = redis_helpers.redis_get(self.redis_conn, self.intent_output, 'response', verbose = self.verbose)
+        response = redis_helpers.redis_get(self.redis_conn, query, 'response', verbose = self.verbose)
 
         if response is None:
             list_f = ['redis_search', 'cog_lookup', 'cog_search']
@@ -356,6 +358,11 @@ class KMOAI_Agent():
                             final_context.append(results[j][i])
 
             response = '\n\n'.join(final_context)   
+
+            
+            completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
+            response = completion_enc.decode(completion_enc.encode(response)[:MAX_SEARCH_TOKENS])
+
             response = self.evaluate(query, response)
 
             redis_helpers.redis_set(self.redis_conn, self.intent_output, 'response', response, CONVERSATION_TTL_SECS, verbose = self.verbose)

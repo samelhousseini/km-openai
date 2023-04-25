@@ -25,13 +25,37 @@ from utils import helpers
 from utils import fr_helpers
 
 
-
 MAX_OUTPUT_TOKENS   = int(os.environ["MAX_OUTPUT_TOKENS"])
 CHOSEN_COMP_MODEL   = os.environ['CHOSEN_COMP_MODEL']
 
 
 
-prompt_template = """Write an elaborate summary of 3 paragraphs of the following:
+## Use
+# """
+# from utils import langchain_agent
+# from utils import openai_helpers
+# from utils import fr_helpers
+# from utils import summarization
+# folder = './docs_to_summarize'
+# ref_summ_df = summarization.summarize_folder(folder, mode='refine', verbose=False)
+# mp_summ_df  = summarization.summarize_folder(folder, mode='map_reduce', verbose=False)
+# """
+
+
+
+
+
+mapreduce_prompt_template = """The maximum output is about 500 to 750 tokens, so make sure to take advantage of this to the maximum.\n
+Write an elaborate summary of 3 paragraphs of the following:
+
+
+{text}
+
+
+SUMMARY:"""
+
+
+refine_prompt_template = """Write an elaborate summary of 3 paragraphs of the following:
 
 {text}
 
@@ -39,7 +63,7 @@ prompt_template = """Write an elaborate summary of 3 paragraphs of the following
 
 refine_template = (
     "Your job is to produce a final summary of 3 paragraphs that is elaborate and rich in details.\n" 
-    "The maximum output is 750 tokens, so make sure to take advantage of this to the maximum.\n"
+    "The maximum output is about 500 to 750 tokens, so make sure to take advantage of this to the maximum.\n"
     "We have provided an existing summary up to a certain point: {existing_answer}\n"
     "We have the opportunity to refine the existing summary."
     "(only if needed) with some more context below.\n"
@@ -52,13 +76,19 @@ refine_template = (
 
 
 
-def chunk_doc(all_text, model=CHOSEN_COMP_MODEL, max_output_tokens=MAX_OUTPUT_TOKENS, chunk_overlap=500):
+def chunk_doc(all_text, mode='refine', model=CHOSEN_COMP_MODEL, max_output_tokens=MAX_OUTPUT_TOKENS, chunk_overlap=500):
 
     enc_name = openai_helpers.get_encoding_name(model)
     enc = openai_helpers.get_encoder(model)
 
     max_tokens = openai_helpers.get_model_max_tokens(model)
-    max_tokens = max_tokens - len(enc.encode(prompt_template)) - len(enc.encode(refine_template)) - 2*MAX_OUTPUT_TOKENS - chunk_overlap
+
+    if mode == 'refine':
+        max_tokens = max_tokens - len(enc.encode(refine_prompt_template)) - len(enc.encode(refine_template)) - 2*MAX_OUTPUT_TOKENS - chunk_overlap
+    elif mode == 'map_reduce':
+        max_tokens = max_tokens - len(enc.encode(mapreduce_prompt_template)) - MAX_OUTPUT_TOKENS - chunk_overlap
+    else:
+        raise Exception('Invalid mode')
 
     text_splitter = TokenTextSplitter(encoding_name=enc_name, chunk_size = max_tokens, chunk_overlap=chunk_overlap)
     
@@ -84,7 +114,7 @@ def clean_up_text(text):
 
 def get_refined_summarization(docs, model=CHOSEN_COMP_MODEL, max_output_tokens=MAX_OUTPUT_TOKENS, stream=False, callbacks=[]):
 
-    PROMPT = PromptTemplate(template=prompt_template, input_variables=["text"])
+    PROMPT = PromptTemplate(template=refine_prompt_template, input_variables=["text"])
     refine_prompt = PromptTemplate(input_variables=["existing_answer", "text"],template=refine_template)
 
     llm = helpers.get_llm(model, temperature=0, max_output_tokens=max_output_tokens, stream=stream, callbacks=callbacks)
@@ -93,6 +123,20 @@ def get_refined_summarization(docs, model=CHOSEN_COMP_MODEL, max_output_tokens=M
     summ = chain({"input_documents": docs}, return_only_outputs=True)
     
     return summ
+
+
+def get_mapreduced_summarization(docs, model=CHOSEN_COMP_MODEL, max_output_tokens=MAX_OUTPUT_TOKENS, stream=False, callbacks=[]):
+
+    PROMPT = PromptTemplate(template=mapreduce_prompt_template, input_variables=["text"])
+
+    llm = helpers.get_llm(model, temperature=0, max_output_tokens=max_output_tokens, stream=stream, callbacks=callbacks)
+
+    chain = load_summarize_chain(llm, chain_type="map_reduce", map_prompt=PROMPT, combine_prompt=PROMPT, return_intermediate_steps=True)
+    summ = chain({"input_documents": docs}, return_only_outputs=True)
+    
+    return summ
+
+
 
 
 def read_document(path, verbose = False):
@@ -120,12 +164,14 @@ def read_document(path, verbose = False):
     return all_text
 
 
-def summarize_document(path, verbose = False):
+def summarize_document(path, mode='refine', verbose = False):
+
+    print(f"##########################\nStarting Processing {path} ...")
     start = time.time()
     text = read_document(path, verbose=verbose)
     if text is None: return None
 
-    summ = summarize_text(text, verbose=verbose)
+    summ = summarize_text(text, mode=mode, verbose=verbose)
     end = time.time()
 
     summary = {
@@ -135,22 +181,29 @@ def summarize_document(path, verbose = False):
         'proc_time': end-start
     }
 
-    print(f"Done Processing {path} in {end-start} seconds")
+    print(f"Done Processing {path} in {end-start} seconds\n##########################\n")
     return summary 
 
 
-def summarize_text(text, verbose = False):    
-    docs = chunk_doc(text)
-    summ = get_refined_summarization(docs)
+def summarize_text(text, mode='refine', verbose = False):    
+    docs = chunk_doc(text, mode=mode)
+
+    if mode == 'refine':
+        summ = get_refined_summarization(docs)
+    elif mode == 'map_reduce':
+        summ = get_mapreduced_summarization(docs)
+    else:
+        raise Exception("Invalid mode")
+
     return summ
 
 
 
-def summarize_folder(folder, save_to_csv=True, save_to_pkl=True, verbose = False):
+def summarize_folder(folder, mode='refine', save_to_csv=True, save_to_pkl=True, verbose = False):
     files = os.listdir(folder)
     print(f"Files in folder {len(files)}")
-    pkl_file = os.path.join(folder, 'summaries.pkl')
-    csv_file = os.path.join(folder, 'summaries.csv')
+    pkl_file = os.path.join(folder, f'summaries_{mode}.pkl')
+    csv_file = os.path.join(folder, f'summaries_{mode}.csv')
 
     if os.path.exists(csv_file):
         summ_df = pd.read_csv(csv_file)
@@ -163,8 +216,8 @@ def summarize_folder(folder, save_to_csv=True, save_to_pkl=True, verbose = False
     for f in files:        
         path = os.path.join(folder, f)
         if f in processed_files: continue
-        print(f"Starting Processing {path} ...")
-        summary = summarize_document(path, verbose=verbose)
+        
+        summary = summarize_document(path, mode=mode, verbose=verbose)
         if summary is None: continue
         summ_df = pd.concat([summ_df, pd.DataFrame([summary])], ignore_index=True)
 
