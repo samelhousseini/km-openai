@@ -70,8 +70,11 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
     enc = openai_helpers.get_encoder(embedding_model)
     tokens = enc.encode(doc_text)
     lang = language.detect_content_language(doc_text[:500])
-
-    json_object['doc_url'] = storage.create_sas(json_object.get('doc_url', "https://microsoft.com"))
+    is_doc = json_object.get('doc_url', False) # doc_url empty for scraped webpages. web_url used instead.
+    if is_doc:
+        json_object['doc_url'] = storage.create_sas(json_object.get('doc_url', "https://microsoft.com"))
+    else:
+        json_object['doc_url'] = ''
     #  json_object['filename'] = filename
     json_object['access'] = access
     json_object['orig_lang'] = lang
