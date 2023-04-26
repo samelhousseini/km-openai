@@ -3,6 +3,11 @@
 
 <br/>
 
+> **Note:**
+> This repo now supports GPT-4
+
+<br/>
+
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsamelhousseini%2Fkm-openai%2Fmain%2Ftemplate.json)
 <br />
 <br />
@@ -36,7 +41,7 @@ The below are the features of this solution:
  
 1. Using both Redis and Cognitive Search (Semantic Search) as tools for the LangChain Agent. Also, added Bing as a third tool, which can be enabled or disabled.
 
-1. Added filtering support in the Bot HTTP request API. This would be useful for things like multi-tenant demos, and filtering on docuemnts with an original source language. Use `"filter":"field:value"` in the HTTP request e.g. `"filter":"orig_lang:en"`.
+1. Added filtering support in the Bot HTTP request API. This would be useful for things like multi-tenant demos, and filtering on docuemnts with an original source language. Use `"filter":"@field:value"` in the HTTP request e.g. `"filter":"@orig_lang:en"`.
 
 1. Automatic segmenting / chunking of documents with overlap based on the specified number(s) of tokens for each OpenAI model to generate embeddings.
  
@@ -64,9 +69,76 @@ The below are the features of this solution:
 <br />
 
 
-# Interacting with ChatGPT 
 
-To hold a conversation with ChatGPT (the 'gpt-35-turbo' model), then the first communication is sent to the Azure Function as usual in the form of JSON, with the query key:
+
+# Search Parameters
+Multiple Search Parameters have been added to control the behavior of the agent. The below values are all `false` **by default**. This can be tested in Postman or the interacting bot:
+
+1. `search_method`: this parameter can take 3 values `'os'`, `'ccr'` and `'zs'`. `'os'` corresponding to the 3 available agents. `'os'` stands for 'One-Pass' agent, `'ccr'` stands for Concersational-Chat-ReAct agent, `'zs'` stands for Zero-Shot-ReAct agent. Both `'ccr'` and `'zs'` use LangChain agents. In terms of performance, `'os'` is fast but with the lowest quality of answers. `'zs'` is the slowest but with the highest quality of anwers, and `'ccr'` is right in the middle in terms of answer quality and latency. For interactive chat bots, `'ccr'` is recommended.
+
+1. `enable_unified_search`: Unified Search searches Redis and Cognitive Search at the same time with parallel calls, and interleaves the results.
+
+1. `enable_redis_search`: enables search with embeddings in Redis
+
+1. `enable_unified_search`: enables semantic search and lookup in Cognitive Search
+
+1. `evaluate_step`: search text results sometimes have the answer to the question but the results might be so long that OpenAI completion call might miss that information (too much noise). `evaluate_step` was created to address this problem. This is a separate call to the OpenAI Completion API to identify the facts that are relevant only to the question. 
+
+1. `check_adequacy`: checks the adequacy of the answer and if the answer does look ok (sometimes a problem with LangChain agents), this step will retry for an answer, up to 3 retries.
+
+1. `check_intent`: checks the intent of the question. If this is a question that is more 'chit-chatty', like 'hi' or 'how are you?' then answer it immediately without going through the search tools of the knowledge base.
+
+1. `use_calendar`: it is a tool to be added to the LangChain agents to insert the date and time into the prompt. This is handy if the solution is expecting any questions like "what are the offers tomorrow?"
+
+1. `use_bing`: enables the use of Bing Search in the results. Bing Search will result snippets from the highest matching websites (or only from the supplied restricted list), and those snippets will be inserted in the Completion API prompt.
+
+
+<p align="center">
+<img src="images/search_params.jpg" width="500"/>
+</p>
+<br />
+
+In general, `zs` will get you better results but is considerably slower than `os` since the LangChain agent might make several calls to the OpenAI APIs with the different tools that it has, and `'ccr'` is right in the middle in terms of answer quality and latency. 
+
+<br />
+<br />
+
+## Comparative Example of the 3 Agents with GPT-4
+
+All 3 agents do well when the queries are simple and / or the information can be retrieved from a single document. However, where the Zero-Shot-ReAct Agent really shines is when the query is complicated with multiple parts to it, and the information is spread over multiple documents in the Knowledge Base. 
+
+The below is a simple illustrative example. The knowledge base consists of the sample documents around "Margie's Travel" agency and thus include 6 brochures about fictional hotels. The Wikipedia page about Sherlock Holmes has also been downloaded and ingested. To run this test, we came up with a question of 2 parts that are not directly related: `"did Sherlock Holmes live in the same country as where the Volcano hotel is located?"`. From the question, the first part asks about Sherlock Holmes, the second asks about the Volcano Hotel, and the LLM needs to deduce whether they have both lived or are located in the same country. 
+
+Here are the results:
+
+1. The One-Pass Agent searched Redis (or Cognitive Search) for the full question, and got all the top ranking results about Sherlock Holmes. The final answer is `"I'm sorry, I could not find any information about the Volcano Hotel in the provided context."`
+
+1. The Conversational-Chat-ReAct Agent gave a mixed bag of results. Because it has not been explicitly instructed in the prompt how many iterations it can do, sometimes it did one search in Redis (or Cognitive Search), and sometimes two searches. The first search is almost always about Sherlock Holmes, with the search string `"Sherlock Holmes country"`. If it did go for a second search iteration, then it looks for `"Volcano hotel country"`. The final answer is either `"Sherlock Holmes is a fictional character from the United Kingdom. However, I do not have information about the location of the Volcano hotel."` or, when it does 2 searches, then it gets `"The Volcano Hotel is located in Las Vegas, United States. Sherlock Holmes lived in London, England . Therefore, Sherlock Holmes did not live in the same country as the Volcano Hotel."`.
+
+1. The Zero-Shot-ReAct Agent really shines here because it is explicitly told that it can do multiple searches in the context of answering a single query. It first searches Redis (or Cognitive Search) for `"Sherlock Holmes country"`, and then searches again for `"Volcano hotel location"`, and gives the right answer every time: `"Sherlock Holmes lived in London, England, while the Volcano Hotel is located in Las Vegas, United States. They are not in the same country."`.
+
+
+<br />
+<br />
+
+## Architecture
+
+The below is the  Architecture of the bot-serving function, including all options:
+<br />
+<br />
+<p align="center">
+<img src="images/agent-arch.jpg" width="700"/>
+</p>
+<br />
+
+<br />
+<br />
+
+
+
+# Conversation Sessions with GPT-4, ChatGPT, and DaVinci 
+
+To hold a conversation, then the first communication is sent to the Azure Function as usual in the form of JSON, with the query key:
 
 <br/>
 <br />
@@ -89,6 +161,35 @@ If the user doesn't to keep the conversation going, then the application should 
 <br />
 <br />
 
+
+
+
+
+# Streaming Answers and Latency
+
+The repo now comes with its own Flask web server that could be run locally on any laptop on port 5000. The Flask server implements SocketIO and showcases the streaming capabilities of OpenAI. This hugely helps with the **latency problem**. Instead of waiting for 10-15 seconds for the final generated answers, the user can start reading the first few words of the answer after a few seconds, without waiting for the fully generated answer.
+
+To run this web server, use the following command in the root folder of the project: 
+
+`flask --app app.py --debug run`
+
+To be able to run this, activate the venv first using the following command on Windows:
+
+`.\.venv\Scripts\activate`
+
+Then install the required packages using the following command:
+
+`pip install -r requirements.txt`
+
+<br />
+<p align="center">
+<img src="images/stream-client.jpg" width="800"/>
+</p>
+<br/>
+<br/>
+
+<br />
+<br />
 
 # Upcoming Features
 

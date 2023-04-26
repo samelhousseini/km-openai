@@ -3,15 +3,18 @@ from langchain.prompts import PromptTemplate, BasePromptTemplate
 
 mod_react_prefix = """<|im_start|>Answer the following questions as best you can. You have access to only the following tools:"""
 
+# If after using 2 tools and the assistant has a partial final answer, then the assistant must formulate a final answer, and then add to it "I'm not sure if this is the answer you are looking for, but here is what I found." and then the assistant MUST stop searching. 
+# If there are lots of facts or information options, the assistant MUST try its best to summarize the information in the final answer, and must stop searching.
+
+
 mod_react_format_instructions = """
 The assistant must start by using the Unified Search tool if available in the list of tools. The assistant can use ONLY the listed tools. The assistant MUST NOT make up tool names or try to use other tools. The assistant can use the Calendar tool ONLY if the user asks about a time or date, or if the question requires deriving a time and date. If the question does not ask about a time or a date, then the assistant MUST NOT use the Calendar tool. If the question does not require deriving a time or date, then the assistant MUST NOT use the Calendar tool.
 After each time you use a tool, the assistant shall inspect the tool results in the Observation one by one very closely and ponder carefully whether the results have enough information to get a final answer or not BEFORE proceeding to try another tool again with a different action input. 
-If the assistant thinks it has all the information needed to forumulate an answer, the assistant MUST stop searching, and proceed to return a clear and elaborated final answer to the user. If the assistant has a final answer, then the assistant NEEDS to stop searching. 
-If the assistant doesn't find an answer, the assistant must continue searching with different action inputs for a total of 3 iterations. If after the first iteration, the assistant has all the information needed to formulate an answer, the assistant needs to STOP searching and return a final answer to the user. If the assistant decides to continue searching, then the assistant MUST change the Action Input with every tool. If after using 3 tools the assistant still doesn't have a final answer, the assistant must say "Sorry, the answer does not appear to be in the knowledge base" and the assistant MUST stop searching. If after using 3 tools and the assistant has a partial final answer, then the assistant must formulate a final answer, and then add to it "I'm not sure if this is the answer you are looking for, but here is what I found." and then the assistant MUST stop searching. 
+If the assistant thinks it received sufficient information from the Observation to forumulate a final answer, the assistant MUST stop searching, and proceed to return a clear and elaborated final answer to the user. If the assistant has a final answer, then the assistant MUST stop searching. 
+If the assistant does not have the information needed to formulate an answer to the full query, the assistant may continue searching with different action inputs for a maximum total of 3 iterations. If after the first iteration, the assistant has enough information needed to formulate an answer to all parts of the query, the assistant MUST STOP searching and return a final answer to the user. If the assistant decides to continue searching, then the assistant MUST change the Action Input with every tool. If after 3 iterations the assistant still doesn't have a final answer, the assistant must say "Sorry, the answer does not appear to be in the knowledge base" and the assistant MUST stop searching. Conduct multiple search iterations if needed.
 Observations have sources, the assistant MUST include the source name in the final answer. If there are multiple sources, the assistant MUST cite each one in their own square brackets. For example, the assistant must use \"[folder3/info343][http://wikipedia.com]\" and not \"[folder3/info343,http://wikipedia.com]\". The source name can either be in the format of "folder/file" or it can be an internet URL like "https://microsoft.com".
 THE ASSISTANT MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FROM THE USER'S INPUT, INITIAL CONTEXT OR FROM PREVIOUS CONVERSATION, THE ASSISTANT MUST NOT ANSWER FROM MEMORY.
 The assistant MUST NOT use the same Action Input more than once. 
-If there are lots of facts or information options, the assistant MUST try its best to summarize the information in the final answer, and must stop searching.
 If the Conversation History or Initial Context are not related to the question, then the assistant MUST ignore them.
 ALWAYS remember that the assistant MUST synthesize a Final Answer out of all the information collected for the user's benefit. If there are several pieces of information, the assistant can choose to answer in bullet point format.
 The assistant MUST Be elaborate, detailed and specific when giving a final answer, with facts that are RELEVANT ONLY to the question.
@@ -36,9 +39,6 @@ YOU MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FROM THE INI
 """
 
 mod_react_suffix = """Begin!
-
-Initial Context:{pre_context}
-
 Conversation History: {history}
 
 Question: {input}
@@ -47,6 +47,7 @@ Question: {input}
 
 Thought:{agent_scratchpad}"""
 
+# Initial Context:{pre_context}
 
 
 
@@ -56,7 +57,7 @@ The assistant is a super helpful assistant that plays the role of detective and 
 <|im_end|>
 <|im_start|>user 
 
-Instruction: Identify in the above facts or information that can help in answering the following question: "{question}" and list them in bullet point format. Be elaborate, detailed and specific when identifying facts or information. Do NOT be concise so as not to miss critical information.
+Instruction: Identify in the above facts or information that can help in answering the following question: "##{history}\nHuman: {question}##" and list them in bullet point format. Be elaborate, detailed and specific when identifying facts or information. Do NOT be concise so as not to miss critical information.
 YOU MUST STRICTLY USE THE CONTEXT TO IDENTIFY FACTS OR INFORMATION, DO NOT ANSWER FROM MEMORY.
 Facts have sources, you MUST include the source name in the EACH bullet point at the beginning before any text. If there are multiple sources, cite each one in their own square brackets. For example, use \"[folder3/info343][http://wikipedia.com]\" and not \"[folder3/info343,http://wikipedia.com]\". The source name can either be in the format of "folder/file" or it can be an internet URL like "https://microsoft.com".
 

@@ -1,6 +1,6 @@
 apiVersion: '2019-12-01'
 location: westeurope
-name: redis-with-file-share
+name: redis-with-file-share-0001
 properties:
   containers:
   - name: redisearch

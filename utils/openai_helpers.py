@@ -12,13 +12,27 @@ from tenacity import (
 )
 
 
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+    AIMessagePromptTemplate
+)
+
+
+from langchain.schema import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage
+)
+
+
 
 openai.api_type = "azure"
 openai.api_key = os.environ["OPENAI_API_KEY"]
 openai.api_base = os.environ["OPENAI_RESOURCE_ENDPOINT"]
 openai.api_version = "2022-12-01"
-
-
 
 
 MAX_QUERY_TOKENS             = int(os.environ["MAX_QUERY_TOKENS"])
@@ -43,6 +57,23 @@ TEMPERATURE = 0
 
 GPT4_COMPLETIONS_MODEL_MAX_TOKENS = 8192
 GPT4_32K_COMPLETIONS_MODEL_MAX_TOKENS = 32768
+
+
+system_start_prompt = "<|im_start|>system "
+user_start_prompt = "<|im_start|>user "
+assistant_start_prompt = "<|im_start|>assistant "
+end_prompt = "<|im_end|> "
+
+
+system_start_prompt="""
+<|im_end|>
+<|im_start|>user
+"""
+
+append_tags = """
+<|im_end|>
+<|im_start|>assistant
+"""
 
 
 
@@ -121,8 +152,36 @@ def get_summ_prompt(text):
 
     return prompt
 
-	
 
+def get_generation(model):
+    if model == "text-davinci-003":
+        return 3
+    elif model == "gpt-35-turbo":
+        return 3.5
+    elif model == "gpt-4-32k":
+        return 4
+    elif model == "gpt-4":
+        return 4
+    else:
+        assert False, f"Generation unknown for model {model}"
+
+
+
+def convert_messages_to_roles(messages):
+    roles = []
+    for m in messages:
+        if isinstance(m, HumanMessage):
+            roles.append({'role':'user', 'content': m.content})
+        elif isinstance(m, AIMessage):
+            roles.append({'role':'assistant', 'content': m.content})
+        elif isinstance(m, SystemMessage):
+            roles.append({'role':'system', 'content': m.content})
+        elif isinstance(m, Messages):
+            roles.append({'role':'user', 'content': m.content})
+        else:
+            assert False, f"Unknown message type {type(m)}"
+
+    return roles
 
 
 def get_model_max_tokens(model):
@@ -144,6 +203,21 @@ def get_model_max_tokens(model):
         return ADA_002_MODEL_MAX_TOKENS
 
 
+def get_encoding_name(model):
+    if model == "text-search-davinci-doc-001":
+        return "p50k_base"
+    elif model == "text-embedding-ada-002":
+        return "cl100k_base"
+    elif model == "gpt-35-turbo": 
+        return "cl100k_base"
+    elif model == "gpt-4-32k":
+        return "cl100k_base"
+    elif model == "gpt-4":
+        return "cl100k_base"               
+    elif model == "text-davinci-003":
+        return "p50k_base"  
+    else:
+        return "gpt2"
 
 
 def get_encoder(model):
@@ -151,14 +225,21 @@ def get_encoder(model):
         return tiktoken.get_encoding("p50k_base")
     elif model == "text-embedding-ada-002":
         return tiktoken.get_encoding("cl100k_base")
-    elif model == "gpt-3.5-turbo": 
+    elif model == "gpt-35-turbo": 
         return tiktoken.get_encoding("cl100k_base")
     elif model == "gpt-4-32k":
         return tiktoken.get_encoding("cl100k_base")
     elif model == "gpt-4":
         return tiktoken.get_encoding("cl100k_base")                
+    elif model == "text-davinci-003":
+        return tiktoken.get_encoding("p50k_base")           
     else:
         return tiktoken.get_encoding("gpt2")
+
+
+def get_token_length(text, model = CHOSEN_COMP_MODEL):
+    enc = get_encoder(model)
+    return len(enc.encode(text))
 
 
 
@@ -176,20 +257,46 @@ def openai_summarize(text, completion_model, max_output_tokens = MAX_OUTPUT_TOKE
 
 
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(7))
-def contact_openai(prompt, completion_model, max_output_tokens):
-    print("\n########################### Calling OAI Completion API - start call")
+def contact_openai(prompt, completion_model = CHOSEN_COMP_MODEL, max_output_tokens = MAX_OUTPUT_TOKENS, stream = False, verbose = False):
+    if verbose: print("\n########################### Calling OAI Completion API - start call")
+
     try:
         b = time.time()
-        resp = openai.Completion.create(
-                        prompt=prompt,
-                        temperature=TEMPERATURE,
-                        max_tokens=max_output_tokens,
-                        model=completion_model,
-                        deployment_id=completion_deployment_id
-                    )["choices"][0]["text"].strip(" \n")
-        a = time.time()
-        print(f"OpenAI response time: {a-b}")
-        return resp
+
+        if (completion_model == 'gpt-4') or (completion_model == 'gpt-4-32k'):
+            openai.api_version = "2023-03-15-preview"
+
+            if not isinstance(prompt, list):
+                prompt = [{'role':'user', 'content': prompt}]
+
+            resp = openai.ChatCompletion.create(
+                    messages=prompt,
+                    temperature=TEMPERATURE,
+                    max_tokens=max_output_tokens,
+                    engine=completion_model,
+                    stream = stream
+                )
+            a = time.time()
+            if verbose: print(f"Using GPT-4 - Chat Completion - with stream {stream} - OpenAI response time: {a-b}")   
+            if stream: return resp
+            else: return resp["choices"][0]["message"]['content'].strip(" \n")
+
+        else:
+            openai.api_version = "2022-12-01"
+            resp = openai.Completion.create(
+                            prompt=prompt,
+                            temperature=TEMPERATURE,
+                            max_tokens=max_output_tokens,
+                            model=completion_model,
+                            deployment_id=completion_deployment_id,
+                            stream = stream
+                        )
+
+            a = time.time()
+            if verbose: print(f"Using GPT-3 - Chat Completion - with stream {stream} - OpenAI response time: {a-b}")                         
+            if stream: return resp
+            else: return resp["choices"][0]["text"].strip(" \n")
+
     except Exception as e:
         # logging.warning(f"Error in contact_openai: {e}")
         print(e)

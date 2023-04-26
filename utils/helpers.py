@@ -9,14 +9,16 @@ from azure.storage.blob import BlobServiceClient, BlobClient
 from azure.storage.blob import ContainerClient, __version__
 from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 import copy
+from langchain.chat_models import ChatOpenAI
+from langchain.callbacks.base import CallbackManager
 
 from utils import language
 from utils import storage
 from utils import redis_helpers
 from utils import openai_helpers
 from utils.kb_doc import KB_Doc
-
 from utils import cosmos_helpers
+from utils.langchain_helpers import mod_agent
 
 
 OVERLAP_TEXT = int(os.environ["OVERLAP_TEXT"])
@@ -26,7 +28,7 @@ CHOSEN_QUERY_EMB_MODEL   = os.environ['CHOSEN_QUERY_EMB_MODEL']
 CHOSEN_COMP_MODEL   = os.environ['CHOSEN_COMP_MODEL']
 MAX_SEARCH_TOKENS  = int(os.environ.get("MAX_SEARCH_TOKENS"))
 MAX_QUERY_TOKENS = int(os.environ.get("MAX_QUERY_TOKENS"))
-
+MAX_OUTPUT_TOKENS   = int(os.environ["MAX_OUTPUT_TOKENS"])
 
 
 
@@ -78,7 +80,7 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
     json_object['orig_lang'] = lang
 
 
-    print("Comparing lengths", len(tokens) , previous_max_tokens-OVERLAP_TEXT)
+    # print("Comparing lengths", len(tokens) , previous_max_tokens-OVERLAP_TEXT)
 
     if (len(tokens) < previous_max_tokens-OVERLAP_TEXT) and (previous_max_tokens > 0):
         print("Skipping generating embeddings as it is optional for this text")
@@ -222,28 +224,30 @@ def redis_search(query: str, filter_param: str):
     query = embedding_enc.decode(embedding_enc.encode(query)[:MAX_QUERY_TOKENS])
 
     query_embedding = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
-    results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
+    results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=25, filter_param=filter_param)
     
     
     if len(results) == 0:
         logging.warning("No embeddings found in Redis, attempting to load embeddings from Cosmos")
         cosmos_helpers.cosmos_restore_embeddings()
-        results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
+        results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=25, filter_param=filter_param)
 
     context = []
 
     # r = [t['web_url'] + ' ' + t['container'] + ' ' + t['filename'] for t in results]
-    # print(results)
+    # [print(r['vector_score']) for r in results]
 
     for t in results:
+        t['text_en'] = t['text_en'].replace('\n', ' ').replace('\r', ' ') 
+
         try:
             if ('web_url' in t.keys()) and (t['web_url'] is not None) and (t['web_url'] != ''):
-                context.append(f"[{t['web_url']}] " + t['text_en'].replace('\n', ' ') )
+                context.append(f"[{t['web_url']}] " + t['text_en'])
             else:
-                context.append(f"[{t['container']}/{t['filename']}] " + t['text_en'].replace('\n', ' ') )
+                context.append(f"[{t['container']}/{t['filename']}] " + t['text_en'])
         except Exception as e:
-            print("Exception in redis_search: ", e)
-            context.append(t['text_en'].replace('\n', ' ') )
+            print("------------------- Exception in redis_search: ", e)
+            context.append(t['text_en'] )
 
 
     for i in range(len(context)):
@@ -256,6 +260,7 @@ def redis_search(query: str, filter_param: str):
 
     for i in range(len(context)):
         total_tokens += len(completion_enc.encode(context[i]))
+        # print(total_tokens)
         if  total_tokens < MAX_SEARCH_TOKENS:
             final_context.append(context[i])
         else:
@@ -287,3 +292,32 @@ def redis_lookup(query: str, filter_param: str):
 
     context = completion_enc.decode(completion_enc.encode(context)[:MAX_SEARCH_TOKENS])
     return context
+
+
+
+import openai
+openai.api_type = "azure"
+openai.api_key = os.environ["OPENAI_API_KEY"]
+openai.api_base = os.environ["OPENAI_RESOURCE_ENDPOINT"]
+
+
+def get_llm(model, temperature=0, max_output_tokens=MAX_OUTPUT_TOKENS, stream=False, callbacks=[]):
+    gen = openai_helpers.get_generation(model)
+
+    if (gen == 3) or (gen == 3.5):
+            openai.api_version = "2022-12-01"    
+            llm = mod_agent.GPT35TurboAzureOpenAI(deployment_name=model, temperature=temperature, 
+                                                    openai_api_key=openai.api_key, max_retries=30, 
+                                                    request_timeout=120, stop=['<|im_end|>'], streaming=stream,
+                                                    callback_manager=CallbackManager(callbacks),
+                                                    max_tokens=max_output_tokens, verbose = True)
+    elif gen == 4:
+        openai.api_version = "2023-03-15-preview"
+        llm = ChatOpenAI(model_name=model, model=model, engine=model, 
+                                temperature=0, openai_api_key=openai.api_key, max_retries=30, streaming=stream,
+                                callback_manager=CallbackManager(callbacks),
+                                request_timeout=120, max_tokens=max_output_tokens, verbose = True)    
+    else:
+        assert False, f"Generation unknown for model {model}"                                
+
+    return llm                                  

@@ -27,7 +27,8 @@ from langchain.agents.react.base import ReActDocstoreAgent
 from langchain.schema import AgentAction, AgentFinish
 from langchain.utilities import BingSearchAPIWrapper
 from utils.langchain_helpers.mod_wiki_prompt import mod_wiki_prompt
-# from utils.langchain_helpers.mod_react_prompt import mod_react_prefix, mod_react_format_instructions_no_bing, mod_react_format_instructions_with_bing, mod_react_suffix
+from langchain.agents.conversational_chat.base import ConversationalChatAgent, AgentOutputParser
+
 import utils.langchain_helpers.mod_react_prompt
 import requests
 from utils import openai_helpers
@@ -95,7 +96,7 @@ class ModBingSearchAPIWrapper(BingSearchAPIWrapper):
                 sites_v = f"({sites_v})"
                 self.sites = sites_v
 
-            print("Sites", self.sites)
+            # print("Sites", self.sites)
 
         snippets = []
         try:
@@ -135,14 +136,10 @@ class ModAgent(Agent):
     pre_context_length  : int = 0
 
     def _get_next_action(self, full_inputs: Dict[str, str]) -> AgentAction:
-        # print("@@@@@ full_inputs", full_inputs)
         full_output = self.llm_chain.predict(**full_inputs)
         # print("@@@@@ full_output", full_output)
+        full_output = full_output.replace('<|im_end|>', '')
         parsed_output = self._extract_tool_and_input(full_output)
-
-        # if parsed_output is None:                
-        #     # print("@@@@@ parsed_output", parsed_output)
-        #     parsed_output = ['Finish', full_output]
 
         while parsed_output is None:
             full_output = self._fix_text(full_output)
@@ -160,18 +157,19 @@ class ModAgent(Agent):
         )
 
 
-    def _construct_scratchpad(
+    def _construct_scratchpad_token_analysis(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
     ) -> str:
         """Construct the scratchpad that lets the agent continue its thought process."""
         completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
         thoughts = ""
 
-        # print('-------------------------------------.query_length', self.query_length)
-        # print('-------------------------------------.pre_context_length', self.pre_context_length)
-        # print('-------------------------------------.history_length', self.history_length)
-
-        pr = self.create_prompt([]).format(history='', input='', agent_scratchpad='', pre_context='')
+        prt = self.create_prompt([])
+        if prt.input_variables == ["input", "history", "agent_scratchpad"]:
+            pr = prt.format(input='', history='', agent_scratchpad='')
+        else:
+            pr = prt.format(input='', chat_history=[], agent_scratchpad=[])
+        # print(pr.input_variables)
         empty_prompt_length = len(completion_enc.encode(pr))
 
 
@@ -190,9 +188,12 @@ class ModAgent(Agent):
             
             th_tokens = len(completion_enc.encode(th_str))
             
-            allowance = max_comp_model_tokens - th_tokens - empty_prompt_length - MAX_OUTPUT_TOKENS - self.history_length - self.query_length - self.pre_context_length
+            allowance = max_comp_model_tokens - 2 * th_tokens - empty_prompt_length - MAX_OUTPUT_TOKENS - self.history_length - self.query_length - self.pre_context_length - len_steps * 35
             if allowance < 0: allowance = 0
             allowance_per_step = allowance // len_steps
+
+            if allowance_per_step > MAX_SEARCH_TOKENS:
+                allowance_per_step = MAX_SEARCH_TOKENS
 
             for action, observation in intermediate_steps:
                 obs_str += observation
@@ -214,11 +215,12 @@ class ModAgent(Agent):
                         len_obs[i] = allowance_per_step + avail_allowance 
 
         else:
-            allowance = max_comp_model_tokens - empty_prompt_length - MAX_OUTPUT_TOKENS - self.query_length - self.history_length - self.pre_context_length
+            allowance = max_comp_model_tokens - th_tokens - empty_prompt_length - MAX_OUTPUT_TOKENS - self.query_length - self.history_length - self.pre_context_length - len_steps * 35
             if allowance < 0: allowance = 0
             len_obs.append(allowance)
 
-        # print(max_comp_model_tokens, th_tokens, empty_prompt_length, MAX_OUTPUT_TOKENS, self.history_length, self.query_length, self.pre_context_length)
+
+        print(max_comp_model_tokens, th_tokens, empty_prompt_length, MAX_OUTPUT_TOKENS, self.history_length, self.query_length, self.pre_context_length)
 
         thoughts = ""
         for action, observation in intermediate_steps:
@@ -228,6 +230,16 @@ class ModAgent(Agent):
         if len(completion_enc.encode(thoughts)) > 0.8 * allowance:
             drop_first = True
 
+        return len_obs, len_steps, th_tokens, allowance
+
+
+    def _construct_scratchpad(
+        self, intermediate_steps: List[Tuple[AgentAction, str]]
+    ) -> str:
+        completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
+        
+        len_obs, len_steps, th_tokens, allowance = self._construct_scratchpad_token_analysis(intermediate_steps)
+
         thoughts = ""
         i = 0
         for action, observation in intermediate_steps:
@@ -236,7 +248,7 @@ class ModAgent(Agent):
             thoughts += f"\n{self.observation_prefix}{completion_enc.decode(completion_enc.encode(observation)[:len_obs[i]])}\n{self.llm_prefix}" 
             i += 1
 
-        # print("\nNUM STEPS:",str(len_steps), "TH_TOKENS", th_tokens, "ALLOWANCE", allowance, "USED", len(completion_enc.encode(thoughts)), 'LEN_OBS', len_obs, "\n")            
+        print("\nNUM STEPS:",str(len_steps), "TH_TOKENS", th_tokens, "ALLOWANCE", allowance, "USED", len(completion_enc.encode(thoughts)), 'LEN_OBS', len_obs, "\n")            
         return thoughts
 
 
@@ -296,7 +308,7 @@ class ReAct(ReActDocstoreAgent, ModAgent):
         # Parse out the action and the directive.
         re_matches = re.search(r"(.*?)\[(.*?)\]", action_str)
 
-        print('re_matches', re_matches.group(1), re_matches.group(2), '\n')
+        # print('re_matches', re_matches.group(1), re_matches.group(2), '\n')
 
         if re_matches.group(1) == 'Finish':
             output = action_str.replace(action_prefix, '').replace('Finish', '').replace('<|im_end|>', '').strip()[1:-1]
@@ -325,7 +337,6 @@ class ZSReAct(ZeroShotAgent, ModAgent):
         return "Thought:"
 
 
-
     @classmethod
     def create_prompt(
         cls,
@@ -345,7 +356,8 @@ class ZSReAct(ZeroShotAgent, ModAgent):
                                 utils.langchain_helpers.mod_react_prompt.mod_react_suffix])
 
         if input_variables is None:
-            input_variables = ["input", "agent_scratchpad", "history", "pre_context"]
+            input_variables = ["input", "history", "agent_scratchpad"]
+
         return PromptTemplate(template=template, input_variables=input_variables)        
 
 
@@ -355,7 +367,7 @@ class ZSReAct(ZeroShotAgent, ModAgent):
         try:
             return self.get_action_and_input_mod(text)
         except Exception as e:
-            print("GOING TO FINAL ANSWER. EXCEPTION:", e, "\n")
+            # print("GOING TO FINAL ANSWER. EXCEPTION:", e, "\n")
             return "Final Answer", text.replace("Action: None", '').replace("Could not parse", '')
 
 
@@ -382,3 +394,180 @@ class ZSReAct(ZeroShotAgent, ModAgent):
         return action, action_input.strip(" ").strip('"')
 
 
+
+from langchain.agents.conversational_chat.prompt import (
+    FORMAT_INSTRUCTIONS,
+)
+
+import utils.langchain_helpers.mod_ccr_prompt
+
+from langchain.schema import (
+    AgentAction,
+    AIMessage,
+    BaseLanguageModel,
+    BaseMessage,
+    BaseOutputParser,
+    HumanMessage,
+)
+
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+)
+
+from langchain.chains import LLMChain
+from langchain.callbacks.base import BaseCallbackManager
+
+
+import json
+
+class ModAgentOutputParser(BaseOutputParser):
+    def get_format_instructions(self) -> str:
+        return utils.langchain_helpers.mod_ccr_prompt.FORMAT_INSTRUCTIONS
+
+    def parse(self, text: str) -> Any:
+        cleaned_output = text.strip()
+        if "```json" in cleaned_output:
+            _, cleaned_output = cleaned_output.split("```json")
+        if "```" in cleaned_output:
+            cleaned_output, _ = cleaned_output.split("```")
+        if cleaned_output.startswith("```json"):
+            cleaned_output = cleaned_output[len("```json") :]
+        if cleaned_output.startswith("```"):
+            cleaned_output = cleaned_output[len("```") :]
+        if cleaned_output.endswith("```"):
+            cleaned_output = cleaned_output[: -len("```")]
+        if cleaned_output.startswith("``"):
+            cleaned_output = cleaned_output[len("``") :]
+        if cleaned_output.endswith("``"):
+            cleaned_output = cleaned_output[: -len("``")]            
+
+        # print("cleaned_output", cleaned_output) #TODO
+        occurences = [
+            "Human:",
+            "AI:",
+        ]
+
+        for occ in occurences:
+            cleaned_output = cleaned_output.replace(occ, '')
+
+        # cleaned_output = cleaned_output.replace("'", '"')
+        cleaned_output = cleaned_output.strip()
+        # print("cleaned_output", cleaned_output) #TODO
+        response = json.loads(cleaned_output)
+        return {"action": response["action"], "action_input": response["action_input"]}
+
+
+
+class ModConversationalChatAgent(ConversationalChatAgent, ModAgent):
+
+    @classmethod
+    def create_prompt(
+        cls,
+        tools: Sequence[BaseTool],
+        system_message: str = utils.langchain_helpers.mod_ccr_prompt.PREFIX,
+        human_message: str = utils.langchain_helpers.mod_ccr_prompt.SUFFIX,
+        input_variables: Optional[List[str]] = None,
+        output_parser: Optional[BaseOutputParser] = None,
+    ) -> BasePromptTemplate:
+
+        # assert False
+
+        tool_strings = "\n".join(
+            [f"> {tool.name}: {tool.description}" for tool in tools]
+        )
+        tool_names = ", ".join([tool.name for tool in tools])
+        _output_parser = output_parser or ModAgentOutputParser()
+        format_instructions = utils.langchain_helpers.mod_ccr_prompt.SUFFIX.format(
+            format_instructions=_output_parser.get_format_instructions()
+        )
+        final_prompt = format_instructions.format(
+            tool_names=tool_names, tools=tool_strings
+        )
+        if input_variables is None:
+            input_variables = ["input", "chat_history", "agent_scratchpad"]
+
+        system_start_prompt = "<|im_start|>system "
+        user_start_prompt = "<|im_start|>user "
+        assistant_start_prompt = "<|im_start|>assistant "
+        end_prompt = "<|im_end|> "
+
+        if CHOSEN_COMP_MODEL == 'gpt-35-turbo':
+            prefix  = system_start_prompt + utils.langchain_helpers.mod_ccr_prompt.PREFIX + end_prompt + '\n' + user_start_prompt
+            final_prompt = final_prompt + end_prompt + '\n' 
+
+        messages = [
+            SystemMessagePromptTemplate.from_template(utils.langchain_helpers.mod_ccr_prompt.PREFIX),
+            MessagesPlaceholder(variable_name="chat_history"),
+            HumanMessagePromptTemplate.from_template(final_prompt),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
+        ]
+
+        return ChatPromptTemplate(input_variables=input_variables, messages=messages)
+
+
+    def _construct_scratchpad(
+        self, intermediate_steps: List[Tuple[AgentAction, str]]
+    ) -> List[BaseMessage]:
+        """Construct the scratchpad that lets the agent continue its thought process."""
+        completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
+        
+        len_obs, len_steps, th_tokens, allowance = self._construct_scratchpad_token_analysis(intermediate_steps)
+
+        thoughts: List[BaseMessage] = []
+        thoughts_str = ''
+
+        i = 0
+        for action, observation in intermediate_steps:
+            thoughts.append(AIMessage(content=action.log))
+            thoughts_str += action.log
+            observation = completion_enc.decode(completion_enc.encode(observation)[:len_obs[i]])
+            human_message = HumanMessage(
+                content=utils.langchain_helpers.mod_ccr_prompt.TEMPLATE_TOOL_RESPONSE.format(observation=observation)
+            )
+            thoughts_str += utils.langchain_helpers.mod_ccr_prompt.TEMPLATE_TOOL_RESPONSE.format(observation=observation)
+            thoughts.append(human_message)
+            i += 1
+
+        # print("\nNUM STEPS:",str(len_steps), "TH_TOKENS", th_tokens, "ALLOWANCE", allowance, "USED", len(completion_enc.encode(thoughts_str)), 'LEN_OBS', len_obs, "\n")            
+        return thoughts
+        
+
+        
+    @classmethod
+    def from_llm_and_tools(
+        cls,
+        llm: BaseLanguageModel,
+        tools: Sequence[BaseTool],
+        callback_manager: Optional[BaseCallbackManager] = None,
+        system_message: str = utils.langchain_helpers.mod_ccr_prompt.PREFIX,
+        human_message: str = utils.langchain_helpers.mod_ccr_prompt.SUFFIX,
+        input_variables: Optional[List[str]] = None,
+        output_parser: Optional[BaseOutputParser] = None,
+        **kwargs: Any,
+    ) -> Agent:
+        """Construct an agent from an LLM and tools."""
+        cls._validate_tools(tools)
+        # print("output_parser", output_parser)
+        _output_parser = output_parser or ModAgentOutputParser()
+        prompt = cls.create_prompt(
+            tools,
+            system_message=system_message,
+            human_message=human_message,
+            input_variables=input_variables,
+            output_parser=_output_parser,
+        )
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=prompt,
+            callback_manager=callback_manager,
+        )
+        tool_names = [tool.name for tool in tools]
+        return cls(
+            llm_chain=llm_chain,
+            allowed_tools=tool_names,
+            output_parser=_output_parser,
+            **kwargs,
+        )

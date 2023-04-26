@@ -29,10 +29,10 @@ def get_param(req, param_name):
 
 
 def check_param(param):
-    if param == 'false':
-        param = False
-    else:
+    if param == 'true':
         param = True
+    else:
+        param = False
 
     return param
 
@@ -52,6 +52,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     evaluate_step = get_param(req, 'evaluate_step')
     check_adequacy = get_param(req, 'check_adequacy')
     check_intent = get_param(req, 'check_intent') 
+    use_calendar = get_param(req, 'use_calendar')
+    use_bing = get_param(req, 'use_bing')
+    
 
     params_dict = {
         'enable_unified_search': check_param(enable_unified_search),
@@ -59,7 +62,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         'enable_cognitive_search': check_param(enable_cognitive_search),
         'evaluate_step': check_param(evaluate_step),
         'check_adequacy': check_param(check_adequacy),
-        'check_intent': check_param(check_intent)
+        'check_intent': check_param(check_intent),
+        'use_calendar': check_param(use_calendar),
+        'use_bing': check_param(use_bing)
     }
 
     

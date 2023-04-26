@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script type="text/javascript" src="script.js" defer></script>
+</head>
+<body>
+
+    <div id="mySidebar" class="sidebar">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <h3>Search Methods</h3>
+        <ul>
+            <li>
+                <input type="radio" name="search-method" id="method-1" value="os" >
+                <label for="method-1">One-Pass Agent</label>
+            </li>
+            <li>
+                <input type="radio" name="search-method" id="method-2" value="ccr" checked>
+                <label for="method-2">Conversational Chat ReAct Agent</label>
+            </li>
+            <li>
+                <input type="radio" name="search-method" id="method-3" value="zs" >
+                <label for="method-3">Zero-Shot ReAct Agent</label>
+            </li>
+        </ul>
+        <button type="button" class="savebtn" onclick="saveSelection()">Save</button>
+    </div>
+
+    <div id="main">
+    <button class="openbtn" onclick="openNav()">&#9776; Options</button>
+    </div>
+
+    <div id="chat-container">
+        <!-- Chat messages will be appended here -->
+    </div>
+
+    <div id="input-container">
+        <input type="text" id="input-message" placeholder="Type your message...">
+        <button id="send-button">Send</button>
+    </div>
+
+</body>
+</html>

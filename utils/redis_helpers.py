@@ -131,21 +131,21 @@ def redis_query_embedding_index(redis_conn, query_emb, t_id, topK=5, filter_para
 
 
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
-def redis_set(redis_conn, key, field, value, expiry = None):
+def redis_set(redis_conn, key, field, value, expiry = None, verbose = False):
     key = key.replace('"', '')
     res = redis_conn.hset(key, field, value)
 
     if expiry is not None:
         redis_conn.expire(name=key, time=expiry)
-    print("Setting Redis Key: ", key, field, expiry)
+    if verbose: print("\nSetting Redis Key: ", key, field, expiry)
     return res
         
 
 
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
-def redis_get(redis_conn, key, field):
+def redis_get(redis_conn, key, field, verbose = False):
     key = key.replace('"', '')
-    print("Getting Redis Key: ", key, field)
+    if verbose: print("\nGetting Redis Key: ", key, field)
     return redis_conn.hget(key, field)
     
 
