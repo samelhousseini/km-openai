@@ -275,11 +275,14 @@ The ARM template is not fully automated (yet), so a few manual steps will have t
     <br />
     <br />
 1. Deploy 3 models in OpenAI:
-   * Go to Deployments in your OpenAI resource. Please note that the 'gpt-35-turbo' model is **only available** in the East US and South Central US regions:
-   * Add 3 models:
+   * Go to Deployments in your OpenAI resource. Please **keep the model name and deployment name the same**:
+   * Add the below 3 models (and the 2 GPT-4 models if available):
       1. gpt-35-turbo
       1. text-embedding-ada-002
-      1. text-davinci-003 (optional)
+      1. text-davinci-003 
+      1. gpt-4
+      1. gpt-4-32k
+      
     <br/>
     <br />
     <p align="center">
