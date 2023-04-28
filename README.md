@@ -4,9 +4,10 @@
 <br/>
 
 > **Note:**
-> This repo now supports GPT-4
+> This repo now supports GPT-4, and support Vector Search in Cognitive Search
 
 <br/>
+
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsamelhousseini%2Fkm-openai%2Fmain%2Ftemplate.json)
 <br />
@@ -39,7 +40,7 @@ The below are the features of this solution:
 
 1. Improved prompts and workflow handling with LangChain. The user should see improved search results in the form of better answers.
  
-1. Using both Redis and Cognitive Search (Semantic Search) as tools for the LangChain Agent. Also, added Bing as a third tool, which can be enabled or disabled.
+1. Using both Redis and Cognitive Search (Vector Search and Semantic Search) as tools for the LangChain Agent. Also, added Bing as a third search tool, which can be enabled or disabled.
 
 1. Added filtering support in the Bot HTTP request API. This would be useful for things like multi-tenant demos, and filtering on docuemnts with an original source language. Use `"filter":"@field:value"` in the HTTP request e.g. `"filter":"@orig_lang:en"`.
 
@@ -80,7 +81,7 @@ Multiple Search Parameters have been added to control the behavior of the agent.
 
 1. `enable_redis_search`: enables search with embeddings in Redis
 
-1. `enable_unified_search`: enables semantic search and lookup in Cognitive Search
+1. `enable_cognitive_search`: enables semantic search and lookup in Cognitive Search. Use `USE_COG_VECSEARCH` in the Func App Configuration (or your .env file) to switch between Semantic Hybrid Search (search with vectors) and simple Semantic Search. This is using the "2023-07-01-Preview" APIs for enabling vector search in Cognitive Search.
 
 1. `evaluate_step`: search text results sometimes have the answer to the question but the results might be so long that OpenAI completion call might miss that information (too much noise). `evaluate_step` was created to address this problem. This is a separate call to the OpenAI Completion API to identify the facts that are relevant only to the question. 
 
@@ -89,6 +90,8 @@ Multiple Search Parameters have been added to control the behavior of the agent.
 1. `check_intent`: checks the intent of the question. If this is a question that is more 'chit-chatty', like 'hi' or 'how are you?' then answer it immediately without going through the search tools of the knowledge base.
 
 1. `use_calendar`: it is a tool to be added to the LangChain agents to insert the date and time into the prompt. This is handy if the solution is expecting any questions like "what are the offers tomorrow?"
+ 
+1. `use_calculator`: for when math calculations are needed.
 
 1. `use_bing`: enables the use of Bing Search in the results. Bing Search will result snippets from the highest matching websites (or only from the supplied restricted list), and those snippets will be inserted in the Completion API prompt.
 
