@@ -11,14 +11,9 @@ import copy
 from datetime import datetime, timedelta
 
 from utils import redis_helpers
+from utils.env_vars import *
 
 
-COSMOS_URI  = os.environ['COSMOS_URI']
-COSMOS_KEY  = os.environ['COSMOS_KEY']
-COSMOS_DB_NAME   = os.environ['COSMOS_DB_NAME']
-CATEGORYID  = os.environ['CATEGORYID']
-EMBCATEGORYID  = os.environ['EMBCATEGORYID']
-VECTOR_FIELD_IN_REDIS  = os.environ['VECTOR_FIELD_IN_REDIS']
 
 client = CosmosClient(url=COSMOS_URI, credential=COSMOS_KEY)
 partitionKeyPath = PartitionKey(path="/categoryId")
@@ -26,7 +21,7 @@ database = client.create_database_if_not_exists(id=COSMOS_DB_NAME)
 
 def init_container():
 
-    indexing_policy={ "includedPaths":[{ "path":"/*"}], "excludedPaths":[{ "path":"/\"_etag\"/?"},{ "path":"/item_vector/?"}]}
+    indexing_policy={ "includedPaths":[{ "path":"/*"}], "excludedPaths":[{ "path":"/\"_etag\"/?"},{ "path":f"/{VECTOR_FIELD_IN_REDIS}/?"}]}
     
     try:
         container = database.create_container_if_not_exists(id="documents", partition_key=partitionKeyPath,indexing_policy=indexing_policy)

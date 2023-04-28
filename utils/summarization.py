@@ -24,15 +24,11 @@ from utils import openai_helpers
 from utils import helpers
 from utils import fr_helpers
 
-
-MAX_OUTPUT_TOKENS   = int(os.environ["MAX_OUTPUT_TOKENS"])
-CHOSEN_COMP_MODEL   = os.environ['CHOSEN_COMP_MODEL']
-
-
+from utils.env_vars import *
 
 ## Use
 # """
-# from utils import langchain_agent
+# from utils import km_agents
 # from utils import openai_helpers
 # from utils import fr_helpers
 # from utils import summarization
@@ -40,8 +36,6 @@ CHOSEN_COMP_MODEL   = os.environ['CHOSEN_COMP_MODEL']
 # ref_summ_df = summarization.summarize_folder(folder, mode='refine', verbose=False)
 # mp_summ_df  = summarization.summarize_folder(folder, mode='map_reduce', verbose=False)
 # """
-
-
 
 
 

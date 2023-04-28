@@ -25,18 +25,7 @@ from tenacity import (
 )
 
 
-
-REDIS_ADDR = os.environ["REDIS_ADDR"]   
-REDIS_PORT = os.environ["REDIS_PORT"]   
-REDIS_PASSWORD = os.environ["REDIS_PASSWORD"]   
-REDIS_INDEX_NAME = os.environ["REDIS_INDEX_NAME"]   
-VECTOR_FIELD_IN_REDIS = os.environ["VECTOR_FIELD_IN_REDIS"]   
-NUMBER_PRODUCTS_INDEX = int(os.environ["NUMBER_PRODUCTS_INDEX"])
-DAVINCI_003_EMBED_NUM_DIMS = int(os.environ['DAVINCI_003_EMBED_NUM_DIMS'])
-ADA_002_EMBED_NUM_DIMS  = int(os.environ['ADA_002_EMBED_NUM_DIMS'])
-CHOSEN_EMB_MODEL   = os.environ['CHOSEN_EMB_MODEL']
-
-
+from utils.env_vars import *
 
 
 def get_model_dims(embedding_model):
@@ -49,6 +38,8 @@ def get_model_dims(embedding_model):
 
 
 def create_search_index (redis_new_conn, vector_field_name, number_of_vectors, vector_dimensions=512, distance_metric='L2'):
+    if (REDIS_ADDR is None) or (REDIS_ADDR == ''): return None
+
     M=40
     EF=200
 
@@ -67,6 +58,8 @@ def redis_reset_index(redis_new_conn):
 
 
 def test_redis(redis_new_conn):
+    if (REDIS_ADDR is None) or (REDIS_ADDR == ''): return None
+
     try:
         out = redis_new_conn.ft(REDIS_INDEX_NAME).info()
         # print(f"Found Redis Index {REDIS_INDEX_NAME}")
@@ -77,6 +70,8 @@ def test_redis(redis_new_conn):
 
 
 def get_new_conn():
+    if (REDIS_ADDR is None) or (REDIS_ADDR == ''): return None
+
     if REDIS_PASSWORD == '':
         redis_conn = Redis(host = REDIS_ADDR, port = REDIS_PORT)
     else:
@@ -89,7 +84,9 @@ def get_new_conn():
 
 
 retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
-def redis_upsert_embedding(redis_conn, e_dict):     
+def redis_upsert_embedding(redis_conn, e_dict):   
+    if (REDIS_ADDR is None) or (REDIS_ADDR == ''): return None
+
     try:
         #embeds = np.array(e[VECTOR_FIELD_IN_REDIS]).astype(np.float32).tobytes()
         #meta = {'text_en': e['text_en'], 'text':e['text'], 'doc_url': e['doc_url'], 'timestamp': e['timestamp'], VECTOR_FIELD_IN_REDIS:embeds}
@@ -110,7 +107,8 @@ def redis_upsert_embedding(redis_conn, e_dict):
 
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
 def redis_query_embedding_index(redis_conn, query_emb, t_id, topK=5, filter_param=None):
-   
+    if (REDIS_ADDR is None) or (REDIS_ADDR == ''): return None
+
     if (filter_param is None) or (filter_param == '*'):
         filter_param = '*'
     else:
@@ -132,6 +130,8 @@ def redis_query_embedding_index(redis_conn, query_emb, t_id, topK=5, filter_para
 
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
 def redis_set(redis_conn, key, field, value, expiry = None, verbose = False):
+    if (REDIS_ADDR is None) or (REDIS_ADDR == ''): return None
+
     key = key.replace('"', '')
     res = redis_conn.hset(key, field, value)
 
@@ -143,9 +143,13 @@ def redis_set(redis_conn, key, field, value, expiry = None, verbose = False):
 
 
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
-def redis_get(redis_conn, key, field, verbose = False):
+def redis_get(redis_conn, key, field, expiry = CONVERSATION_TTL_SECS, verbose = False):
+    if (REDIS_ADDR is None) or (REDIS_ADDR == ''): return None
+
     key = key.replace('"', '')
     if verbose: print("\nGetting Redis Key: ", key, field)
+    if redis_conn.ttl(key) > 0: redis_conn.expire(name=key, time=expiry)
+
     return redis_conn.hget(key, field)
     
 

@@ -9,6 +9,7 @@ from azure.storage.blob import BlobServiceClient, BlobClient
 from azure.storage.blob import ContainerClient, __version__
 from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 import copy
+from langchain.llms import AzureOpenAI
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import CallbackManager
 
@@ -20,16 +21,7 @@ from utils.kb_doc import KB_Doc
 from utils import cosmos_helpers
 from utils.langchain_helpers import mod_agent
 
-
-OVERLAP_TEXT = int(os.environ["OVERLAP_TEXT"])
-NUM_TOP_MATCHES = int(os.environ['NUM_TOP_MATCHES'])
-CHOSEN_EMB_MODEL   = os.environ['CHOSEN_EMB_MODEL']
-CHOSEN_QUERY_EMB_MODEL   = os.environ['CHOSEN_QUERY_EMB_MODEL']
-CHOSEN_COMP_MODEL   = os.environ['CHOSEN_COMP_MODEL']
-MAX_SEARCH_TOKENS  = int(os.environ.get("MAX_SEARCH_TOKENS"))
-MAX_QUERY_TOKENS = int(os.environ.get("MAX_QUERY_TOKENS"))
-MAX_OUTPUT_TOKENS   = int(os.environ["MAX_OUTPUT_TOKENS"])
-
+from utils.env_vars import *
 
 
 def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_max_tokens = 0, text_suffix = '',  gen_emb=True):
@@ -39,6 +31,7 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
     json_object = full_kbd_doc.get_dict()
 
     logging.info(f"Starting to generate embeddings with {embedding_model} and {max_emb_tokens} tokens")
+    print(f"Starting to generate embeddings with {embedding_model} and {max_emb_tokens} tokens")
 
     try:
         if isinstance(json_object['timestamp'], list):
@@ -80,7 +73,7 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
     json_object['orig_lang'] = lang
 
 
-    # print("Comparing lengths", len(tokens) , previous_max_tokens-OVERLAP_TEXT)
+    print("Comparing lengths", len(tokens) , previous_max_tokens-OVERLAP_TEXT)
 
     if (len(tokens) < previous_max_tokens-OVERLAP_TEXT) and (previous_max_tokens > 0):
         print("Skipping generating embeddings as it is optional for this text")
@@ -90,8 +83,10 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
     suff = 0 
     for chunk in chunked_words(tokens, chunk_length=max_emb_tokens-OVERLAP_TEXT):
         decoded_chunk = enc.decode(chunk)
+        
         translated_chunk = decoded_chunk
-        if lang != 'en': translated_chunk = language.translate(decoded_chunk, lang)
+        if lang != 'en': 
+            translated_chunk = language.translate(decoded_chunk, lang)
        
         if gen_emb:
             embedding = openai_helpers.get_openai_embedding(translated_chunk, embedding_model)
@@ -103,7 +98,7 @@ def generate_embeddings(full_kbd_doc, embedding_model, max_emb_tokens, previous_
         dd['text_en'] = translated_chunk
         if lang != 'en': dd['text'] = decoded_chunk
         else: dd['text'] = ''
-        dd['item_vector'] = embedding
+        dd[VECTOR_FIELD_IN_REDIS] = embedding
 
         chunk_kbd_doc = KB_Doc()
         chunk_kbd_doc.load(dd)
@@ -217,6 +212,10 @@ re_strs = [
 
 
 def redis_search(query: str, filter_param: str):
+    if (REDIS_ADDR is None) or (REDIS_ADDR == ''): 
+        return ["Sorry, I couldn't find any information related to the question."]
+
+
     redis_conn = redis_helpers.get_new_conn()
     completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
     embedding_enc = openai_helpers.get_encoder(CHOSEN_EMB_MODEL)
@@ -224,30 +223,35 @@ def redis_search(query: str, filter_param: str):
     query = embedding_enc.decode(embedding_enc.encode(query)[:MAX_QUERY_TOKENS])
 
     query_embedding = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
-    results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=25, filter_param=filter_param)
-    
-    
+    results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
+
     if len(results) == 0:
         logging.warning("No embeddings found in Redis, attempting to load embeddings from Cosmos")
         cosmos_helpers.cosmos_restore_embeddings()
-        results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=25, filter_param=filter_param)
+        results = redis_helpers.redis_query_embedding_index(redis_conn, query_embedding, -1, topK=NUM_TOP_MATCHES, filter_param=filter_param)
+    
+    return process_search_results(results)
+    
+    
+def process_search_results(results):
+    completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
+
+    if len(results) == 0:
+        return ["Sorry, I couldn't find any information related to the question."]
 
     context = []
 
-    # r = [t['web_url'] + ' ' + t['container'] + ' ' + t['filename'] for t in results]
-    # [print(r['vector_score']) for r in results]
-
     for t in results:
-        t['text_en'] = t['text_en'].replace('\n', ' ').replace('\r', ' ') 
+        t['text_en'] = t['text_en'].replace('\r', ' ') 
 
         try:
             if ('web_url' in t.keys()) and (t['web_url'] is not None) and (t['web_url'] != ''):
-                context.append(f"[{t['web_url']}] " + t['text_en'])
+                context.append('######\n' + f"[{t['web_url']}] " + t['text_en'] + '\n######\n')
             else:
-                context.append(f"[{t['container']}/{t['filename']}] " + t['text_en'])
+                context.append('######\n' + f"[{t['container']}/{t['filename']}] " + t['text_en']  + '\n######\n')
         except Exception as e:
-            print("------------------- Exception in redis_search: ", e)
-            context.append(t['text_en'] )
+            print("------------------- Exception in process_search_results: ", e)
+            context.append('######\n' + t['text_en'] + '\n######\n')
 
 
     for i in range(len(context)):
@@ -295,28 +299,23 @@ def redis_lookup(query: str, filter_param: str):
 
 
 
-import openai
-openai.api_type = "azure"
-openai.api_key = os.environ["OPENAI_API_KEY"]
-openai.api_base = os.environ["OPENAI_RESOURCE_ENDPOINT"]
 
 
-def get_llm(model, temperature=0, max_output_tokens=MAX_OUTPUT_TOKENS, stream=False, callbacks=[]):
+def get_llm(model = CHOSEN_COMP_MODEL, temperature=0, max_output_tokens=MAX_OUTPUT_TOKENS, stream=False, callbacks=[]):
     gen = openai_helpers.get_generation(model)
 
-    if (gen == 3) or (gen == 3.5):
-            openai.api_version = "2022-12-01"    
-            llm = mod_agent.GPT35TurboAzureOpenAI(deployment_name=model, temperature=temperature, 
-                                                    openai_api_key=openai.api_key, max_retries=30, 
-                                                    request_timeout=120, stop=['<|im_end|>'], streaming=stream,
-                                                    callback_manager=CallbackManager(callbacks),
-                                                    max_tokens=max_output_tokens, verbose = True)
-    elif gen == 4:
-        openai.api_version = "2023-03-15-preview"
+    if (gen == 3) :
+        llm = AzureOpenAI(deployment_name=model, model_name=model, temperature=temperature, 
+                        openai_api_key=openai.api_key, max_retries=30, 
+                        request_timeout=120, streaming=stream,
+                        callback_manager=CallbackManager(callbacks),
+                        max_tokens=max_output_tokens, verbose = True)
+                        
+    elif (gen == 4) or (gen == 3.5):
         llm = ChatOpenAI(model_name=model, model=model, engine=model, 
-                                temperature=0, openai_api_key=openai.api_key, max_retries=30, streaming=stream,
-                                callback_manager=CallbackManager(callbacks),
-                                request_timeout=120, max_tokens=max_output_tokens, verbose = True)    
+                            temperature=0, openai_api_key=openai.api_key, max_retries=30, streaming=stream,
+                            callback_manager=CallbackManager(callbacks),
+                            request_timeout=120, max_tokens=max_output_tokens, verbose = True)    
     else:
         assert False, f"Generation unknown for model {model}"                                
 

@@ -2,9 +2,7 @@ import os
 import json
 from datetime import datetime, timedelta
 
-
-KB_INDEX_NAME = os.environ.get("KB_INDEX_NAME")
-KB_BLOB_CONTAINER = os.environ.get("KB_INDEX_NAME")
+from utils.env_vars import *
 
 class KB_Doc():
 

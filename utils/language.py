@@ -8,12 +8,7 @@ import typing
 from azure.core.credentials import AzureKeyCredential
 from azure.ai.textanalytics import TextAnalyticsClient
 
-TRANSLATION_API_KEY  = os.environ["COG_SERV_KEY"]
-TRANSLATION_ENDPOINT = os.environ["TRANSLATION_ENDPOINT"]
-TRANSLATION_LOCATION = os.environ["TRANSLATION_LOCATION"]
-COG_SERV_ENDPOINT    = os.environ["COG_SERV_ENDPOINT"]
-COG_SERV_KEY         = os.environ["COG_SERV_KEY"]
-
+from utils.env_vars import *
 
 def detect_content_language(content):
     path = '/detect'
@@ -68,7 +63,7 @@ def translate(text, from_lang, to_lang = 'en'):
     response = request.json()
 
     try:
-        print(response)
+        # print(response)
         return response[0]['translations'][0]['text']
     except Exception as e:
         print(e)

@@ -19,10 +19,7 @@ from tenacity import (
 
 from utils import storage
 
-COG_SERV_ENDPOINT = os.environ['COG_SERV_ENDPOINT']
-COG_SERV_KEY = os.environ['COG_SERV_KEY']
-FR_CONTAINER = os.environ['FR_CONTAINER']
-OUTPUT_BLOB_CONTAINER = os.environ['OUTPUT_BLOB_CONTAINER']
+from utils.env_vars import *
 
 
 document_analysis_client = DocumentAnalysisClient(COG_SERV_ENDPOINT, AzureKeyCredential(COG_SERV_KEY))

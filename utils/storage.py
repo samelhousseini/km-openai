@@ -13,12 +13,7 @@ import copy
 import uuid
 import json
 
-KB_BLOB_CONN_STR = os.environ["KB_BLOB_CONN_STR"]
-KB_BLOB_CONTAINER = os.environ["KB_BLOB_CONTAINER"]
-CATEGORYID  = os.environ['CATEGORYID']
-OUTPUT_BLOB_CONTAINER = os.environ['OUTPUT_BLOB_CONTAINER']
-FR_CONTAINER = os.environ['FR_CONTAINER']
-
+from utils.env_vars import *
 
 
 def get_kb_container_client():
@@ -42,7 +37,7 @@ def create_sas_from_container_and_blob(container, blob_name):
             container_name=container,
             blob_name=blob_name,
             permission=BlobSasPermissions(read=True),
-            expiry=datetime.utcnow() + timedelta(hours=10*365*24),
+            expiry=datetime.utcnow() + timedelta(hours=20*365*24),
         )
     
     sas_url = blob_client.url + '?' + token

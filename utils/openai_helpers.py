@@ -27,36 +27,12 @@ from langchain.schema import (
     SystemMessage
 )
 
+from utils.env_vars import *
 
 
-openai.api_type = "azure"
-openai.api_key = os.environ["OPENAI_API_KEY"]
-openai.api_base = os.environ["OPENAI_RESOURCE_ENDPOINT"]
-openai.api_version = "2022-12-01"
+import openai
+openai.api_version = OPENAI_API_VERSION
 
-
-MAX_QUERY_TOKENS             = int(os.environ["MAX_QUERY_TOKENS"])
-MAX_OUTPUT_TOKENS            = int(os.environ["MAX_OUTPUT_TOKENS"])
-
-DAVINCI_003_MODEL_MAX_TOKENS = int(os.environ["DAVINCI_003_MODEL_MAX_TOKENS"])
-ADA_002_MODEL_MAX_TOKENS     = int(os.environ["ADA_002_MODEL_MAX_TOKENS"])
-DAVINCI_003_EMB_MAX_TOKENS   = int(os.environ['DAVINCI_003_EMB_MAX_TOKENS'])
-
-
-GPT35_TURBO_COMPLETIONS_MODEL = os.environ['GPT35_TURBO_COMPLETIONS_MODEL']
-GPT35_TURBO_COMPLETIONS_MAX_TOKENS = int(os.environ["GPT35_TURBO_COMPLETIONS_MAX_TOKENS"])
-
-CHOSEN_EMB_MODEL        = os.environ['CHOSEN_EMB_MODEL']
-CHOSEN_QUERY_EMB_MODEL  = os.environ['CHOSEN_QUERY_EMB_MODEL']
-CHOSEN_COMP_MODEL       = os.environ['CHOSEN_COMP_MODEL']
-
-RESTRICTIVE_PROMPT    = os.environ['RESTRICTIVE_PROMPT']
-
-
-TEMPERATURE = 0
-
-GPT4_COMPLETIONS_MODEL_MAX_TOKENS = 8192
-GPT4_32K_COMPLETIONS_MODEL_MAX_TOKENS = 32768
 
 
 system_start_prompt = "<|im_start|>system "
@@ -237,6 +213,16 @@ def get_encoder(model):
         return tiktoken.get_encoding("gpt2")
 
 
+
+def get_model_dims(embedding_model):
+    if embedding_model == "text-search-davinci-doc-001":
+        return DAVINCI_003_EMBED_NUM_DIMS
+    elif embedding_model == "text-embedding-ada-002":
+        return ADA_002_EMBED_NUM_DIMS
+    else:
+        return ADA_002_EMBED_NUM_DIMS
+
+
 def get_token_length(text, model = CHOSEN_COMP_MODEL):
     enc = get_encoder(model)
     return len(enc.encode(text))
@@ -244,7 +230,7 @@ def get_token_length(text, model = CHOSEN_COMP_MODEL):
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(30))
-def get_openai_embedding(query, embedding_model):
+def get_openai_embedding(query, embedding_model = CHOSEN_EMB_MODEL):
     return openai.Embedding.create(input=query, engine=embedding_deployment_id)['data'][0]['embedding']
 
 
@@ -260,10 +246,12 @@ def openai_summarize(text, completion_model, max_output_tokens = MAX_OUTPUT_TOKE
 def contact_openai(prompt, completion_model = CHOSEN_COMP_MODEL, max_output_tokens = MAX_OUTPUT_TOKENS, stream = False, verbose = False):
     if verbose: print("\n########################### Calling OAI Completion API - start call")
 
+    gen = get_generation(completion_model)
+
     try:
         b = time.time()
 
-        if (completion_model == 'gpt-4') or (completion_model == 'gpt-4-32k'):
+        if (gen == 4) or (gen == 3.5):
             openai.api_version = "2023-03-15-preview"
 
             if not isinstance(prompt, list):

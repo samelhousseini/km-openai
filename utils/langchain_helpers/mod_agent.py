@@ -8,7 +8,34 @@ import re
 
 from datetime import date
 
+from langchain.agents.conversational_chat.prompt import (
+    FORMAT_INSTRUCTIONS,
+)
 
+import utils.langchain_helpers.mod_ccr_prompt
+
+from langchain.schema import (
+    AgentAction,
+    AgentFinish,
+    AIMessage,
+    BaseLanguageModel,
+    BaseMessage,
+    BaseOutputParser,
+    HumanMessage,
+)
+
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+)
+
+from langchain.chains import LLMChain
+from langchain.callbacks.base import BaseCallbackManager
+
+
+import json
 from langchain.llms.openai import AzureOpenAI
 from langchain.agents import load_tools
 from langchain.agents import initialize_agent, Tool
@@ -19,7 +46,7 @@ from langchain import LLMMathChain
 from langchain.agents import Tool, AgentExecutor
 from langchain.prompts import PromptTemplate, BasePromptTemplate
 from langchain.agents.mrkl.base import ZeroShotAgent
-from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Tuple
+from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Tuple, Union
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from langchain.tools.base import BaseTool
 from langchain.agents.agent import Agent, AgentExecutor
@@ -34,29 +61,7 @@ import requests
 from utils import openai_helpers
 
 
-DAVINCI_003_MODEL_MAX_TOKENS = int(os.environ["DAVINCI_003_MODEL_MAX_TOKENS"])
-ADA_002_MODEL_MAX_TOKENS     = int(os.environ["ADA_002_MODEL_MAX_TOKENS"])
-DAVINCI_003_EMB_MAX_TOKENS   = int(os.environ['DAVINCI_003_EMB_MAX_TOKENS'])
-GPT35_TURBO_COMPLETIONS_MODEL = os.environ['GPT35_TURBO_COMPLETIONS_MODEL']
-
-
-CHOSEN_EMB_MODEL        = os.environ['CHOSEN_EMB_MODEL']
-CHOSEN_QUERY_EMB_MODEL  = os.environ['CHOSEN_QUERY_EMB_MODEL']
-
-NUM_TOP_MATCHES = int(os.environ['NUM_TOP_MATCHES'])
-CHOSEN_COMP_MODEL = os.environ.get("CHOSEN_COMP_MODEL")
-GPT35_TURBO_COMPLETIONS_MAX_TOKENS = int(os.environ.get("GPT35_TURBO_COMPLETIONS_MAX_TOKENS"))
-MAX_OUTPUT_TOKENS = int(os.environ.get("MAX_OUTPUT_TOKENS"))
-MAX_QUERY_TOKENS = int(os.environ.get("MAX_QUERY_TOKENS"))
-MAX_HISTORY_TOKENS = int(os.environ.get("MAX_HISTORY_TOKENS"))
-MAX_SEARCH_TOKENS  = int(os.environ.get("MAX_SEARCH_TOKENS"))
-PRE_CONTEXT = int(os.environ.get("PRE_CONTEXT"))
-
-
-USE_BING = os.environ.get("USE_BING")
-BING_SUBSCRIPTION_KEY = os.environ.get("BING_SUBSCRIPTION_KEY")
-BING_SEARCH_URL = os.environ.get("BING_SEARCH_URL")
-LIST_OF_COMMA_SEPARATED_URLS = os.environ.get("LIST_OF_COMMA_SEPARATED_URLS")
+from utils.env_vars import *
 
 
 
@@ -111,21 +116,6 @@ class ModBingSearchAPIWrapper(BingSearchAPIWrapper):
             snippets.append('['+result["url"] + '] ' + result["snippet"])
         
         return snippets
-
-
-
-
-
-class GPT35TurboAzureOpenAI(AzureOpenAI):
-    stop: List[str] = None
-    @property
-    def _invocation_params(self):
-        params = super()._invocation_params
-        params.pop('logprobs', None)
-        params.pop('best_of', None)
-        params.pop('echo', None)
-        # print(params)
-        return params
 
 
 
@@ -395,39 +385,44 @@ class ZSReAct(ZeroShotAgent, ModAgent):
 
 
 
-from langchain.agents.conversational_chat.prompt import (
-    FORMAT_INSTRUCTIONS,
-)
 
-import utils.langchain_helpers.mod_ccr_prompt
+import yaml
 
-from langchain.schema import (
-    AgentAction,
-    AIMessage,
-    BaseLanguageModel,
-    BaseMessage,
-    BaseOutputParser,
-    HumanMessage,
-)
-
-from langchain.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-    SystemMessagePromptTemplate,
-)
-
-from langchain.chains import LLMChain
-from langchain.callbacks.base import BaseCallbackManager
-
-
-import json
-
-class ModAgentOutputParser(BaseOutputParser):
+class ModAgentOutputParser(AgentOutputParser):
     def get_format_instructions(self) -> str:
         return utils.langchain_helpers.mod_ccr_prompt.FORMAT_INSTRUCTIONS
 
-    def parse(self, text: str) -> Any:
+    # def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+    #     cleaned_output = text.strip()
+    #     if "```json" in cleaned_output:
+    #         _, cleaned_output = cleaned_output.split("```json")
+    #     if "```" in cleaned_output:
+    #         cleaned_output, _ = cleaned_output.split("```")
+    #     if cleaned_output.startswith("```json"):
+    #         cleaned_output = cleaned_output[len("```json") :]
+    #     if cleaned_output.startswith("```"):
+    #         cleaned_output = cleaned_output[len("```") :]
+    #     if cleaned_output.endswith("```"):
+    #         cleaned_output = cleaned_output[: -len("```")]
+
+    #     occurences = [
+    #         "Human:",
+    #         "AI:",
+    #     ]
+
+    #     for occ in occurences:
+    #         cleaned_output = cleaned_output.replace(occ, '')
+
+    #     cleaned_output = cleaned_output.strip()
+    #     print('cleaned_output', cleaned_output)
+    #     response = yaml.full_load(cleaned_output)
+    #     action, action_input = response["action"], response["action_input"]
+    #     if action == "Final Answer":
+    #         return AgentFinish({"output": action_input}, text)
+    #     else:
+    #         return AgentAction(action, action_input, text)
+
+    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         cleaned_output = text.strip()
         if "```json" in cleaned_output:
             _, cleaned_output = cleaned_output.split("```json")
@@ -533,9 +528,9 @@ class ModConversationalChatAgent(ConversationalChatAgent, ModAgent):
 
         # print("\nNUM STEPS:",str(len_steps), "TH_TOKENS", th_tokens, "ALLOWANCE", allowance, "USED", len(completion_enc.encode(thoughts_str)), 'LEN_OBS', len_obs, "\n")            
         return thoughts
-        
 
         
+       
     @classmethod
     def from_llm_and_tools(
         cls,
@@ -550,7 +545,8 @@ class ModConversationalChatAgent(ConversationalChatAgent, ModAgent):
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
-        # print("output_parser", output_parser)
+        print("output_parser", output_parser)
+
         _output_parser = output_parser or ModAgentOutputParser()
         prompt = cls.create_prompt(
             tools,
@@ -565,6 +561,7 @@ class ModConversationalChatAgent(ConversationalChatAgent, ModAgent):
             callback_manager=callback_manager,
         )
         tool_names = [tool.name for tool in tools]
+
         return cls(
             llm_chain=llm_chain,
             allowed_tools=tool_names,

@@ -9,7 +9,7 @@ import urllib
 
 from utils import bot_helpers
 from utils import langchain_helpers
-from utils import langchain_agent
+from utils import km_agents
 from utils import redis_helpers
 
 
@@ -25,13 +25,7 @@ global_params_dict = {
 
 redis_conn = redis_helpers.get_new_conn()
 
-
-CHOSEN_EMB_MODEL   = os.environ['CHOSEN_EMB_MODEL']
-CHOSEN_QUERY_EMB_MODEL   = os.environ['CHOSEN_QUERY_EMB_MODEL']
-CHOSEN_COMP_MODEL   = os.environ['CHOSEN_COMP_MODEL']
-
-DAVINCI_003_COMPLETIONS_MODEL = os.environ['DAVINCI_003_COMPLETIONS_MODEL']
-NUM_TOP_MATCHES = int(os.environ['NUM_TOP_MATCHES'])
+from utils.env_vars import *
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*') 
@@ -73,7 +67,7 @@ def on_connect():
 def on_config(agent_type):
     print(f"config {request.sid} - {agent_type}")
     connection = {'socketio': socketio, 'connection_id':request.sid}
-    agent = langchain_agent.KMOAI_Agent(agent_name = agent_type, params_dict=global_params_dict,  stream = True, connection=connection)
+    agent = km_agents.KMOAI_Agent(agent_name = agent_type, params_dict=global_params_dict,  stream = True, connection=connection)
     agents_sid[request.sid] = agent
 
 
@@ -160,11 +154,8 @@ def process_kmoai_request(req):
         'use_bing': check_param(use_bing)
     }
     
-    if filter_param is None:
-        os.environ['redis_filter_param'] = '*'
-    else:
-        os.environ['redis_filter_param'] = filter_param
-
+    if filter_param is None: filter_param = '*'
+    
     return bot_helpers.openai_interrogate_text(query, session_id=session_id, filter_param=filter_param, agent_name=search_method, params_dict=params_dict)
 
 

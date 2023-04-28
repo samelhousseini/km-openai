@@ -4,13 +4,7 @@ import os
 
 from utils import bot_helpers
 
-
-CHOSEN_EMB_MODEL   = os.environ['CHOSEN_EMB_MODEL']
-CHOSEN_QUERY_EMB_MODEL   = os.environ['CHOSEN_QUERY_EMB_MODEL']
-CHOSEN_COMP_MODEL   = os.environ['CHOSEN_COMP_MODEL']
-
-DAVINCI_003_COMPLETIONS_MODEL = os.environ['DAVINCI_003_COMPLETIONS_MODEL']
-NUM_TOP_MATCHES = int(os.environ['NUM_TOP_MATCHES'])
+from utils.env_vars import *
 
 
 def get_param(req, param_name):
@@ -53,6 +47,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     check_adequacy = get_param(req, 'check_adequacy')
     check_intent = get_param(req, 'check_intent') 
     use_calendar = get_param(req, 'use_calendar')
+    use_calculator = get_param(req, 'use_calculator')
     use_bing = get_param(req, 'use_bing')
     
 
@@ -64,14 +59,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         'check_adequacy': check_param(check_adequacy),
         'check_intent': check_param(check_intent),
         'use_calendar': check_param(use_calendar),
+        'use_calculator': check_param(use_calculator),
         'use_bing': check_param(use_bing)
     }
 
-    
-    if filter_param is None:
-        os.environ['redis_filter_param'] = '*'
-    else:
-        os.environ['redis_filter_param'] = filter_param
+    if filter_param is None: filter_param = '*'
 
     if query:
         str = bot_helpers.openai_interrogate_text(query, session_id=session_id, filter_param=filter_param, agent_name=search_method, params_dict=params_dict)

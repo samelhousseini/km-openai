@@ -10,22 +10,9 @@ from azure.search.documents.indexes.models import *
 
 from utils import openai_helpers
 from utils.kb_doc import KB_Doc
+from utils.cogvecsearch_helpers import cogsearch_vecstore
 
-COG_SEARCH_ENDPOINT = os.environ["COG_SEARCH_ENDPOINT"]
-COG_SEARCH_ADMIN_KEY = os.environ["COG_SEARCH_ADMIN_KEY"]
-KB_BLOB_CONTAINER = os.environ["KB_BLOB_CONTAINER"]
-KB_INDEX_NAME = os.environ["KB_INDEX_NAME"]
-KB_INDEXER_NAME = os.environ["KB_INDEXER_NAME"]
-KB_DATA_SOURCE_NAME = os.environ["KB_DATA_SOURCE_NAME"]
-KB_SKILLSET_NAME = os.environ["KB_SKILLSET_NAME"]
-KB_BLOB_CONN_STR = os.environ["KB_BLOB_CONN_STR"]
-COG_SERV_ENDPOINT = os.environ["COG_SERV_ENDPOINT"]
-COG_SERV_KEY = os.environ["COG_SERV_KEY"]
-COG_SEARCH_CUSTOM_FUNC  = os.environ.get("COG_SEARCH_CUSTOM_FUNC", "https://")
-NUM_TOP_MATCHES = int(os.environ['NUM_TOP_MATCHES'])
-MAX_SEARCH_TOKENS  = int(os.environ.get("MAX_SEARCH_TOKENS"))
-KB_SEM_INDEX_NAME = os.environ["KB_SEM_INDEX_NAME"]
-CHOSEN_COMP_MODEL   = os.environ['CHOSEN_COMP_MODEL']
+from utils.env_vars import *
 
 
 
@@ -49,45 +36,58 @@ sem_search_client = SearchClient(endpoint=COG_SEARCH_ENDPOINT,
 
 
 include_category = None
-KB_FIELDS_CONTENT = "content"
-KB_FIELDS_CATEGORY =  "category"
-KB_FIELDS_SOURCEFILE  = "sourcefile"
-KB_FIELDS_CONTAINER  = "container"
-KB_FIELDS_FILENAME  = "filename"
+
 
 
 def create_semantic_search_index():
 
-    try:
-        result = admin_client.delete_index(KB_SEM_INDEX_NAME)
-        print ('Index', KB_SEM_INDEX_NAME, 'Deleted')
-    except Exception as ex:
-        print (f"Index deletion exception:\n{ex}")
+    if USE_COG_VECSEARCH == 1:
+        vs = cogsearch_vecstore.CogSearchVecStore()
 
-    index = SearchIndex(
-        name=KB_SEM_INDEX_NAME,
-        fields=[
-            SimpleField(name="id", type="Edm.String", key=True),
-            SearchableField(name="content", type="Edm.String", analyzer_name="en.microsoft"),
-            SimpleField(name="category", type="Edm.String", filterable=True, facetable=True),
-            SimpleField(name="sourcefile", type="Edm.String", filterable=True, facetable=True),
-            SimpleField(name="container", type="Edm.String", filterable=True, facetable=True),
-            SimpleField(name="filename", type="Edm.String", filterable=True, facetable=True),
-            SimpleField(name="web_url", type="Edm.String", filterable=True, facetable=True),
-            SimpleField(name="orig_lang", type="Edm.String", filterable=True, facetable=True),
-        ],
-        semantic_settings=SemanticSettings(
-            configurations=[SemanticConfiguration(
-                name='default',
-                prioritized_fields=PrioritizedFields(
-                    title_field=None, prioritized_content_fields=[SemanticField(field_name='content')]))])
-    )
+        try:    
+            vs.delete_index()
+            print ('Index', COG_VECSEARCH_VECTOR_INDEX, 'Deleted')
+        except Exception as ex:
+            print (f"OK: Looks like index {COG_VECSEARCH_VECTOR_INDEX} does not exist")
 
-    try:
-        result = admin_client.create_index(index)
-        print ('Index', result.name, 'created')
-    except Exception as ex:
-        print (f"Index creation exception:\n{ex}")        
+        try:
+            vs.create_index()
+            print ('Index', COG_VECSEARCH_VECTOR_INDEX, 'created')
+        except Exception as ex:
+            print (f"Index creation exception {COG_VECSEARCH_VECTOR_INDEX}:\n{ex}")    
+
+    else:
+
+        try:
+            result = admin_client.delete_index(KB_SEM_INDEX_NAME)
+            print ('Index', KB_SEM_INDEX_NAME, 'Deleted')
+        except Exception as ex:
+            print (f"Index deletion exception:\n{ex}")
+
+        index = SearchIndex(
+            name=KB_SEM_INDEX_NAME,
+            fields=[
+                SimpleField(name="id", type="Edm.String", key=True),
+                SearchableField(name="content", type="Edm.String", analyzer_name="en.microsoft"),
+                SimpleField(name="category", type="Edm.String", filterable=True, facetable=True),
+                SimpleField(name="sourcefile", type="Edm.String", filterable=True, facetable=True),
+                SimpleField(name="container", type="Edm.String", filterable=True, facetable=True),
+                SimpleField(name="filename", type="Edm.String", filterable=True, facetable=True),
+                SimpleField(name="web_url", type="Edm.String", filterable=True, facetable=True),
+                SimpleField(name="orig_lang", type="Edm.String", filterable=True, facetable=True),
+            ],
+            semantic_settings=SemanticSettings(
+                configurations=[SemanticConfiguration(
+                    name='default',
+                    prioritized_fields=PrioritizedFields(
+                        title_field=None, prioritized_content_fields=[SemanticField(field_name='content')]))])
+        )
+
+        try:
+            result = admin_client.create_index(index)
+            print ('Index', result.name, 'created')
+        except Exception as ex:
+            print (f"Index creation exception:\n{ex}")        
 
 
 
@@ -274,8 +274,20 @@ re_strs = [
 
 
 
-KB_FIELDS_CONTAINER  = "container"
-KB_FIELDS_FILENAME  = "filename"
+def process_filter(filter_param = None):
+    proc_filter = None
+    if filter_param is not None:
+        filter_const = filter_param.replace("@", '').split(':')
+        if len(filter_const) > 0:
+            proc_filter = f"{filter_const[0]} eq '{filter_const[1]}'"
+    return proc_filter
+
+
+def cog_vecsearch(terms: str, filter_param = None):
+    proc_filter = process_filter(filter_param)
+    vs = cogsearch_vecstore.CogSearchVecStore()
+    return vs.search(terms, search_type='semantic_hybrid', filter=proc_filter)
+
 
 
 def cog_search(terms: str, filter_param = None):
@@ -283,32 +295,31 @@ def cog_search(terms: str, filter_param = None):
     completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
 
     # Optionally enable captions for summaries by adding optional arugment query_caption="extractive|highlight-false"
-    # and adjust the string formatting below to include the captions from the @search.captions field
-    
-    filter = None
-    if filter_param is not None:
-        filter_const = filter_param.replace("@", '').split(':')
-        if len(filter_const) > 0:
-            filter = f"{filter_const[0]} eq '{filter_const[1]}'"
+    # and adjust the string formatting below to include the captions from the @search.captions field 
+    proc_filter = process_filter(filter_param)
     
     # print(f"CogSearch filter: {filter}")
     
     r = sem_search_client.search(terms, 
-                             filter=filter,
-                             top = NUM_TOP_MATCHES,
-                             query_type=QueryType.SEMANTIC, 
-                             query_language="en-us", 
-                             query_speller="lexicon", 
-                             semantic_configuration_name="default")
+                                filter=proc_filter,
+                                top = NUM_TOP_MATCHES,
+                                query_type=QueryType.SEMANTIC, 
+                                query_language="en-us", 
+                                query_speller="lexicon", 
+                                semantic_configuration_name="default")
 
     context = []
 
+
+
     for doc in r:
         if ('web_url' in doc.keys()) and (doc['web_url'] is not None) and (doc['web_url'] != ''):
-            context.append(f"[{doc['web_url']}] " + (doc[KB_FIELDS_CONTENT]).replace("\n", "").replace("\r", ""))
+            context.append(f"######\n[{doc['web_url']}] " + (doc[KB_FIELDS_CONTENT]).replace("\n", "").replace("\r", "") + "\n######\n")
         else:
-            context.append(f"[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] " + (doc[KB_FIELDS_CONTENT]).replace("\n", "").replace("\r", "") )
+            context.append(f"######\n[{doc[KB_FIELDS_CONTAINER]}/{doc[KB_FIELDS_FILENAME]}] " + (doc[KB_FIELDS_CONTENT]).replace("\n", "").replace("\r", "") + "\n######\n")
 
+    if len(context) == 0:
+        return ["Sorry, I couldn't find any information related to the question."]
 
     for i in range(len(context)):
         for re_str in re_strs:

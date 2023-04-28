@@ -29,16 +29,17 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chat_models import ChatOpenAI
 
 from utils.langchain_helpers.oldschoolsearch import OldSchoolSearch
-from utils.langchain_helpers.mod_agent import GPT35TurboAzureOpenAI, ZSReAct, ReAct, ModBingSearchAPIWrapper, ModConversationalChatAgent
+from utils.langchain_helpers.mod_agent import ZSReAct, ReAct, ModBingSearchAPIWrapper, ModConversationalChatAgent
 import utils.langchain_helpers.mod_react_prompt
 
 from utils import openai_helpers
 from utils.language import extract_entities
 from utils import redis_helpers
+from utils import helpers
 from utils import storage
 
 from utils.helpers import redis_search, redis_lookup
-from utils.cogsearch_helpers import cog_search, cog_lookup
+from utils.cogsearch_helpers import cog_search, cog_lookup, cog_vecsearch
 from multiprocessing.dummy import Pool as ThreadPool
 
 from langchain.schema import (
@@ -50,27 +51,14 @@ from utils.langchain_helpers import streaming_handler
 from langchain.callbacks.base import CallbackManager
 
 
-AZURE_OPENAI_SERVICE = os.environ.get("OPENAI_RESOURCE_ENDPOINT") 
-OPENAI_API_KEY= os.environ.get("OPENAI_API_KEY")
-DAVINCI_003_COMPLETIONS_MODEL = os.environ.get("DAVINCI_003_COMPLETIONS_MODEL")
-CHOSEN_COMP_MODEL = os.environ.get("CHOSEN_COMP_MODEL")
-COG_SEARCH_ENDPOINT= os.environ.get("COG_SEARCH_ENDPOINT")
-COG_SEARCH_ADMIN_KEY= os.environ.get("COG_SEARCH_ADMIN_KEY")
-KB_SEM_INDEX_NAME = os.environ.get("KB_SEM_INDEX_NAME")
-MAX_OUTPUT_TOKENS = int(os.environ.get("MAX_OUTPUT_TOKENS"))
-CHOSEN_EMB_MODEL = os.environ.get("CHOSEN_EMB_MODEL")
-MAX_QUERY_TOKENS = int(os.environ.get("MAX_QUERY_TOKENS"))
-MAX_HISTORY_TOKENS = int(os.environ.get("MAX_HISTORY_TOKENS"))
-USE_BING = os.environ.get("USE_BING")
-CONVERSATION_TTL_SECS = int(os.environ.get("CONVERSATION_TTL_SECS"))
-MAX_SEARCH_TOKENS  = int(os.environ.get("MAX_SEARCH_TOKENS"))
+from utils.env_vars import *
 
 
 import openai
 
 openai.api_type = "azure"
-openai.api_key = os.environ["OPENAI_API_KEY"]
-openai.api_base = os.environ["OPENAI_RESOURCE_ENDPOINT"]
+openai.api_key = OPENAI_API_KEY
+openai.api_base = OPENAI_RESOURCE_ENDPOINT
 
 
 DEFAULT_RESPONSE = "Sorry, the question was not clear, or the information is not in the knowledge base. Please rephrase your question."
@@ -101,6 +89,7 @@ class KMOAI_Agent():
         self.check_adequacy = params_dict.get('check_adequacy', False)
         self.check_intent = params_dict.get('check_intent', False)
         self.use_calendar = params_dict.get('use_calendar', False)
+        self.use_calculator = params_dict.get('use_calculator', False)
         self.use_bing = params_dict.get('use_bing', False)
 
         if self.enable_unified_search == None: self.enable_unified_search = False
@@ -110,6 +99,7 @@ class KMOAI_Agent():
         if self.check_adequacy == None: self.check_adequacy = False
         if self.check_intent == None: self.check_intent = False
         if self.use_calendar == None: self.use_calendar = False
+        if self.use_calculator == None: self.use_calculator = False
         if self.use_bing == None: self.use_bing = False
 
         if self.verbose: print("enable_unified_search", self.enable_unified_search)
@@ -119,6 +109,7 @@ class KMOAI_Agent():
         if self.verbose: print("check_adequacy", self.check_adequacy)
         if self.verbose: print("check_intent", self.check_intent)
         if self.verbose: print("use_calendar", self.use_calendar)
+        if self.verbose: print("use_calculator", self.use_calculator)
         if self.verbose: print("use_bing", self.use_bing)
 
         self.buffer = ''
@@ -138,49 +129,48 @@ class KMOAI_Agent():
         else:
             callbacks = [streaming_handler.StreamingSocketIOCallbackHandler(connection['socketio'], connection['connection_id'])]
 
-        if (gen == 3) or (gen == 3.5):
-            openai.api_version = "2022-12-01"    
-            self.llm = GPT35TurboAzureOpenAI(deployment_name=CHOSEN_COMP_MODEL, temperature=0, openai_api_key=openai.api_key, max_retries=10, 
-                                             request_timeout=120, stop=['<|im_end|>'], streaming=self.stream,
-                                             callback_manager=CallbackManager(callbacks),
-                                             max_tokens=MAX_OUTPUT_TOKENS, verbose = True)
-        elif gen == 4:
-            openai.api_version = "2023-03-15-preview"
-            self.llm = ChatOpenAI(model_name=CHOSEN_COMP_MODEL, model=CHOSEN_COMP_MODEL, engine=CHOSEN_COMP_MODEL, 
-                                  temperature=0, openai_api_key=openai.api_key, max_retries=10, streaming=self.stream,
-                                  callback_manager=CallbackManager(callbacks),
-                                  request_timeout=120, max_tokens=MAX_OUTPUT_TOKENS, verbose = True)
-        else:
-            assert False, f"Generation unknown for model {CHOSEN_COMP_MODEL}"
+        self.llm = helpers.get_llm(CHOSEN_COMP_MODEL, temperature=0, max_output_tokens=MAX_OUTPUT_TOKENS, stream=False, callbacks=callbacks)
+        self.llm_math_chain = LLMMathChain(llm=self.llm, verbose=True)
 
         self.gen = gen
-        zs_tools = []
+
+        agent_tools = []
+
+        if self.use_calculator:
+            agent_tools += [
+                Tool(name="Calculator (only math formulas, NO text search)", func=self.llm_math_chain.run,description="useful for when you need to answer questions about math")
+            ]
 
         if self.use_calendar:
-            zs_tools += [
-            Tool(name="Calendar", func=self.get_date, description="useful for when you need to get the current time and date to answer the question. USE ONLY IF THIS IS RELEVANT TO THE QUESTION.")
+            agent_tools += [
+                Tool(name="Calendar", func=self.get_date, description="useful for when you need to get the current time and date to answer the question. USE ONLY IF THIS IS RELEVANT TO THE QUESTION.")
             ]
 
         if self.enable_unified_search: 
-            zs_tools += [
-                Tool(name="Unified Search", func=self.unified_search, description="useful for when you need to start a search to answer questions from the knowledge base")
+            agent_tools += [
+                Tool(name="Knowledge Base Search #1", func=self.unified_search, description="useful for when you need to start a search to answer questions from the knowledge base")
             ]
         
         if self.enable_redis_search: 
-            zs_tools += [
-                Tool(name="Redis Search", func=self.agent_redis_search, description="useful for when you need to answer questions from the Redis system"),
+            agent_tools += [
+                Tool(name="Knowledge Base Search #3", func=self.agent_redis_search, description="useful for when you need to answer questions from the Redis system"),
             ]
 
         if self.enable_cognitive_search: 
-            zs_tools += [
-                Tool(name="Cognitive Search", func=self.agent_cog_search, description="useful for when you need to answer questions from the Cognitive system"),
-                Tool(name="Cognitive Lookup", func=self.agent_cog_lookup, description="useful for when you need to lookup terms from the the Cognitive system"),            
+            agent_tools += [    
+                Tool(name="Knowledge Base Search #4", func=self.agent_cog_search, description="useful for when you need to answer questions from the Cognitive system"),
             ]
+
+            if USE_COG_VECSEARCH != 1:
+                agent_tools += [
+                    Tool(name="Knowledge Base Search #2", func=self.agent_cog_lookup, description="useful for when you need to search for named entities from the the Cognitive system"),            
+                ]
+                
 
 
         if self.use_bing or (USE_BING == 'yes'):
             self.bing_search = ModBingSearchAPIWrapper(k=10)
-            zs_tools.append(Tool(name="Online Search", func=self.agent_bing_search, description='useful for when you need to answer questions about current events from the internet'),)
+            agent_tools.append(Tool(name="Online Search", func=self.agent_bing_search, description='useful for when you need to answer questions about current events from the internet'),)
         else:
             self.bing_search = None
 
@@ -190,29 +180,20 @@ class KMOAI_Agent():
         ]
 
 
-        self.zs_tools = zs_tools
+        self.agent_tools = agent_tools
         
 
-        self.zs_agent = ZSReAct.from_llm_and_tools(self.llm, zs_tools)
-        self.zs_chain = AgentExecutor.from_agent_and_tools(self.zs_agent, zs_tools, verbose=verbose, max_iterations = 6, early_stopping_method="generate")
+        self.zs_agent = ZSReAct.from_llm_and_tools(self.llm, agent_tools)
+        self.zs_chain = AgentExecutor.from_agent_and_tools(self.zs_agent, agent_tools, verbose=verbose, max_iterations = 4, early_stopping_method="generate")
 
-        self.ds_agent = ReAct.from_llm_and_tools(self.llm, ds_tools)
-        self.ds_chain = AgentExecutor.from_agent_and_tools(self.ds_agent, ds_tools, verbose=verbose, return_intermediate_steps = verbose, max_iterations = 6, early_stopping_method="generate", memory=self.memory )
-
-                                          
-        # self.ccrd_chain = initialize_agent(self.zs_tools, self.llm, agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION, verbose=True, memory=self.memory)
-
-        # from langchain.agents.conversational_chat.base import ConversationalChatAgent
-        self.ccrd_agent = ModConversationalChatAgent.from_llm_and_tools(self.llm, zs_tools)
-        self.ccrd_chain =  AgentExecutor.from_agent_and_tools(self.ccrd_agent, zs_tools, verbose=verbose, max_iterations = 6, early_stopping_method="generate", memory=self.memory)
+        self.ccrd_agent = ModConversationalChatAgent.from_llm_and_tools(self.llm, agent_tools)
+        self.ccrd_chain =  AgentExecutor.from_agent_and_tools(self.ccrd_agent, agent_tools, verbose=verbose, max_iterations = 4, early_stopping_method="generate", memory=self.memory)
 
         completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
 
         zs_pr = self.zs_agent.create_prompt([]).format(input='', history='', agent_scratchpad='')
-        ds_pr = self.ds_agent.create_prompt([]).format(history='', input='', agent_scratchpad='', pre_context='')
 
         self.zs_empty_prompt_length = len(completion_enc.encode(zs_pr))
-        self.ds_empty_prompt_length = len(completion_enc.encode(ds_pr))
 
 
 
@@ -250,7 +231,10 @@ class KMOAI_Agent():
         response = redis_helpers.redis_get(self.redis_conn, query, 'cog_search_response', verbose = self.verbose)
 
         if response is None:
-            response = '\n\n'.join(cog_search(query, self.cogsearch_filter_param))
+            if USE_COG_VECSEARCH:
+                response = '\n\n'.join(cog_vecsearch(query, self.cogsearch_filter_param))
+            else:
+                response = '\n\n'.join(cog_search(query, self.cogsearch_filter_param))
             response = self.evaluate(query, response)
             redis_helpers.redis_set(self.redis_conn, query, 'cog_search_response', response, CONVERSATION_TTL_SECS, verbose = self.verbose)
         else:
@@ -472,6 +456,10 @@ class KMOAI_Agent():
         if (self.agent_name == 'os') or (self.agent_name == 'zs'):
             self.memory.save_context({"input": query}, {"output": answer_with_sources})
 
+        if answer == 'Agent stopped due to max iterations.':
+            answer = 'I am sorry, I am not able to find an answer to your question. Please try again with a different question.'
+
+
         return answer, sources, likely_sources
 
 
@@ -582,14 +570,12 @@ class KMOAI_Agent():
     def process_request(self, query, hist, pre_context):
         
         if self.verbose: print("agent_name", self.agent_name)
-        
+
         try:
             if self.agent_name == 'ccr':
                 response = self.ccrd_chain({'input':query})
             elif self.agent_name == 'zs':
                 response = self.zs_chain({'input':query, 'history':hist})  
-            elif self.agent_name == 'ds':                
-                response = self.ds_chain({'input':query, 'history':hist, 'pre_context':pre_context})
             elif self.agent_name == 'os':   
                 response = OldSchoolSearch().search(query, hist, pre_context, filter_param=self.redis_filter_param, 
                                                     enable_unified_search=self.enable_unified_search, lc_agent=self, 
@@ -601,32 +587,9 @@ class KMOAI_Agent():
 
         except Exception as e:
             e_str = str(e)
-            response = f"Technical Error: {e_str}"
+            return 'I am sorry, I am not able to find an answer to your question. Please try again with a different question.', [], [f"Technical Error: {e_str}"]
+            # response = f"Technical Error: {e_str}"
             print("Exception", response)
-            # assert False
-
-            # if e_str.startswith("Could not parse LLM output:"):
-            #     response = e_str.replace("Action: None", "").replace("Action:", "").replace('<|im_end|>', '')
-            # else:
-            #     print("Exception 2nd chain", e)
-            #     try:
-            #         response = self.zs_chain({'input':query, 'history':hist}) 
-            #     except Exception as e:
-            #         try:
-            #             oss = OldSchoolSearch()
-            #             response = oss.search(query, hist, pre_context, filter_param=self.redis_filter_param, 
-            #                                     enable_unified_search=self.enable_unified_search, lc_agent=self, 
-            #                                     enable_cognitive_search=self.enable_cognitive_search, evaluate_step=self.evaluate_step, 
-            #                                     stream=stream)   
-                    
-            #         except Exception as e:
-            #             print("Exception 3rd chain", e)
-            #             try:
-            #                 response = self.ds_chain({'input':query, 'history':hist, 'pre_context':pre_context})    
-            #             except Exception as e:
-            #                 print("Exception 4th chain", e)
-            #                 response = DEFAULT_RESPONSE  
-
         
         if (self.agent_name == 'os') and (self.stream):
             ans = ""
@@ -717,7 +680,7 @@ class KMOAI_Agent():
 
     def process_stream_response(self, resp):
         if self.agent_name == 'os':
-            if self.gen == 4:
+            if (self.gen == 4) or (self.gen == 3.5):
                 return str(resp["choices"][0]["delta"].get("content", ''))
             else:
                 return resp["choices"][0]["text"]
@@ -750,7 +713,6 @@ class KMOAI_Agent():
 
         self.assign_filter_param(filter_param)
         self.inform_agent_input_lengths(self.zs_chain.agent, query, hist, pre_context)
-        self.inform_agent_input_lengths(self.ds_chain.agent, query, hist, pre_context)
 
         answer, sources, likely_sources = self.process_request(query, hist, pre_context)
 
@@ -784,73 +746,6 @@ class KMOAI_Agent():
         self.manage_history(hist, sources, prompt_id)
         return answer, sources, likely_sources, prompt_id
         
-
-
-
-
-
-    def run_stream(self, query, prompt_id, redis_conn, filter_param, connection_id=None):
-
-        self.redis_conn = redis_conn
-        
-        hist, prompt_id = self.get_history(prompt_id)
-        self.history = hist.replace('\n', ' ')
-        if self.verbose: print(f"Inserting history: {hist}")
-        pre_context = ''
-        self.intent_output = self.agent_name + ': ' + query
-
-        if self.check_intent:
-            intent, intent_output = self.get_intent(query)
-            self.intent_output = self.agent_name + ': ' + intent_output
-            if self.verbose: print("Intent:", intent, '-', self.intent_output)
-
-            if intent == "chit chat":
-                return self.chichat(query), [], [], prompt_id
-
-            pre_context = self.get_pre_context(self.intent_output)
-            if self.verbose: print(f"Inserting pre-context: {pre_context}")
-
-        self.assign_filter_param(filter_param)
-
-        if connection_id is not None:
-            service = WebPubSubServiceClient.from_connection_string(connection_string=PUB_SUB_ENDPOINT, hub='oaiqnachat')
-
-        
-        response = OldSchoolSearch().search(query, hist, pre_context, filter_param=self.redis_filter_param, 
-                                                    enable_unified_search=self.enable_unified_search, lc_agent=self, 
-                                                    enable_cognitive_search=self.enable_cognitive_search, evaluate_step=self.evaluate_step,
-                                                    stream = True)             
-
-        answer = ""
-        for resp in response:
-            resp = self.process_stream_response(resp["choices"][0]["text"])
-            answer += resp
-            if connection_id is not None:
-                service.send_to_connection( message = resp, connection_id = connection_id)
-            else:
-                if self.verbose: print(resp, end='')
-
-        answer, sources, likely_sources = self.process_final_response(query, answer) 
-
-        if self.verbose: 
-            print("************************")
-            print("Final Answer:", answer)
-            print("Sources:", sources)
-            print("************************")
-
-        self.manage_history(hist, prompt_id)
-        # redis_helpers.redis_set(self.redis_conn, self.intent_output, 'answer', answer, CONVERSATION_TTL_SECS)
-        # redis_helpers.redis_set(self.redis_conn, self.intent_output, 'sources', ','.join(sources), CONVERSATION_TTL_SECS)
-        if connection_id is not None:
-            service.send_to_connection( message = sources, connection_id = connection_id)
-        
-        #return answer, sources, likely_sources, prompt_id
-
-
-        
-
-
-
 
 
 

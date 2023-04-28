@@ -11,25 +11,9 @@ from utils import storage
 from utils import redis_helpers
 from utils import openai_helpers
 from utils import cosmos_helpers
-from utils import langchain_agent
+from utils import km_agents
 
-
-MAX_QUERY_TOKENS             = int(os.environ["MAX_QUERY_TOKENS"])
-MAX_OUTPUT_TOKENS            = int(os.environ["MAX_OUTPUT_TOKENS"])
-
-DAVINCI_003_MODEL_MAX_TOKENS = int(os.environ["DAVINCI_003_MODEL_MAX_TOKENS"])
-ADA_002_MODEL_MAX_TOKENS     = int(os.environ["ADA_002_MODEL_MAX_TOKENS"])
-DAVINCI_003_EMB_MAX_TOKENS   = int(os.environ['DAVINCI_003_EMB_MAX_TOKENS'])
-
-
-GPT35_TURBO_COMPLETIONS_MODEL = os.environ['GPT35_TURBO_COMPLETIONS_MODEL']
-GPT35_TURBO_COMPLETIONS_MAX_TOKENS = int(os.environ["GPT35_TURBO_COMPLETIONS_MAX_TOKENS"])
-
-CHOSEN_EMB_MODEL        = os.environ['CHOSEN_EMB_MODEL']
-CHOSEN_QUERY_EMB_MODEL  = os.environ['CHOSEN_QUERY_EMB_MODEL']
-CHOSEN_COMP_MODEL       = os.environ['CHOSEN_COMP_MODEL']
-
-RESTRICTIVE_PROMPT    = os.environ['RESTRICTIVE_PROMPT']
+from utils.env_vars import *
 
         
 redis_conn = redis_helpers.get_new_conn() 
@@ -45,7 +29,7 @@ def openai_interrogate_text(query, session_id=None, filter_param=None, agent_nam
     if (agent_name is None) or (agent_name not in ['zs', 'ds', 'os']):
         agent_name = 'zs'
 
-    agent = langchain_agent.KMOAI_Agent(agent_name = agent_name, params_dict=params_dict, verbose = False)
+    agent = km_agents.KMOAI_Agent(agent_name = agent_name, params_dict=params_dict, verbose = False)
 
     final_answer, sources, likely_sources, session_id = agent.run(query, redis_conn, session_id, filter_param)
 

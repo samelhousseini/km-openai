@@ -832,7 +832,7 @@
                         } ,
                         {
                             "name": "NUM_TOP_MATCHES",
-                            "value": "7"
+                            "value": "2"
                         },
                         {
                             "name": "FR_CONTAINER",
@@ -872,7 +872,7 @@
                         } ,
                         {
                             "name": "CONVERSATION_TTL_SECS",
-                            "value": "7200"
+                            "value": "172800"
                         } ,
                         {
                             "name": "MAX_SEARCH_TOKENS",

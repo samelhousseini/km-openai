@@ -11,12 +11,7 @@ from langchain.prompts.chat import (
 )
 
 
-RESTRICTIVE_PROMPT = os.environ['RESTRICTIVE_PROMPT']
-GPT35_TURBO_COMPLETIONS_MODEL = os.environ['GPT35_TURBO_COMPLETIONS_MODEL']
-CHOSEN_COMP_MODEL = os.environ['CHOSEN_COMP_MODEL']
-
-GPT4_MODEL = "gpt-4"
-GPT4_32K_MODEL = "gpt-4-32k"
+from utils.env_vars import *
 
 
 
@@ -91,8 +86,10 @@ def get_simple_prompt(context, query, history, pre_context):
     else:
         instruction = instruction_simple
 
+    gen = openai_helpers.get_generation(CHOSEN_COMP_MODEL)
 
-    if (CHOSEN_COMP_MODEL == GPT4_MODEL) or (CHOSEN_COMP_MODEL == GPT4_32K_MODEL):
+    # if (CHOSEN_COMP_MODEL == GPT4_MODEL) or (CHOSEN_COMP_MODEL == GPT4_32K_MODEL):
+    if (gen == 4) or (gen == 3.5):        
         messages = [
                     SystemMessagePromptTemplate.from_template(instruction_template).format(strict=strict_prompt),
                     HumanMessagePromptTemplate.from_template(body).format(history=history, 

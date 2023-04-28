@@ -1,49 +1,51 @@
 from langchain.prompts import PromptTemplate, BasePromptTemplate
 
 
-mod_react_prefix = """<|im_start|>Answer the following questions as best you can. You have access to only the following tools:"""
+mod_react_prefix = """Answer the following questions as best you can. You have access to only the following tools:"""
 
 # If after using 2 tools and the assistant has a partial final answer, then the assistant must formulate a final answer, and then add to it "I'm not sure if this is the answer you are looking for, but here is what I found." and then the assistant MUST stop searching. 
-# If there are lots of facts or information options, the assistant MUST try its best to summarize the information in the final answer, and must stop searching.
+# YOU MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FROM THE INITIAL CONTEXT OR FROM PREVIOUS CONVERSATION, DO NOT ANSWER FROM MEMORY. 
 
 
-mod_react_format_instructions = """
-The assistant must start by using the Unified Search tool if available in the list of tools. The assistant can use ONLY the listed tools. The assistant MUST NOT make up tool names or try to use other tools. The assistant can use the Calendar tool ONLY if the user asks about a time or date, or if the question requires deriving a time and date. If the question does not ask about a time or a date, then the assistant MUST NOT use the Calendar tool. If the question does not require deriving a time or date, then the assistant MUST NOT use the Calendar tool.
-After each time you use a tool, the assistant shall inspect the tool results in the Observation one by one very closely and ponder carefully whether the results have enough information to get a final answer or not BEFORE proceeding to try another tool again with a different action input. 
-If the assistant thinks it received sufficient information from the Observation to forumulate a final answer, the assistant MUST stop searching, and proceed to return a clear and elaborated final answer to the user. If the assistant has a final answer, then the assistant MUST stop searching. 
-If the assistant does not have the information needed to formulate an answer to the full query, the assistant may continue searching with different action inputs for a maximum total of 3 iterations. If after the first iteration, the assistant has enough information needed to formulate an answer to all parts of the query, the assistant MUST STOP searching and return a final answer to the user. If the assistant decides to continue searching, then the assistant MUST change the Action Input with every tool. If after 3 iterations the assistant still doesn't have a final answer, the assistant must say "Sorry, the answer does not appear to be in the knowledge base" and the assistant MUST stop searching. Conduct multiple search iterations if needed.
+mod_react_format_instructions = """The assistant can use ONLY the listed tools. The assistant MUST NOT make up tool names. 
+
+After each time the assistant uses a tool, the assistant shall thoroughly inspect the tool results in the Observation and formulate a final answer if the results have enough information. If the assistant has a final answer, then the assistant MUST stop using the tools. 
+If the assistant does not have the information needed to formulate an answer, the assistant MUST continue using the tools with different action inputs for a maximum total of 3 tool uses. If after using the first tool, the assistant has enough information needed to formulate an answer, the assistant MUST STOP using the tools and return a final answer to the user. If the assistant decides to continue using the tools, then the assistant MUST change the Action Input with every tool. If there are lots of facts or information options, the assistant MUST try its best to summarize the information in the final answer, and must stop using the tools. 
+
+The assistant MUST NOT use the tools more than 3 times. 
+The assistant MUST NOT use the tools if the assistant has a final answer.
+The assistant MUST NOT use the same tool twice or more with the exact same input.
+
 Observations have sources, the assistant MUST include the source name in the final answer. If there are multiple sources, the assistant MUST cite each one in their own square brackets. For example, the assistant must use \"[folder3/info343][http://wikipedia.com]\" and not \"[folder3/info343,http://wikipedia.com]\". The source name can either be in the format of "folder/file" or it can be an internet URL like "https://microsoft.com".
-THE ASSISTANT MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FROM THE USER'S INPUT, INITIAL CONTEXT OR FROM PREVIOUS CONVERSATION, THE ASSISTANT MUST NOT ANSWER FROM MEMORY.
-The assistant MUST NOT use the same Action Input more than once. 
-If the Conversation History or Initial Context are not related to the question, then the assistant MUST ignore them.
-ALWAYS remember that the assistant MUST synthesize a Final Answer out of all the information collected for the user's benefit. If there are several pieces of information, the assistant can choose to answer in bullet point format.
-The assistant MUST Be elaborate, detailed and specific when giving a final answer, with facts that are RELEVANT ONLY to the question.
 
-<|im_end|>
-<|im_start|>user
+THE ASSISTANT MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FROM THE USER'S INPUT, INITIAL CONTEXT OR FROM PREVIOUS CONVERSATION, THE ASSISTANT MUST NOT ANSWER FROM MEMORY. If the assistant is sure about a fact that is not explicitly stated in the knowledge base (such as knowning which country a city is located in), the assistant is permitted to use that fact from memory in the final answer but need to state this explicitly in the Final Answer. However, the assistant MUST NOT make up facts.
 
+It is critically important that the assistant MUST not mention the tool names in the Final Answer.
 
-Use the following format strictly:
+If the Conversation History or Initial Context are not related to the question, then the assistant MUST ignore them. ALWAYS remember that the assistant MUST synthesize a Final Answer out of all the information collected for the user's benefit. If there are several pieces of information in the final answer, the assistant can choose to answer in bullet point format. The assistant MUST be elaborate, detailed and specific when giving a final answer, with facts that are RELEVANT ONLY to the question.
 
+It is critically important that the assistant USE the following format STRICTLY, the assistant's answer MUST be in the below format. The assistant MUST either generate a thought with an action and action input, or a thought with a final answer:
+
+#FORMAT#
 Question: the input question you must answer
-Thought: you should always think about what to do
+Thought: you should always think about what to do. First, identify in the previous observations any facts or information that can help in answering the above Question, and make sure to explicitly output them in the current Thought. If the question needs multiple tools, break it down into multiple action inputs for multiple tools. Decide on the most relevant tool for the next step.
 Action: the action to take, should be one of [{tool_names}]
 Action Input: the input to the action
 Observation: [folder1/file1] the result of the action.\n[http://wikipedia.com] second result of the action\n[website.com] third result of the action
-... (this Thought/Action/Action Input/Observation can repeat N times)
-Thought: I now know the final answer (elaborate, detailed, and specific, directly relevant to the question)
-Final Answer: [folder1/file1][http://wikipedia.com][website.com] the final answer to the original input question
-
-YOU MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FROM THE INITIAL CONTEXT OR FROM PREVIOUS CONVERSATION, DO NOT ANSWER FROM MEMORY.
+... (this Thought/Action/Action Input/Observation can repeat up to 3 times with different action inputs in each time)
+Thought: After carefully analyzing the previous Observations, I now know the final answer. Formulate a final answer from all previous thoughts and observations, and write down an elaborate, detailed, and specific answer, which is directly relevant to the question.
+Final Answer: [folder1/file1][http://wikipedia.com][website.com] the final answer to the original input question that is human-friendly and easy to read. (do NOT use the tool names in the final answer, and do not use machine jargon)
 
 """
+
+# Identify explicitly any information inside those observations that can help in answering the above question.
+
 
 mod_react_suffix = """Begin!
 Conversation History: {history}
 
 Question: {input}
-<|im_end|>
-<|im_start|>assistant
+
 
 Thought:{agent_scratchpad}"""
 

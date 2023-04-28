@@ -50,7 +50,9 @@ class HTTPRequest:
         self.search_service_name = search_service_name
         self.index_name = index_name
         self.api_version = api_version
-        self.url = f"{search_service_name}/indexes/{index_name}?api-version={api_version}"
+        self.url        = f"{search_service_name}/indexes/{index_name}?api-version={api_version}"
+        self.post_url   = f"{search_service_name}/indexes/{index_name}/docs/index?api-version={api_version}"
+        self.search_url = f"{search_service_name}/indexes/{index_name}/docs/search?api-version={self.api_version}"
         
         self.default_headers = {'Content-Type': 'application/json', 'api-key': self.api_key}
 
@@ -67,7 +69,18 @@ class HTTPRequest:
         return response_data
 
 
-    @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(10))
+    def get_url(self, op = None):
+        if op == 'index':
+            url = self.post_url
+        elif op == 'search':
+            url = self.search_url
+        else:
+            url = self.url
+
+        return url
+
+
+    @retry(wait=wait_random_exponential(min=1, max=4), stop=stop_after_attempt(4))
     def put(self, headers=None, body=None):
         
         if headers is None:
@@ -82,8 +95,10 @@ class HTTPRequest:
         return self.handle_response(response)
 
 
-    @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(10))
-    def post(self, headers=None, body=None):
+    @retry(wait=wait_random_exponential(min=1, max=4), stop=stop_after_attempt(4))
+    def post(self, op = None, headers=None, body=None):
+
+        url = self.get_url(op)
 
         if headers is None:
             headers = self.default_headers
@@ -93,11 +108,11 @@ class HTTPRequest:
         if body is None:
             body = {}
         
-        response = requests.post(self.url, json=body, headers=headers)
+        response = requests.post(url, json=body, headers=headers)
         return self.handle_response(response)
 
 
-    @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(10))
+    @retry(wait=wait_random_exponential(min=1, max=4), stop=stop_after_attempt(2))
     def get(self, headers=None, params=None):
 
         if headers is None:
@@ -112,13 +127,15 @@ class HTTPRequest:
         return self.handle_response(response)
 
 
-    @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(10))
-    def delete(self, headers=None):
+    @retry(wait=wait_random_exponential(min=1, max=4), stop=stop_after_attempt(4))
+    def delete(self, op = None, id = None, headers=None):
+
+        url = self.get_url(op)
 
         if headers is None:
             headers = self.default_headers
         else:
             headers = {**self.default_headers, **headers}
         
-        response = requests.delete(self.url, headers=headers)
+        response = requests.delete(url, headers=headers)
         return self.handle_response(response)

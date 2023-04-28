@@ -23,23 +23,7 @@ from langchain.prompts.chat import (
 )
 
 
-DAVINCI_003_MODEL_MAX_TOKENS = int(os.environ["DAVINCI_003_MODEL_MAX_TOKENS"])
-ADA_002_MODEL_MAX_TOKENS     = int(os.environ["ADA_002_MODEL_MAX_TOKENS"])
-DAVINCI_003_EMB_MAX_TOKENS   = int(os.environ['DAVINCI_003_EMB_MAX_TOKENS'])
-GPT35_TURBO_COMPLETIONS_MODEL = os.environ['GPT35_TURBO_COMPLETIONS_MODEL']
-
-
-CHOSEN_EMB_MODEL        = os.environ['CHOSEN_EMB_MODEL']
-CHOSEN_QUERY_EMB_MODEL  = os.environ['CHOSEN_QUERY_EMB_MODEL']
-
-NUM_TOP_MATCHES = int(os.environ['NUM_TOP_MATCHES'])
-CHOSEN_COMP_MODEL = os.environ.get("CHOSEN_COMP_MODEL")
-GPT35_TURBO_COMPLETIONS_MAX_TOKENS = int(os.environ.get("GPT35_TURBO_COMPLETIONS_MAX_TOKENS"))
-MAX_OUTPUT_TOKENS = int(os.environ.get("MAX_OUTPUT_TOKENS"))
-MAX_QUERY_TOKENS = int(os.environ.get("MAX_QUERY_TOKENS"))
-MAX_HISTORY_TOKENS = int(os.environ.get("MAX_HISTORY_TOKENS"))
-MAX_SEARCH_TOKENS  = int(os.environ.get("MAX_SEARCH_TOKENS"))
-PRE_CONTEXT = int(os.environ['PRE_CONTEXT'])
+from utils.env_vars import *
 
 
 system_message = "The assistant is a super helpful assistant that plays the role of a linguistic professor and has ultra high attention to details."
@@ -90,7 +74,7 @@ class OldSchoolSearch():
 
         if history != '':
             
-            if gen == 4:
+            if (gen == 4) or (gen == 3.5):
                 messages = [
                     SystemMessagePromptTemplate.from_template(system_message).format(),
                     HumanMessagePromptTemplate.from_template(body).format(history=history, question=query),
@@ -105,7 +89,7 @@ class OldSchoolSearch():
                                                 instruction=instruction)
                 query = openai_helpers.contact_openai(prompt)
                 
-        if gen == 4:
+        if (gen == 4) or (gen == 3.5):
             p = ''
             for m in utils.langchain_helpers.simple_prompt.get_simple_prompt('', '', '', ''): p += m['content']
             empty_prompt_length = len(completion_enc.encode(p))
@@ -121,7 +105,7 @@ class OldSchoolSearch():
         if enable_unified_search:
             context = lc_agent.unified_search(query)
         elif enable_cognitive_search:
-            context = lc_agent.agent_cog_search(query, filter_param)
+            context = lc_agent.agent_cog_search(query)
         else: 
             context = lc_agent.agent_redis_search(query)
         
