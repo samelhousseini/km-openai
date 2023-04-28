@@ -4,7 +4,7 @@
 <br/>
 
 > **Note:**
-> This repo now supports GPT-4, and support Vector Search in Cognitive Search
+> This repo now supports GPT-4, and supports Vector Search in Cognitive Search
 
 <br/>
 
