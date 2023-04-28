@@ -42,6 +42,8 @@ The below are the features of this solution:
  
 1. Using both Redis and Cognitive Search (Vector Search and Semantic Search) as tools for the LangChain Agent. Also, added Bing as a third search tool, which can be enabled or disabled.
 
+1. If the user chooses to use Vector Search in Cognitive Search, then they skip Redis provisioning by keeping `REDIS_ADDR` blank in the configuration. However, that means that the session history cannot be cached, and each query/question is independent of the previous ones. If the user chooses to provision Redis, they can still Cognitive Sarch for vector search, and Redis as a cache only (no vector search).
+
 1. Added filtering support in the Bot HTTP request API. This would be useful for things like multi-tenant demos, and filtering on docuemnts with an original source language. Use `"filter":"@field:value"` in the HTTP request e.g. `"filter":"@orig_lang:en"`.
 
 1. Automatic segmenting / chunking of documents with overlap based on the specified number(s) of tokens for each OpenAI model to generate embeddings.
