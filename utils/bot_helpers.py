@@ -26,7 +26,7 @@ def openai_interrogate_text(query, session_id=None, filter_param=None, agent_nam
     lang = language.detect_content_language(query)
     if lang != 'en': query = language.translate(query, lang, 'en')
 
-    if (agent_name is None) or (agent_name not in ['zs', 'ds', 'os']):
+    if (agent_name is None) or (agent_name not in ['zs', 'ccr', 'os']):
         agent_name = 'zs'
 
     agent = km_agents.KMOAI_Agent(agent_name = agent_name, params_dict=params_dict, verbose = False)
