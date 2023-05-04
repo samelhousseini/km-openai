@@ -49,6 +49,21 @@ def create_search_index (redis_new_conn, vector_field_name, number_of_vectors, v
     redis_new_conn.ft(REDIS_INDEX_NAME).create_index(fields)
 
 
+def flush_cached_values_only():
+    if (REDIS_ADDR is None) or (REDIS_ADDR == ''): return None
+
+    redis_conn = get_new_conn()
+    ks = redis_conn.keys()
+    print(f"Found {len(ks)} values that are cached in Redis")
+
+    for k in ks:
+        ttl = redis_conn.ttl(k)
+        if ttl > 0:
+            print(f"Key has {ttl} seconds to live, deleting...")
+            redis_conn.expire(name=k, time=1)
+
+
+
 def redis_reset_index(redis_new_conn):
     #flush all data
     redis_new_conn.flushall()
@@ -83,7 +98,7 @@ def get_new_conn():
     return redis_conn
 
 
-retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
+@retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
 def redis_upsert_embedding(redis_conn, e_dict):   
     if (REDIS_ADDR is None) or (REDIS_ADDR == ''): return None
 
@@ -91,7 +106,17 @@ def redis_upsert_embedding(redis_conn, e_dict):
         #embeds = np.array(e[VECTOR_FIELD_IN_REDIS]).astype(np.float32).tobytes()
         #meta = {'text_en': e['text_en'], 'text':e['text'], 'doc_url': e['doc_url'], 'timestamp': e['timestamp'], VECTOR_FIELD_IN_REDIS:embeds}
         e = copy.deepcopy(e_dict)
-        e[VECTOR_FIELD_IN_REDIS] = np.array(e[VECTOR_FIELD_IN_REDIS]).astype(np.float32).tobytes()
+
+        for k in e: 
+            if isinstance(e[k], list) and (len(e[k]) > 0):
+                if isinstance(e[k][0], float): e[k] = np.array(e[k]).astype(np.float32).tobytes()
+                if isinstance(e[k][0], str): e[k] = ', '.join(e[k])
+
+        # e[VECTOR_FIELD_IN_REDIS] = np.array(e[VECTOR_FIELD_IN_REDIS]).astype(np.float32).tobytes()
+
+        for k in e: 
+            if isinstance(e[k], list):
+                print(e[k])
 
         p = redis_conn.pipeline(transaction=False)
         p.hset(e['id'], mapping=e)
@@ -130,7 +155,7 @@ def redis_query_embedding_index(redis_conn, query_emb, t_id, topK=5, filter_para
 
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
 def redis_set(redis_conn, key, field, value, expiry = None, verbose = False):
-    if (REDIS_ADDR is None) or (REDIS_ADDR == ''): return None
+    if (REDIS_ADDR is None) or (REDIS_ADDR == '') or (USE_REDIS_CACHE != 1): return None
 
     key = key.replace('"', '')
     res = redis_conn.hset(key, field, value)
@@ -144,12 +169,11 @@ def redis_set(redis_conn, key, field, value, expiry = None, verbose = False):
 
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
 def redis_get(redis_conn, key, field, expiry = CONVERSATION_TTL_SECS, verbose = False):
-    if (REDIS_ADDR is None) or (REDIS_ADDR == ''): return None
+    if (REDIS_ADDR is None) or (REDIS_ADDR == '') or (USE_REDIS_CACHE != 1): return None
 
     key = key.replace('"', '')
     if verbose: print("\nGetting Redis Key: ", key, field)
     if redis_conn.ttl(key) > 0: redis_conn.expire(name=key, time=expiry)
-
     return redis_conn.hget(key, field)
     
 

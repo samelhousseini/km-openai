@@ -185,3 +185,8 @@ summarization.ipynb
 summarization copy.ipynb
 utils/langchain_helpers/summ_react_prompt.py
 cogvecsearch.ipynb
+qna debug.ipynb
+cv.ipynb
+.env1
+qna_demo.ipynb
+qna_lufthansa.ipynb

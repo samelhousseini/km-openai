@@ -276,11 +276,15 @@ re_strs = [
 
 def process_filter(filter_param = None):
     proc_filter = None
-    if filter_param is not None:
-        filter_const = filter_param.replace("@", '').split(':')
-        if len(filter_const) > 0:
-            proc_filter = f"{filter_const[0]} eq '{filter_const[1]}'"
-    return proc_filter
+    try:
+        if filter_param == '*': return None
+        if filter_param is not None:
+            filter_const = filter_param.replace("@", '').split(':')
+            if len(filter_const) > 1:
+                proc_filter = f"{filter_const[0]} eq '{filter_const[1]}'"
+        return proc_filter
+    except:
+        return None
 
 
 def cog_vecsearch(terms: str, filter_param = None):

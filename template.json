@@ -832,7 +832,7 @@
                         } ,
                         {
                             "name": "NUM_TOP_MATCHES",
-                            "value": "2"
+                            "value": "3"
                         },
                         {
                             "name": "FR_CONTAINER",
@@ -889,6 +889,10 @@
                         {
                             "name": "LIST_OF_COMMA_SEPARATED_URLS",
                             "value": "[ parameters('ListOfCommaSeparatedURLs')]" 
+                        },
+                        {
+                            "name": "USE_REDIS_CACHE",
+                            "value": "1"
                         }
                     ]
                 },

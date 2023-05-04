@@ -21,6 +21,10 @@ class KB_Doc():
         self.filename = ''
         self.web_url = ''
 
+        if PROCESS_IMAGES == 1:
+            self.cv_image_vector = [0.] * 1024
+            self.cv_text_vector = [0.] * 1024
+
 
     def load(self, data):
         for k in data:

@@ -26,8 +26,11 @@ USE_COG_VECSEARCH = int(os.environ.get("USE_COG_VECSEARCH", "1"))
 
 CONVERSATION_TTL_SECS = int(os.environ.get("CONVERSATION_TTL_SECS", "172800"))
 
-DATABASE_MODE = int(os.environ.get("DATABASE_MODE", "1"))
+DATABASE_MODE = int(os.environ.get("DATABASE_MODE", "0"))
 
+USE_REDIS_CACHE = int(os.environ.get("USE_REDIS_CACHE", "1"))
+
+PROCESS_IMAGES = int(os.environ.get("PROCESS_IMAGES", "1"))
 
 
 
@@ -62,6 +65,8 @@ BING_SEARCH_URL = os.environ.get("BING_SEARCH_URL", "https://api.bing.microsoft.
 TRANSLATION_ENDPOINT = os.environ.get("TRANSLATION_ENDPOINT", "https://api.cognitive.microsofttranslator.com")
 TRANSLATION_API_KEY = os.environ.get("TRANSLATION_API_KEY", COG_SERV_KEY)
 TRANSLATION_LOCATION = os.environ.get("TRANSLATION_LOCATION", "westeurope")
+
+if TRANSLATION_API_KEY == "": TRANSLATION_API_KEY = COG_SERV_KEY
 
 
 ###################
@@ -137,6 +142,6 @@ GPT4_COMPLETIONS_MODEL_MAX_TOKENS =  int(os.environ.get("GPT4_COMPLETIONS_MODEL_
 GPT4_32K_COMPLETIONS_MODEL_MAX_TOKENS = int(os.environ.get("GPT4_32K_COMPLETIONS_MODEL_MAX_TOKENS", "32768"))
 GPT4_MODEL = os.environ.get("GPT4_MODEL", "gpt-4")
 GPT4_32K_MODEL = os.environ.get("GPT4_32K_MODEL", "gpt-4-32k")
-
+CV_API_VERSION = os.environ.get("CV_API_VERSION", "2023-02-01-preview")
 
 

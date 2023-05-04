@@ -87,6 +87,7 @@ def handle_message(q):
     emit('new_message', "Query: " + q + '\n') 
     answer, sources, likely_sources, s_id = agents_sid[request.sid].run(q, redis_conn, request.sid)
     sources_str = ''
+    send(answer)
     if len(sources) > 0:
         for s in sources: 
             try:

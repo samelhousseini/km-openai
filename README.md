@@ -14,7 +14,7 @@
 <br />
 
 
-# Knowledge Mining with OpenAI Architecture
+# Enterprise Search with OpenAI Architecture
 <br/>
 <br />
 <p align="center">

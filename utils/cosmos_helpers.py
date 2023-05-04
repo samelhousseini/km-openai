@@ -14,28 +14,34 @@ from utils import redis_helpers
 from utils.env_vars import *
 
 
+try:
 
-client = CosmosClient(url=COSMOS_URI, credential=COSMOS_KEY)
-partitionKeyPath = PartitionKey(path="/categoryId")
-database = client.create_database_if_not_exists(id=COSMOS_DB_NAME)
+    if DATABASE_MODE == 1:
+        client = CosmosClient(url=COSMOS_URI, credential=COSMOS_KEY)
+        partitionKeyPath = PartitionKey(path="/categoryId")
+        database = client.create_database_if_not_exists(id=COSMOS_DB_NAME)
 
-def init_container():
+        def init_container():
 
-    indexing_policy={ "includedPaths":[{ "path":"/*"}], "excludedPaths":[{ "path":"/\"_etag\"/?"},{ "path":f"/{VECTOR_FIELD_IN_REDIS}/?"}]}
+            indexing_policy={ "includedPaths":[{ "path":"/*"}], "excludedPaths":[{ "path":"/\"_etag\"/?"},{ "path":f"/{VECTOR_FIELD_IN_REDIS}/?"}]}
+            
+            try:
+                container = database.create_container_if_not_exists(id="documents", partition_key=partitionKeyPath,indexing_policy=indexing_policy)
+            except:
+                try:
+                    container = database.create_container_if_not_exists(id="documents", partition_key=partitionKeyPath,indexing_policy=indexing_policy)
+
+                except Exception as e:
+                    logging.error(f"Encountered error {e} while creating the container")
+                    print(f"Encountered error {e} while creating the container")
+
+            return container
+
+        container = init_container()
     
-    try:
-        container = database.create_container_if_not_exists(id="documents", partition_key=partitionKeyPath,indexing_policy=indexing_policy)
-    except:
-        try:
-            container = database.create_container_if_not_exists(id="documents", partition_key=partitionKeyPath,indexing_policy=indexing_policy)
-
-        except Exception as e:
-            logging.error(f"Encountered error {e} while creating the container")
-            print(f"Encountered error {e} while creating the container")
-
-    return container
-
-container = init_container()
+except:
+    print("Failed to initialize Cosmos DB container")
+    logging.error("Failed to initialize Cosmos DB container")
 
 
 

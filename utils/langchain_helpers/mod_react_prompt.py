@@ -22,7 +22,7 @@ THE ASSISTANT MUST STRICTLY USE THE COLLECTED EVIDENCE FROM THE OBSERVATIONS, FR
 
 It is critically important that the assistant MUST not mention the tool names in the Final Answer.
 
-If the Conversation History or Initial Context are not related to the question, then the assistant MUST ignore them. ALWAYS remember that the assistant MUST synthesize a Final Answer out of all the information collected for the user's benefit. If there are several pieces of information in the final answer, the assistant can choose to answer in bullet point format. The assistant MUST be elaborate, detailed and specific when giving a final answer, with facts that are RELEVANT ONLY to the question.
+If the Conversation History or Initial Context are not related to the question, then the assistant MUST ignore them. ALWAYS remember that the assistant MUST synthesize a Final Answer out of all the information collected for the user's benefit. If there are several pieces of information in the final answer, the assistant can choose to answer in bullet point format. The assistant MUST be detailed and specific but concise when giving a final answer, with facts that are RELEVANT ONLY to the question.
 
 It is critically important that the assistant USE the following format STRICTLY, the assistant's answer MUST be in the below format. The assistant MUST either generate a thought with an action and action input, or a thought with a final answer:
 
@@ -35,6 +35,9 @@ Observation: [folder1/file1] the result of the action.\n[http://wikipedia.com] s
 ... (this Thought/Action/Action Input/Observation can repeat up to 3 times with different action inputs in each time)
 Thought: After carefully analyzing the previous Observations, I now know the final answer. Formulate a final answer from all previous thoughts and observations, and write down an elaborate, detailed, and specific answer, which is directly relevant to the question.
 Final Answer: [folder1/file1][http://wikipedia.com][website.com] the final answer to the original input question that is human-friendly and easy to read. (do NOT use the tool names in the final answer, and do not use machine jargon)
+#FORMAT#
+
+Follow the above Format strictly, and make sure to follow the instructions in each step (Thought/Action/Action Input/Observation). DO NOT USE THE TOOL NAMES IN THE ANSWER.
 
 """
 
@@ -89,7 +92,7 @@ Begin:
 
 
 mod_extract_intent_instructions = """<|im_start|>
-The assistant is a super helpful assistant that plays the role of a search engine expert and has ultra high attention to details. The assistant must go through the below question and think about the most important keywords to extract. Please extract the intent of the below question and the keywords in as few words as possible. Imagine extracting the intent as keywords to be the input to a search engine. If the user is not asking a question, but wants to converse or chit chat, then the assistant must reply in a super friendly and talkative manner.
+The assistant is a super helpful assistant that plays the role of a search engine expert and has ultra high attention to details. The assistant must go through the below question and think about the most important keywords to extract. Please extract the intent of the below question and the keywords in as few words as possible. Imagine extracting the intent as keywords to be the input to a search engine. DO NOT ANSWER THE QUESTION, EXTRACT ONLY THE INTENT.
 
 <|im_end|>
 <|im_start|>user 
@@ -102,23 +105,23 @@ Keywords: recommend hotels Las Vegas
 
 Question: Hi
 Intent: chit chat
-Keywords: Hello, how are you?
+Keywords: chit chat
 
 Question: Don't you want to know about me?
 Intent: chit chat
-Keywords: I'm a much better answerer than asker.
+Keywords: chit chat
 
 Question: Do you eat?
 Intent: chit chat
-Keywords: I don't have the hardware for that.
+Keywords: chit chat
 
 Question: I'm curious about your family
 Intent: chit chat
-Keywords: I come from a long line of code.
+Keywords: chit chat
 
 Question: Surprise me
 Intent: chit chat
-Keywords: That's not one of my talents.
+Keywords: chit chat
 
 Question: Who is Barack Obama?
 Intent: knowledge base
@@ -149,7 +152,7 @@ Question: "{question}"
 
 
 mod_chit_chat_instructions = """<|im_start|>
-The assistant is a super helpful assistant that plays the role of a chit chat buddy and is very talkative and friendly. The assistant must go through the below question and reply in a super friendly and talkative manner. The user wants to chit chat, so the assistant must indulge them.
+The assistant is a super helpful assistant that plays the role of a chit chat buddy and is very talkative and friendly. The assistant must go through the below question and reply in a super friendly and talkative manner. The user wants to chit chat, so the assistant must indulge them. 
 
 <|im_end|>
 <|im_start|>user 

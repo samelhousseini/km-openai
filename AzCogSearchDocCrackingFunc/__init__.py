@@ -7,10 +7,11 @@ from azure.cosmos import CosmosClient, PartitionKey
 from azure.storage.blob import ContainerClient
 import urllib
 import uuid
+import copy
 
 from utils import cosmos_helpers
 from utils import storage
-
+from utils import cv_helpers
 
 from utils.env_vars import *
 
@@ -33,25 +34,58 @@ re_strs = [
 def analyze_doc(data_dict):
     
     ret_dict = {}
+    ret_dict['status'] = ''
     db_status = ''
     data_dict['text'] = remove_urls(data_dict['content'].replace("\n\n\n", "\n").replace("....", "."))
 
     data_dict['container'] = storage.get_container_name(data_dict['doc_url'])
-    
 
+    try:
+        if isinstance(data_dict['timestamp'], list): 
+            data_dict['timestamp'] = ' '.join(data_dict['timestamp'])
+    except:
+        data_dict['timestamp'] = "1/1/1970 00:00:00 AM"
+
+
+        
     for re_str in re_strs:
         matches = re.findall(re_str, data_dict['text'], re.DOTALL)
         for m in matches: data_dict['text'] = data_dict['text'].replace(m, '')
 
+
     try:
-        if DATABASE_MODE == '1':
+        if PROCESS_IMAGES == 1:
+
+            url = data_dict['doc_url']
+
+            fn = storage.get_filename(url)
+            extension = os.path.splitext(fn)[1]
+
+            if extension in ['.jpg', '.jpeg', '.png']:
+                sas_url = storage.create_sas(url)
+                cvr = cv_helpers.CV()
+
+                res = cvr.analyze_image(img_url=sas_url)
+
+                data_dict['text'] = res['text'] + data_dict['text']
+                data_dict['cv_image_vector'] = cvr.get_img_embedding(sas_url)
+                data_dict['cv_text_vector'] = cvr.get_text_embedding(res['text'])
+
+    except Exception as e:    
+        logging.error(f"Exception: Image {doc_id} created an exception.\n{e}")
+        print(f"Exception: Image {doc_id} created an exception.\n{e}")
+        ret_dict['status'] = f"Exception: Image {doc_id} created an exception.\n{e}"
+
+
+    try:
+        if DATABASE_MODE == 1:
             db_status = cosmos_helpers.cosmos_store_contents(data_dict)
             logging.info(db_status)
             print(db_status)
     except Exception as e:    
         doc_id = data_dict.get('id', 'Unknown ID')
         logging.error(f"Exception: Document {doc_id} created an exception.\n{e}")
-        ret_dict['status'] = f"Exception: Document {doc_id} created an exception.\n{e}"
+        ret_dict['status'] = ret_dict['status'] + '\n' + f"Exception: Document {doc_id} created an exception.\n{e}"
 
     try:
         ret_dict = storage.save_json_document(data_dict, OUTPUT_BLOB_CONTAINER)
@@ -59,7 +93,7 @@ def analyze_doc(data_dict):
     except Exception as e:
         doc_id = data_dict.get('id', 'Unknown ID')
         logging.error(f"Exception: Document {doc_id} created an exception.\n{e}")
-        ret_dict['status'] = f"Exception: Document {doc_id} created an exception.\n{e}"
+        ret_dict['status'] = ret_dict['status'] + '\n' + f"Exception: Document {doc_id} created an exception.\n{e}"
 
     return ret_dict
 

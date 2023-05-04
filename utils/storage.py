@@ -69,7 +69,7 @@ def save_json_document(data_dict, container = OUTPUT_BLOB_CONTAINER):
 
     new_doc['id'] = new_doc.get('id', str(uuid.uuid4()))
     new_doc['categoryId'] = CATEGORYID
-    new_doc['timestamp']  = new_doc.get('timestamp', datetime.now().strftime("%m/%d/%Y, %H:%M:%S")),  
+    new_doc['timestamp']  = new_doc.get('timestamp', datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))  
     new_doc['doc_url']    = new_doc.get('doc_url', f'https://microsoft.com/{str(uuid.uuid4())}')
     
     if 'content' in new_doc.keys():

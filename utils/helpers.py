@@ -242,7 +242,7 @@ def process_search_results(results):
     context = []
 
     for t in results:
-        t['text_en'] = t['text_en'].replace('\r', ' ') 
+        t['text_en'] = t['text_en'].replace('\r', ' ').replace('\n', ' ') 
 
         try:
             if ('web_url' in t.keys()) and (t['web_url'] is not None) and (t['web_url'] != ''):
