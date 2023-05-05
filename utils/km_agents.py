@@ -570,26 +570,26 @@ class KMOAI_Agent():
     def process_request(self, query, hist, pre_context):
         
         if self.verbose: print("agent_name", self.agent_name)
-        response = self.ccrd_chain({'input':query})
-        # try:
-        #     if self.agent_name == 'ccr':
-        #         response = self.ccrd_chain({'input':query})
-        #     elif self.agent_name == 'zs':
-        #         response = self.zs_chain({'input':query, 'history':hist})  
-        #     elif self.agent_name == 'os':   
-        #         response = OldSchoolSearch().search(query, hist, pre_context, filter_param=self.redis_filter_param, 
-        #                                             enable_unified_search=self.enable_unified_search, lc_agent=self, 
-        #                                             enable_cognitive_search=self.enable_cognitive_search, evaluate_step=self.evaluate_step,
-        #                                             stream=self.stream, verbose=self.verbose)             
-        #     else:
-        #         response = self.zs_chain({'input':query, 'history':hist, 'pre_context':pre_context}) 
+
+        try:
+            if self.agent_name == 'ccr':
+                response = self.ccrd_chain({'input':query})
+            elif self.agent_name == 'zs':
+                response = self.zs_chain({'input':query, 'history':hist})  
+            elif self.agent_name == 'os':   
+                response = OldSchoolSearch().search(query, hist, pre_context, filter_param=self.redis_filter_param, 
+                                                    enable_unified_search=self.enable_unified_search, lc_agent=self, 
+                                                    enable_cognitive_search=self.enable_cognitive_search, evaluate_step=self.evaluate_step,
+                                                    stream=self.stream, verbose=self.verbose)             
+            else:
+                response = self.zs_chain({'input':query, 'history':hist, 'pre_context':pre_context}) 
 
 
-        # except Exception as e:
-        #     e_str = str(e)
-        #     return 'I am sorry, I am not able to find an answer to your question. Please try again with a different question.', [], [f"Technical Error: {e_str}"]
-        #     # response = f"Technical Error: {e_str}"
-        #     print("Exception", response)
+        except Exception as e:
+            e_str = str(e)
+            return 'I am sorry, I am not able to find an answer to your question. Please try again with a different question.', [], [f"Technical Error: {e_str}"]
+            # response = f"Technical Error: {e_str}"
+            print("Exception", response)
         
         if (self.agent_name == 'os') and (self.stream):
             ans = ""
