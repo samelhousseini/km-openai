@@ -190,3 +190,9 @@ cv.ipynb
 .env1
 qna_demo.ipynb
 qna_lufthansa.ipynb
+.env2
+qna - ai knowledge exchange.ipynb
+kb_docs_samples/summaries_map_reduce.csv
+kb_docs_samples/summaries_refine.csv
+kb_docs_samples/summaries_map_reduce.pkl
+kb_docs_samples/summaries_refine.pkl

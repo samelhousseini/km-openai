@@ -24,7 +24,7 @@ class CV:
 
 
 
-    def process_json(self, response):
+    def process_json(self, img_url, response):
         res = {}
 
         res['main_caption'] = response['captionResult']['text']
@@ -32,15 +32,13 @@ class CV:
         res['ocr'] = response['readResult']['content']
         res['captions'] = [caption['text'] for caption in response['denseCaptionsResult']['values']]
 
-        res['text'] = f"Main Caption: {res['main_caption']}\nOCR: {res['ocr']}\nDense Captions: {', '.join(res['captions'])}\nTags: {', '.join(res['tags'])}"
+        res['text'] = f"[{img_url}] This is an image. Main Caption: {res['main_caption']}\nOCR: {res['ocr']}\nDense Captions: {', '.join(res['captions'])}\nTags: {', '.join(res['tags'])}"
 
         return res
 
 
 
     def analyze_image(self, img_url = None, filename = None):
-        
-        print(f"Contacting {self.http_req.url}")
 
         if filename is not None: 
         
@@ -51,7 +49,7 @@ class CV:
         else:
             response = self.http_req.post(op='analyze', headers=self.http_req.json_headers, body={'url': img_url})
             
-        response = self.process_json(response)
+        response = self.process_json(img_url, response)
 
         return response
 

@@ -37,7 +37,7 @@ def analyze_doc(data_dict):
     ret_dict['status'] = ''
     db_status = ''
     data_dict['text'] = remove_urls(data_dict['content'].replace("\n\n\n", "\n").replace("....", "."))
-
+    data_dict['contentType'] = 'text'
     data_dict['container'] = storage.get_container_name(data_dict['doc_url'])
 
     try:
@@ -70,6 +70,7 @@ def analyze_doc(data_dict):
                 data_dict['text'] = res['text'] + data_dict['text']
                 data_dict['cv_image_vector'] = cvr.get_img_embedding(sas_url)
                 data_dict['cv_text_vector'] = cvr.get_text_embedding(res['text'])
+                data_dict['contentType'] = 'image'
 
     except Exception as e:    
         logging.error(f"Exception: Image {doc_id} created an exception.\n{e}")

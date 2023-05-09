@@ -16,7 +16,7 @@ field_json = {
     "analyzer": None,
     "normalizer": None,
     "dimensions": None,
-    "algorithmConfiguration": None,
+    "vectorSearchConfiguration": None,
     "synonymMaps": []
 }
 
@@ -35,7 +35,7 @@ vector_json = {
     "analyzer": None,
     "normalizer": None,
     "dimensions": 1536,
-    "algorithmConfiguration": "vector-config",
+    "vectorSearchConfiguration": "vector-config",
     "synonymMaps": []
 }
 
@@ -60,7 +60,7 @@ create_index_json = {
             "analyzer": None,
             "normalizer": None,
             "dimensions": None,
-            "algorithmConfiguration": None,
+            "vectorSearchConfiguration": None,
             "synonymMaps": []
         },
         {
@@ -77,7 +77,7 @@ create_index_json = {
             "analyzer": None,
             "normalizer": None,
             "dimensions": None,
-            "algorithmConfiguration": None,
+            "vectorSearchConfiguration": None,
             "synonymMaps": []
         },
         {
@@ -94,7 +94,7 @@ create_index_json = {
             "analyzer": None,
             "normalizer": None,
             "dimensions": None,
-            "algorithmConfiguration": None,
+            "vectorSearchConfiguration": None,
             "synonymMaps": []
         },
         {
@@ -111,7 +111,7 @@ create_index_json = {
             "analyzer": None,
             "normalizer": None,
             "dimensions": None,
-            "algorithmConfiguration": None,
+            "vectorSearchConfiguration": None,
             "synonymMaps": []
         },
         {
@@ -128,7 +128,7 @@ create_index_json = {
             "analyzer": None,
             "normalizer": None,
             "dimensions": 1536,
-            "algorithmConfiguration": "vector-config",
+            "vectorSearchConfiguration": "vector-config",
             "synonymMaps": []
         },
         {
@@ -145,7 +145,7 @@ create_index_json = {
             "analyzer": None,
             "normalizer": None,
             "dimensions": 1024,
-            "algorithmConfiguration": "vector-config",
+            "vectorSearchConfiguration": "vector-config",
             "synonymMaps": []
         },
         {
@@ -162,7 +162,7 @@ create_index_json = {
             "analyzer": None,
             "normalizer": None,
             "dimensions": 1024,
-            "algorithmConfiguration": "vector-config",
+            "vectorSearchConfiguration": "vector-config",
             "synonymMaps": []
         }
     ],
@@ -209,9 +209,9 @@ create_index_json = {
         "algorithmConfigurations": [
             {
                 "name": "vector-config",
-                "algorithm": "hnsw",
+                "kind": "hnsw",
                 "hnswParameters": {
-                    "m": 4,
+                    "m": 40,
                     "efConstruction": 400,
                     "metric": "cosine"
                 }
@@ -241,7 +241,7 @@ search_dict_vector = {
     "vector": {
         "value": [],
         "fields": VECTOR_FIELD_IN_REDIS,
-        "k": 10
+        "k": NUM_TOP_MATCHES
     },
     "select": "*",
     "filter": None
@@ -256,7 +256,7 @@ search_dict_hybrid = {
     },
     "search": "",
     "select": "*",
-    "top": "10",
+    "top": f"{NUM_TOP_MATCHES}",
     "filter": None
 }
 
@@ -265,7 +265,7 @@ search_dict_semantic_hybrid= {
     "vector": {
         "value": [],
         "fields": VECTOR_FIELD_IN_REDIS,
-        "k": 10
+        "k": NUM_TOP_MATCHES,
     },
     "search": "",
     "select":"*",
@@ -274,6 +274,7 @@ search_dict_semantic_hybrid= {
     "queryLanguage": "en-us",
     "captions": "extractive",
     "answers": "extractive",
+    "top": f"{NUM_TOP_MATCHES*3}",
     "filter": None
 }
 

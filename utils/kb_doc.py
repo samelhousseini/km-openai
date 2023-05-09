@@ -20,6 +20,8 @@ class KB_Doc():
         self.container = KB_BLOB_CONTAINER
         self.filename = ''
         self.web_url = ''
+        self.contentType = ''
+
 
         if PROCESS_IMAGES == 1:
             self.cv_image_vector = [0.] * 1024

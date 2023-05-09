@@ -37,10 +37,14 @@ from utils.language import extract_entities
 from utils import redis_helpers
 from utils import helpers
 from utils import storage
+from utils import cv_helpers
 
 from utils.helpers import redis_search, redis_lookup
 from utils.cogsearch_helpers import cog_search, cog_lookup, cog_vecsearch
 from multiprocessing.dummy import Pool as ThreadPool
+from utils.cogvecsearch_helpers import cogsearch_vecstore
+
+
 
 from langchain.schema import (
     AIMessage,
@@ -174,6 +178,14 @@ class KMOAI_Agent():
         else:
             self.bing_search = None
 
+
+        if PROCESS_IMAGES == 1:
+            agent_tools += [
+                Tool(name="Analyse Image", func=self.agent_analyze_image, description="useful for when you need to analyze images and get back text description"),
+                Tool(name="Get Similar Images with URL", func=self.agent_get_similar_images, description="useful for when you need to get similar images from the knowledge base"),
+            ]
+
+
         ds_tools = [
             Tool(name="Search", func=self.unified_search, description="useful for when you need to answer questions"),
             Tool(name="Lookup", func=self.agent_cog_lookup, description="useful for when you need to lookup terms")
@@ -271,6 +283,19 @@ class KMOAI_Agent():
             return response
         else:
             return ''
+
+
+
+    def agent_analyze_image(self, url):
+        cvr = cv_helpers.CV()
+        res = cvr.analyze_image(img_url=url)            
+        return res['text']
+
+
+    def agent_get_similar_images(self, url):
+        vs = cogsearch_vecstore.CogSearchVecStore()
+        return '\n\n'.join(vs.search_similar_images(url))
+
 
 
     def evaluate(self, query, context):
@@ -425,25 +450,26 @@ class KMOAI_Agent():
 
         answer_with_sources = copy.deepcopy(answer)
 
-        source_matches = re.findall(r'\((.*?)\)', answer)  
-        source_matches += re.findall(r'\[(.*?)\]', answer)
+        # source_matches = re.findall(r'\((.*?)\)', answer)  
+        source_matches = re.findall(r'\[(.*?)\]', answer)
         
+        source_num = 1
         for s in source_matches:
             try:
                 arr = s.split('/')
                 sas_link = storage.create_sas_from_container_and_blob(arr[0], arr[1])
                 sources.append(sas_link)
-                answer = answer.replace('('+s+')', '')
-                answer = answer.replace('['+s+']', '')
+                answer = answer.replace(s, str(source_num))
+                source_num += 1
             except:
                 if s.startswith("https://"): 
                     sources.append(s)
-                    answer = answer.replace('('+s+')', '')
-                    answer = answer.replace('['+s+']', '')
+                    answer = answer.replace(s, str(source_num))
+                    source_num += 1
                 elif s.startswith("http://"): 
                     sources.append(s)
-                    answer = answer.replace('('+s+')', '')
-                    answer = answer.replace('['+s+']', '')
+                    answer = answer.replace(s, str(source_num))
+                    source_num += 1
                 else: 
                     likely_sources.append(s)
 
@@ -698,8 +724,7 @@ class KMOAI_Agent():
         if self.verbose: print(f"Inserting history: {hist}")
         pre_context = ''
 
-        print(self.agent_name)
-        print(query)
+
         self.intent_output = self.agent_name + ': ' + query
 
         if self.check_intent:

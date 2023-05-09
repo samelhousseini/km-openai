@@ -26,7 +26,8 @@ from utils import fr_helpers
 
 from utils.env_vars import *
 
-## Use
+
+## Use with Python 3.9+ ONLY
 # """
 # from utils import km_agents
 # from utils import openai_helpers

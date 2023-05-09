@@ -290,7 +290,7 @@ def process_filter(filter_param = None):
 def cog_vecsearch(terms: str, filter_param = None):
     proc_filter = process_filter(filter_param)
     vs = cogsearch_vecstore.CogSearchVecStore()
-    return vs.search(terms, search_type='semantic_hybrid', filter=proc_filter)
+    return vs.search(terms, search_type='vector', filter=proc_filter)
 
 
 

@@ -265,7 +265,7 @@ def process_search_results(results):
     for i in range(len(context)):
         total_tokens += len(completion_enc.encode(context[i]))
         # print(total_tokens)
-        if  total_tokens < MAX_SEARCH_TOKENS:
+        if  (total_tokens < MAX_SEARCH_TOKENS) and (len(final_context) < NUM_TOP_MATCHES):
             final_context.append(context[i])
         else:
             break

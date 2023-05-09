@@ -14,6 +14,8 @@ from utils.env_vars import *
 from utils import kb_doc
 from utils import cv_helpers
 
+import re
+
 
 class CogSearchVecStore:
 
@@ -95,11 +97,7 @@ class CogSearchVecStore:
 
 
 
-    def search(self, query, search_type = 'vector', vector_name = None, select=None, filter=None, verbose=False):
-
-        if search_type not in self.search_types:
-            raise Exception(f"search_type must be one of {self.search_types}")
-
+    def get_search_json(self, query, search_type = 'vector'):
         if search_type == 'vector':
             query_dict = copy.deepcopy(utils.cogvecsearch_helpers.cs_json.search_dict_vector)
         elif search_type == 'hybrid':
@@ -108,41 +106,111 @@ class CogSearchVecStore:
         elif search_type == 'semantic_hybrid':
             query_dict = copy.deepcopy(utils.cogvecsearch_helpers.cs_json.search_dict_semantic_hybrid)
             query_dict['search'] = query
+        return query_dict
 
-        
-        query_dict = copy.deepcopy(utils.cogvecsearch_helpers.cs_json.search_dict_vector)
-        
-
+            
+    def get_vector_fields(self, query, query_dict, vector_name = None):
         if (vector_name is None) or (vector_name == VECTOR_FIELD_IN_REDIS):
             completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
             embedding_enc = openai_helpers.get_encoder(CHOSEN_EMB_MODEL)
             query_dict['vector']['fields'] = VECTOR_FIELD_IN_REDIS
             query = embedding_enc.decode(embedding_enc.encode(query)[:MAX_QUERY_TOKENS])
             query_dict['vector']['value'] = openai_helpers.get_openai_embedding(query, CHOSEN_EMB_MODEL)    
-        elif vector_name in ['cv_text_vector', 'cv_image_vector']:
+        elif vector_name == 'cv_text_vector':
             cvr = cv_helpers.CV()
             query_dict['vector']['fields'] = vector_name
             query_dict['vector']['value'] = cvr.get_text_embedding(query)
+        elif vector_name == 'cv_image_vector':
+            cvr = cv_helpers.CV()
+            query_dict['vector']['fields'] = vector_name
+            query_dict['vector']['value'] = cvr.get_img_embedding(query)
         else:
             raise Exception(f'Invalid Vector Name {vector_name}')
-
         
+        return query_dict
+
+
+
+    def search(self, query, search_type = 'vector', vector_name = None, select=None, filter=None, verbose=False):
+
+        if search_type not in self.search_types:
+            raise Exception(f"search_type must be one of {self.search_types}")
+
+        regex = r"(https?:\/\/[^\/\s]+(?:\/[^\/\s]+)*\/[^?\/\s]+(?:\.jpg|\.jpeg|\.png)(?:\?[^\s'\"]+)?)"
+        match = re.search(regex, query)
+
+        if match:
+            sas_url = match.group(1)
+            cvr = cv_helpers.CV()
+            res = cvr.analyze_image(img_url=sas_url)
+            query = query.replace(sas_url, '') + '\n' + res['text']
+
+        query_dict = self.get_search_json(query, search_type)
+        query_dict = self.get_vector_fields(query, query_dict, vector_name)
         query_dict['vector']['k'] = NUM_TOP_MATCHES
         query_dict['filter'] = filter
         query_dict['select'] = ', '.join(self.all_fields) if select is None else select
 
-
-
         results = self.http_req.post(op ='search', body = query_dict)
-
-        if verbose: [print(r['@search.score']) for r in results['value']]
-
-        context = helpers.process_search_results(results['value'])
-
-        return context
+        results = results['value']
+        if verbose: [print(r['@search.score']) for r in results]
 
 
+        if match:
+            sas_url = match.group(1)
+            query_dict = self.get_vector_fields(sas_url, query_dict, 'cv_image_vector')
+            img_results = self.http_req.post(op ='search', body = query_dict)
+            results = [img_results['value'], results]
+            
+            max_items = max([len(r) for r in results])
+
+            final_context = []
+            context_dict = {}
+
+            for i in range(max_items):
+                for j in range(len(results)):
+                    if i < len(results[j]): 
+                        if results[j][i]['id'] not in context_dict:
+                            context_dict[results[j][i]['id']] = 1
+                            final_context.append(results[j][i])        
+
+            results = final_context
+
+        context = helpers.process_search_results(results)
+
+        if match:
+            return ['Analysis of the image in the question: ' + query + '\n\n'] + context
+        else:
+            return context
 
 
 
+    def search_similar_images(self, query,  select=None, filter=None, verbose=False):
+
+        search_type = 'vector'
+        vector_name = 'cv_image_vector'
+
+        if search_type not in self.search_types:
+            raise Exception(f"search_type must be one of {self.search_types}")
+
+        regex = r"(https?:\/\/[^\/\s]+(?:\/[^\/\s]+)*\/[^?\/\s]+(?:\.jpg|\.jpeg|\.png)(?:\?[^\s'\"]+)?)"
+        match = re.search(regex, query)
+
+        if match:
+            url = match.group(1)
+            query_dict = self.get_search_json(url, search_type)
+            query_dict = self.get_vector_fields(url, query_dict, vector_name)
+            query_dict['vector']['k'] = NUM_TOP_MATCHES
+            query_dict['filter'] = filter
+            query_dict['select'] = ', '.join(self.all_fields) if select is None else select
+
+            results = self.http_req.post(op ='search', body = query_dict)
+            results = results['value']
+            if verbose: [print(r['@search.score']) for r in results]
+
+            context = helpers.process_search_results(results)
+
+            return context
         
+        else:
+            return ["Sorry, no similar images have been found"]
