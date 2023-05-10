@@ -11,7 +11,7 @@ MAX_HISTORY_TOKENS = int(os.environ.get("MAX_HISTORY_TOKENS", "1000"))
 MAX_SEARCH_TOKENS = int(os.environ.get("MAX_SEARCH_TOKENS", "2500"))
 MAX_QUERY_TOKENS = int(os.environ.get("MAX_QUERY_TOKENS", "500"))
 PRE_CONTEXT = int(os.environ.get("PRE_CONTEXT", "500"))
-NUM_TOP_MATCHES = int(os.environ.get("NUM_TOP_MATCHES", "2"))
+NUM_TOP_MATCHES = int(os.environ.get("NUM_TOP_MATCHES", "3"))
 
 OVERLAP_TEXT = int(os.environ.get("OVERLAP_TEXT", "150"))
 SMALL_EMB_TOKEN_NUM = int(os.environ.get("SMALL_EMB_TOKEN_NUM", "750"))
@@ -22,7 +22,7 @@ X_LARGE_EMB_TOKEN_NUM = int(os.environ.get("X_LARGE_EMB_TOKEN_NUM", "0"))
 USE_BING = os.environ.get("USE_BING", "no")
 LIST_OF_COMMA_SEPARATED_URLS = os.environ.get("LIST_OF_COMMA_SEPARATED_URLS", "")
 
-USE_COG_VECSEARCH = int(os.environ.get("USE_COG_VECSEARCH", "1"))
+USE_COG_VECSEARCH = int(os.environ.get("USE_COG_VECSEARCH", "0"))
 
 CONVERSATION_TTL_SECS = int(os.environ.get("CONVERSATION_TTL_SECS", "172800"))
 
@@ -30,7 +30,7 @@ DATABASE_MODE = int(os.environ.get("DATABASE_MODE", "0"))
 
 USE_REDIS_CACHE = int(os.environ.get("USE_REDIS_CACHE", "1"))
 
-PROCESS_IMAGES = int(os.environ.get("PROCESS_IMAGES", "1"))
+PROCESS_IMAGES = int(os.environ.get("PROCESS_IMAGES", "0"))
 
 
 
