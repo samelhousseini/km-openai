@@ -102,10 +102,12 @@ class OldSchoolSearch():
         max_comp_model_tokens = openai_helpers.get_model_max_tokens(completion_model)
         max_emb_model_tokens = openai_helpers.get_model_max_tokens(embedding_model)
 
-        if enable_unified_search:
+        if lc_agent.enable_unified_search:
             context = lc_agent.unified_search(query)
         elif enable_cognitive_search:
             context = lc_agent.agent_cog_search(query)
+        # elif lc_agent.use_bing:
+        #     context = lc_agent.agent_bing_search(query)
         else: 
             context = lc_agent.agent_redis_search(query)
         

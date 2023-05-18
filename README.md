@@ -4,7 +4,7 @@
 <br/>
 
 > **Note:**
-> This repo now supports GPT-4, and supports Vector Search in Cognitive Search
+> This repo now supports GPT-4
 
 <br/>
 
@@ -40,9 +40,9 @@ The below are the features of this solution:
 
 1. Improved prompts and workflow handling with LangChain. The user should see improved search results in the form of better answers.
  
-1. Using both Redis and Cognitive Search (Vector Search and Semantic Search) as tools for the LangChain Agent. Also, added Bing as a third search tool, which can be enabled or disabled.
+1. Using both Redis and Cognitive Search (Semantic Search) as tools for the LangChain Agent. Also, added Bing as a third search tool, which can be enabled or disabled.
 
-1. If the user chooses to use Vector Search in Cognitive Search, then they can skip Redis provisioning completely by keeping `REDIS_ADDR` blank in the configuration. However, that means that the session history cannot be cached, and each query/question is independent of the previous ones. It is still preferable to provision a Redis resource, the user can then still use Cognitive Sarch for vector search, and Redis as a cache only (no vector search).
+1. The user can choose to skip Redis provisioning completely by keeping `REDIS_ADDR` blank in the configuration. However, that means that the session history cannot be cached, and each query/question is independent of the previous ones. 
 
 1. Added filtering support in the Bot HTTP request API. This would be useful for things like multi-tenant demos, and filtering on docuemnts with an original source language. Use `"filter":"@field:value"` in the HTTP request e.g. `"filter":"@orig_lang:en"`.
 
@@ -83,7 +83,7 @@ Multiple Search Parameters have been added to control the behavior of the agent.
 
 1. `enable_redis_search`: enables search with embeddings in Redis
 
-1. `enable_cognitive_search`: enables semantic search and lookup in Cognitive Search. Use `USE_COG_VECSEARCH` in the Func App Configuration (or your .env file) to switch between Semantic Hybrid Search (search with vectors) and simple Semantic Search. This is using the "2023-07-01-Preview" APIs for enabling vector search in Cognitive Search.
+1. `enable_cognitive_search`: enables semantic search and lookup in Cognitive Search. 
 
 1. `evaluate_step`: search text results sometimes have the answer to the question but the results might be so long that OpenAI completion call might miss that information (too much noise). `evaluate_step` was created to address this problem. This is a separate call to the OpenAI Completion API to identify the facts that are relevant only to the question. 
 
