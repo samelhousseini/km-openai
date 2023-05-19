@@ -211,7 +211,7 @@ create_index_json = {
                 "name": "vector-config",
                 "kind": "hnsw",
                 "hnswParameters": {
-                    "m": 40,
+                    "m": 10,
                     "efConstruction": 400,
                     "metric": "cosine"
                 }

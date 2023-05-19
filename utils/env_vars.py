@@ -22,9 +22,9 @@ X_LARGE_EMB_TOKEN_NUM = int(os.environ.get("X_LARGE_EMB_TOKEN_NUM", "0"))
 USE_BING = os.environ.get("USE_BING", "no")
 LIST_OF_COMMA_SEPARATED_URLS = os.environ.get("LIST_OF_COMMA_SEPARATED_URLS", "")
 
-USE_COG_VECSEARCH = int(os.environ.get("USE_COG_VECSEARCH", "0"))
-
 CONVERSATION_TTL_SECS = int(os.environ.get("CONVERSATION_TTL_SECS", "172800"))
+
+USE_COG_VECSEARCH = int(os.environ.get("USE_COG_VECSEARCH", "0"))
 
 DATABASE_MODE = int(os.environ.get("DATABASE_MODE", "0"))
 
