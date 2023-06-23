@@ -71,16 +71,15 @@ class CogSearchVecStore:
                 doc_dict[k] = doc.get(k, '')
 
             doc_dict['id'] = doc['id'] if doc.get('id', None) else str(uuid.uuid4())
-            doc_dict[VECTOR_FIELD_IN_REDIS] = doc.get(VECTOR_FIELD_IN_REDIS, [])
-            doc_dict['cv_image_vector'] = doc.get('cv_image_vector', [])
-            doc_dict['cv_text_vector'] = doc.get('cv_text_vector', [])
+            doc_dict[VECTOR_FIELD_IN_REDIS] = doc.get(VECTOR_FIELD_IN_REDIS, [0]*1024)
+            doc_dict['cv_image_vector'] = doc.get('cv_image_vector',[0]*1024)
+            doc_dict['cv_text_vector'] = doc.get('cv_text_vector', [0]*1024)
             doc_dict["@search.action"] = "upload"
             docs_dict['value'].append(doc_dict)
         
         self.http_req.post(op ='index', body = docs_dict)
 
         return docs_dict
-
 
 
     def delete_documents(self, op='index', ids = []):
