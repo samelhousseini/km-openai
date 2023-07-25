@@ -8,8 +8,9 @@
 
 <br/>
 
+
 > **Note:**
-> Please sign up here for the vector store feature (private preview) in Cognitive Search: [aka.ms/VectorSearchSignUp](aka.ms/VectorSearchSignUp)
+> Redis is not used to store embeddings anymore, but now the Vector Store in Cognitive Search is used for the embeddings. Redis is still needed to store the user conversation history (chat session). Therefore, a Redis container (ACI) can be used instead of Redis Enterprise. The user can use redis.yml in the repo to create a Redis container. 
 
 <br/>
 
@@ -24,13 +25,13 @@
 <br/>
 <br />
 <p align="center">
-<img src="images/km-openai.png" />
+<img src="images/km-openai v2.jpg" />
 </p>
 <br/>
 <br/>
 
 # Purpose
-The purpose of this repo is to accelerate the deployment of a Python-based Knowledge Mining solution with OpenAI that will ingest a Knowledge Base, generate embeddings using the contents extracted, store them in a vector search engine (Redis), and use that engine to answer queries / questions specific to that Knowledge Base.
+The purpose of this repo is to accelerate the deployment of a Python-based Knowledge Mining solution with OpenAI that will ingest a Knowledge Base, generate embeddings using the contents extracted, store them in a vector search engine (Cognitive Search), and use that engine to answer queries / questions specific to that Knowledge Base.
 
 The Cognitive Search component serves to make it easier to ingest a Knowledge Base with a variety of document formats. The Cognitive Services component connected to the Search makes it possible to have an enrichment pipeline. This pipeline can generate information based on images for example, which can be included at the time of generating embeddings. 
 
@@ -46,9 +47,9 @@ The below are the features of this solution:
 
 1. Improved prompts and workflow handling with LangChain. The user should see improved search results in the form of better answers.
  
-1. Using both Redis and Cognitive Search (Semantic Search) as tools for the LangChain Agent. Also, added Bing as a third search tool, which can be enabled or disabled.
+1. Using Cognitive Search (Semantic Search and Vector Search) as tools for the LangChain Agent. Also, added Bing as a another search tool, which can be enabled or disabled.
 
-1. The user can choose to skip Redis provisioning completely by keeping `REDIS_ADDR` blank in the configuration. However, that means that the session history cannot be cached, and each query/question is independent of the previous ones. 
+1. Redis is used only to cache some intermediate results, as well as caching the user conversation history. However, the user can choose to skip Redis provisioning completely by keeping `REDIS_ADDR` blank in the configuration. This means that the session history cannot be cached, and each query/question is independent of the previous ones. 
 
 1. Added filtering support in the Bot HTTP request API. This would be useful for things like multi-tenant demos, and filtering on docuemnts with an original source language. Use `"filter":"@field:value"` in the HTTP request e.g. `"filter":"@orig_lang:en"`.
 
@@ -68,7 +69,7 @@ The below are the features of this solution:
 
 1. Automatic translation from/to English using Cognitive Services, since OpenAI works best with English
 
-1. The Cognitive Search ecosystem provides the potential to add a wide variety of custom skills, as well as access the native search capabilities which can complement the embedding search in Redis.
+1. The Cognitive Search ecosystem provides the potential to add a wide variety of custom skills, as well as access the native search capabilities which can complement the embedding search.
 
 1. Automatic deployment of the Azure Functions from this repo to the Function App
 
@@ -89,7 +90,7 @@ Multiple Search Parameters have been added to control the behavior of the agent.
 
 1. `enable_redis_search`: enables search with embeddings in Redis
 
-1. `enable_cognitive_search`: enables semantic search and lookup in Cognitive Search. 
+1. `enable_cognitive_search`: enables vector search, semantic search and lookup in Cognitive Search. 
 
 1. `evaluate_step`: search text results sometimes have the answer to the question but the results might be so long that OpenAI completion call might miss that information (too much noise). `evaluate_step` was created to address this problem. This is a separate call to the OpenAI Completion API to identify the facts that are relevant only to the question. 
 
@@ -122,11 +123,11 @@ The below is a simple illustrative example. The knowledge base consists of the s
 
 Here are the results:
 
-1. The One-Pass Agent searched Redis (or Cognitive Search) for the full question, and got all the top ranking results about Sherlock Holmes. The final answer is `"I'm sorry, I could not find any information about the Volcano Hotel in the provided context."`
+1. The One-Pass Agent searched Cognitive Search for the full question, and got all the top ranking results about Sherlock Holmes. The final answer is `"I'm sorry, I could not find any information about the Volcano Hotel in the provided context."`
 
-1. The Conversational-Chat-ReAct Agent gave a mixed bag of results. Because it has not been explicitly instructed in the prompt how many iterations it can do, sometimes it did one search in Redis (or Cognitive Search), and sometimes two searches. The first search is almost always about Sherlock Holmes, with the search string `"Sherlock Holmes country"`. If it did go for a second search iteration, then it looks for `"Volcano hotel country"`. The final answer is either `"Sherlock Holmes is a fictional character from the United Kingdom. However, I do not have information about the location of the Volcano hotel."` or, when it does 2 searches, then it gets `"The Volcano Hotel is located in Las Vegas, United States. Sherlock Holmes lived in London, England . Therefore, Sherlock Holmes did not live in the same country as the Volcano Hotel."`.
+1. The Conversational-Chat-ReAct Agent gave a mixed bag of results. Because it has not been explicitly instructed in the prompt how many iterations it can do, sometimes it did one search in Cognitive Search, and sometimes two searches. The first search is almost always about Sherlock Holmes, with the search string `"Sherlock Holmes country"`. If it did go for a second search iteration, then it looks for `"Volcano hotel country"`. The final answer is either `"Sherlock Holmes is a fictional character from the United Kingdom. However, I do not have information about the location of the Volcano hotel."` or, when it does 2 searches, then it gets `"The Volcano Hotel is located in Las Vegas, United States. Sherlock Holmes lived in London, England . Therefore, Sherlock Holmes did not live in the same country as the Volcano Hotel."`.
 
-1. The Zero-Shot-ReAct Agent really shines here because it is explicitly told that it can do multiple searches in the context of answering a single query. It first searches Redis (or Cognitive Search) for `"Sherlock Holmes country"`, and then searches again for `"Volcano hotel location"`, and gives the right answer every time: `"Sherlock Holmes lived in London, England, while the Volcano Hotel is located in Las Vegas, United States. They are not in the same country."`.
+1. The Zero-Shot-ReAct Agent really shines here because it is explicitly told that it can do multiple searches in the context of answering a single query. It first searches Cognitive Search for `"Sherlock Holmes country"`, and then searches again for `"Volcano hotel location"`, and gives the right answer every time: `"Sherlock Holmes lived in London, England, while the Volcano Hotel is located in Las Vegas, United States. They are not in the same country."`.
 
 
 <br />
@@ -208,7 +209,7 @@ Then install the required packages using the following command:
 1. ARM: Adding Application Insights to the ARM template
 1. Code: Adding a custom skill that processes csv files
 1. Code: Adding a demo for HTML crawling
-1. Code: Adding an embedding match filtering (in Redis) for filtering on metadata 
+1. Code: Adding an embedding match filtering (in Cognitive Search) for filtering on metadata 
 1. Integrating the features of the new repo from CogSearch PG into this one
 
 

@@ -893,7 +893,7 @@
                         },
                         {
                             "name": "USE_REDIS_CACHE",
-                            "value": "0"
+                            "value": "1"
                         },
                         {
                             "name": "USE_COG_VECSEARCH",
