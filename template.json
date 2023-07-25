@@ -892,7 +892,15 @@
                         },
                         {
                             "name": "USE_REDIS_CACHE",
+                            "value": "0"
+                        },
+                        {
+                            "name": "USE_COG_VECSEARCH",
                             "value": "1"
+                        },
+                        {
+                            "name": "PROCESS_IMAGES",
+                            "value": "0"
                         }
                     ]
                 },
