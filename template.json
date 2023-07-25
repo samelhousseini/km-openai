@@ -42,7 +42,8 @@
             "allowedValues": [
                 "westeurope",
                 "eastus",
-                "southcentralus"
+                "southcentralus",
+                "francecentral"
                 ]
         },
         "DeployNewRedisResource": {

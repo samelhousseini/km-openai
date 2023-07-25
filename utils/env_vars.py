@@ -24,11 +24,11 @@ LIST_OF_COMMA_SEPARATED_URLS = os.environ.get("LIST_OF_COMMA_SEPARATED_URLS", ""
 
 CONVERSATION_TTL_SECS = int(os.environ.get("CONVERSATION_TTL_SECS", "172800"))
 
-USE_COG_VECSEARCH = int(os.environ.get("USE_COG_VECSEARCH", "0"))
+USE_COG_VECSEARCH = int(os.environ.get("USE_COG_VECSEARCH", "1"))
 
 DATABASE_MODE = int(os.environ.get("DATABASE_MODE", "0"))
 
-USE_REDIS_CACHE = int(os.environ.get("USE_REDIS_CACHE", "1"))
+USE_REDIS_CACHE = int(os.environ.get("USE_REDIS_CACHE", "0"))
 
 PROCESS_IMAGES = int(os.environ.get("PROCESS_IMAGES", "0"))
 
