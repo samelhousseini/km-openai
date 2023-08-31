@@ -25,12 +25,14 @@ from langchain.memory import ConversationBufferMemory
 from datetime import datetime
 from datetime import date
 from langchain.agents import AgentType
-from langchain.memory import ConversationBufferMemory
+#from langchain.memory import ConversationBufferMemory
 from langchain.chat_models import ChatOpenAI
 
 from utils.langchain_helpers.oldschoolsearch import OldSchoolSearch
 from utils.langchain_helpers.mod_agent import ZSReAct, ReAct, ModBingSearchAPIWrapper, ModConversationalChatAgent
 import utils.langchain_helpers.mod_react_prompt
+from utils.langchain_helpers import oai_fc_agent
+
 
 from utils import openai_helpers
 from utils.language import extract_entities
@@ -87,17 +89,17 @@ class KMOAI_Agent():
         self.history = ""
 
         self.enable_unified_search = params_dict.get('enable_unified_search', False)
-        self.enable_cognitive_search = params_dict.get('enable_cognitive_search', False)
+        self.enable_cognitive_search = params_dict.get('enable_cognitive_search', True)
         self.enable_redis_search = params_dict.get('enable_redis_search', False)
         self.evaluate_step = params_dict.get('evaluate_step', False)
-        self.check_adequacy = params_dict.get('check_adequacy', False)
-        self.check_intent = params_dict.get('check_intent', False)
+        self.check_adequacy = params_dict.get('check_adequacy', True)
+        self.check_intent = params_dict.get('check_intent', True)
         self.use_calendar = params_dict.get('use_calendar', False)
         self.use_calculator = params_dict.get('use_calculator', False)
         self.use_bing = params_dict.get('use_bing', False)
 
         if self.enable_unified_search == None: self.enable_unified_search = False
-        if self.enable_cognitive_search == None: self.enable_cognitive_search = False
+        if self.enable_cognitive_search == None: self.enable_cognitive_search = True
         if self.enable_redis_search == None: self.enable_redis_search = False
         if self.evaluate_step == None: self.evaluate_step = False
         if self.check_adequacy == None: self.check_adequacy = False
@@ -133,7 +135,7 @@ class KMOAI_Agent():
         else:
             callbacks = [streaming_handler.StreamingSocketIOCallbackHandler(connection['socketio'], connection['connection_id'])]
 
-        self.llm = helpers.get_llm(CHOSEN_COMP_MODEL, temperature=0, max_output_tokens=MAX_OUTPUT_TOKENS, stream=False, callbacks=callbacks)
+        self.llm = helpers.get_llm(CHOSEN_COMP_MODEL, temperature=0.3, max_output_tokens=MAX_OUTPUT_TOKENS, stream=False, callbacks=callbacks)
         self.llm_math_chain = LLMMathChain(llm=self.llm, verbose=True)
 
         self.gen = gen
@@ -479,12 +481,11 @@ class KMOAI_Agent():
         if answer == '':
             answer = DEFAULT_RESPONSE
 
-        if (self.agent_name == 'os') or (self.agent_name == 'zs'):
-            self.memory.save_context({"input": query}, {"output": answer_with_sources})
+        # if (self.agent_name == 'os') or (self.agent_name == 'zs'):
+        self.memory.save_context({"input": query}, {"output": answer_with_sources})
 
         if answer == 'Agent stopped due to max iterations.':
             answer = 'I am sorry, I am not able to find an answer to your question. Please try again with a different question.'
-
 
         return answer, sources, likely_sources
 
@@ -503,7 +504,7 @@ class KMOAI_Agent():
                 hist = ''
                 prompt_id = str(uuid.uuid4())
             else:
-                rhist = redis_helpers.redis_get(self.redis_conn, prompt_id, 'history', verbose = self.verbose)
+                rhist = redis_helpers.redis_get(self.redis_conn, prompt_id, 'history', verbose = self.verbose, force=True)
                 if rhist is None:
                     hist = ''
                 else:
@@ -565,14 +566,14 @@ class KMOAI_Agent():
         hist_enc = completion_enc.encode(hist)
         hist_enc_len = len(hist_enc)
 
-        if hist_enc_len > MAX_HISTORY_TOKENS * 0.85:
-            if self.verbose: print("Summarizing History")
-            hist = openai_helpers.openai_summarize(hist, CHOSEN_COMP_MODEL).replace('<|im_end|>', '')
+        # if hist_enc_len > MAX_HISTORY_TOKENS * 0.85:
+        #     if self.verbose: print("Summarizing History")
+        #     hist = openai_helpers.openai_summarize(hist, CHOSEN_COMP_MODEL).replace('<|im_end|>', '')
 
         if hist_enc_len > MAX_HISTORY_TOKENS:
             hist = completion_enc.decode(hist_enc[hist_enc_len - MAX_HISTORY_TOKENS :])
 
-        redis_helpers.redis_set(self.redis_conn, prompt_id, 'history', hist, CONVERSATION_TTL_SECS, verbose = self.verbose)
+        redis_helpers.redis_set(self.redis_conn, prompt_id, 'history', hist, CONVERSATION_TTL_SECS, verbose = self.verbose, force=True)
 
 
 
@@ -597,19 +598,25 @@ class KMOAI_Agent():
         
         if self.verbose: print("agent_name", self.agent_name)
 
-        try:
-            if self.agent_name == 'ccr':
-                response = self.ccrd_chain({'input':query})
-            elif self.agent_name == 'zs':
-                response = self.zs_chain({'input':query, 'history':hist})  
-            elif self.agent_name == 'os':   
-                response = OldSchoolSearch().search(query, hist, pre_context, filter_param=self.redis_filter_param, 
-                                                    enable_unified_search=self.enable_unified_search, lc_agent=self, 
-                                                    enable_cognitive_search=self.enable_cognitive_search, evaluate_step=self.evaluate_step,
-                                                    stream=self.stream, verbose=self.verbose)             
-            else:
-                response = self.zs_chain({'input':query, 'history':hist, 'pre_context':pre_context}) 
+        # agent = oai_fc_agent.oai_fc_agent()
 
+
+        try:
+            print('try')
+            # if self.agent_name == 'ccr':
+            #     response = self.ccrd_chain({'input':query})
+            # elif self.agent_name == 'zs':
+            #     response = self.zs_chain({'input':query, 'history':hist})  
+            # elif self.agent_name == 'os':   
+            #     response = OldSchoolSearch().search(query, hist, pre_context, filter_param=self.redis_filter_param, 
+            #                                         enable_unified_search=self.enable_unified_search, lc_agent=self, 
+            #                                         enable_cognitive_search=self.enable_cognitive_search, evaluate_step=self.evaluate_step,
+            #                                         stream=self.stream, verbose=self.verbose)             
+            # else:
+            #     response = self.zs_chain({'input':query, 'history':hist, 'pre_context':pre_context}) 
+
+            agent = oai_fc_agent.oai_fc_agent()
+            response = agent.run(query, self, hist)
 
         except Exception as e:
             e_str = str(e)
@@ -715,9 +722,9 @@ class KMOAI_Agent():
 
 
 
-    def run(self, query, redis_conn, prompt_id = None, filter_param = None):
+    def run(self, query, prompt_id = None, filter_param = None):
 
-        self.redis_conn = redis_conn
+        self.redis_conn = redis_helpers.get_new_conn()
         
         hist, prompt_id = self.get_history(prompt_id)
         self.history = hist.replace('\n', ' ')

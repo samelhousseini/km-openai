@@ -12,20 +12,20 @@ from tenacity import (
 )
 
 
-from langchain.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-    SystemMessagePromptTemplate,
-    AIMessagePromptTemplate
-)
+# from langchain.prompts.chat import (
+#     ChatPromptTemplate,
+#     HumanMessagePromptTemplate,
+#     MessagesPlaceholder,
+#     SystemMessagePromptTemplate,
+#     AIMessagePromptTemplate
+# )
 
 
-from langchain.schema import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage
-)
+# from langchain.schema import (
+#     AIMessage,
+#     HumanMessage,
+#     SystemMessage
+# )
 
 from utils.env_vars import *
 
@@ -95,8 +95,8 @@ def check_model_deployment(oai_model):
 
 
 
-completion_deployment_id = check_model_deployment(CHOSEN_COMP_MODEL)
-embedding_deployment_id = check_model_deployment(CHOSEN_EMB_MODEL)
+# completion_deployment_id = check_model_deployment(CHOSEN_COMP_MODEL)
+# embedding_deployment_id = check_model_deployment(CHOSEN_EMB_MODEL)
 
 
 
@@ -133,6 +133,8 @@ def get_generation(model):
     if model == "text-davinci-003":
         return 3
     elif model == "gpt-35-turbo":
+        return 3.5
+    elif model == "gpt-35-turbo-16k":
         return 3.5
     elif model == "gpt-4-32k":
         return 4
@@ -171,12 +173,14 @@ def get_model_max_tokens(model):
         return ADA_002_MODEL_MAX_TOKENS
     elif model == "gpt-35-turbo":
         return GPT35_TURBO_COMPLETIONS_MAX_TOKENS        
+    elif model == "gpt-35-turbo-16k":
+        return GPT35_TURBO_16K_COMPLETIONS_MAX_TOKENS        
     elif model == "gpt-4-32k":
         return GPT4_32K_COMPLETIONS_MODEL_MAX_TOKENS     
     elif model == "gpt-4":
         return GPT4_COMPLETIONS_MODEL_MAX_TOKENS             
     else:
-        return ADA_002_MODEL_MAX_TOKENS
+        return GPT35_TURBO_COMPLETIONS_MAX_TOKENS
 
 
 def get_encoding_name(model):
@@ -186,6 +190,8 @@ def get_encoding_name(model):
         return "cl100k_base"
     elif model == "gpt-35-turbo": 
         return "cl100k_base"
+    elif model == "gpt-35-turbo-16k": 
+        return "cl100k_base"        
     elif model == "gpt-4-32k":
         return "cl100k_base"
     elif model == "gpt-4":
@@ -203,6 +209,8 @@ def get_encoder(model):
         return tiktoken.get_encoding("cl100k_base")
     elif model == "gpt-35-turbo": 
         return tiktoken.get_encoding("cl100k_base")
+    elif model == "gpt-35-turbo-16k": 
+        return tiktoken.get_encoding("cl100k_base")        
     elif model == "gpt-4-32k":
         return tiktoken.get_encoding("cl100k_base")
     elif model == "gpt-4":
@@ -223,15 +231,15 @@ def get_model_dims(embedding_model):
         return ADA_002_EMBED_NUM_DIMS
 
 
-def get_token_length(text, model = CHOSEN_COMP_MODEL):
+def get_token_length(text, model = CHOSEN_EMB_MODEL):
     enc = get_encoder(model)
     return len(enc.encode(text))
 
 
 
-@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(30))
+# @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(30))
 def get_openai_embedding(query, embedding_model = CHOSEN_EMB_MODEL):
-    return openai.Embedding.create(input=query, engine=embedding_deployment_id)['data'][0]['embedding']
+    return openai.Embedding.create(input=query, engine=embedding_model)['data'][0]['embedding']
 
 
 
@@ -242,53 +250,45 @@ def openai_summarize(text, completion_model, max_output_tokens = MAX_OUTPUT_TOKE
 
 
 
-@retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(7))
-def contact_openai(prompt, completion_model = CHOSEN_COMP_MODEL, max_output_tokens = MAX_OUTPUT_TOKENS, stream = False, verbose = False):
+# @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(7))
+def contact_openai(prompt, completion_model = CHOSEN_COMP_MODEL, max_output_tokens = MAX_OUTPUT_TOKENS, functions=None, stream = False, verbose = False):
     if verbose: print("\n########################### Calling OAI Completion API - start call")
 
-    gen = get_generation(completion_model)
 
-    try:
-        b = time.time()
+    b = time.time()
+    openai.api_version = "2023-07-01-preview"
 
-        if (gen == 4) or (gen == 3.5):
-            openai.api_version = "2023-03-15-preview"
+    if not isinstance(prompt, list):
+        prompt = [{'role':'user', 'content': prompt}]
 
-            if not isinstance(prompt, list):
-                prompt = [{'role':'user', 'content': prompt}]
-
-            resp = openai.ChatCompletion.create(
-                    messages=prompt,
-                    temperature=TEMPERATURE,
-                    max_tokens=max_output_tokens,
-                    engine=completion_model,
-                    stream = stream
-                )
-            a = time.time()
-            if verbose: print(f"Using GPT-4 - Chat Completion - with stream {stream} - OpenAI response time: {a-b}")   
-            if stream: return resp
-            else: return resp["choices"][0]["message"]['content'].strip(" \n")
-
+    if functions is None:
+        resp = openai.ChatCompletion.create(
+                messages=prompt,
+                temperature=TEMPERATURE,
+                max_tokens=max_output_tokens,
+                engine=completion_model,
+                stream = stream
+            )
+    else:
+        resp = openai.ChatCompletion.create(
+                messages=prompt,
+                temperature=TEMPERATURE,
+                max_tokens=max_output_tokens,
+                engine=completion_model,
+                functions=functions,
+                function_call="auto",
+                stream = stream
+            )
+    a = time.time()
+    if verbose: print(f"Using GPT-4 - Chat Completion - with stream {stream} - OpenAI response time: {a-b}")   
+    if stream: return resp
+    else: 
+        if functions is None:
+            return resp["choices"][0]["message"]['content'].strip(" \n")
         else:
-            openai.api_version = "2022-12-01"
-            resp = openai.Completion.create(
-                            prompt=prompt,
-                            temperature=TEMPERATURE,
-                            max_tokens=max_output_tokens,
-                            model=completion_model,
-                            deployment_id=completion_deployment_id,
-                            stream = stream
-                        )
+            return resp
 
-            a = time.time()
-            if verbose: print(f"Using GPT-3 - Chat Completion - with stream {stream} - OpenAI response time: {a-b}")                         
-            if stream: return resp
-            else: return resp["choices"][0]["text"].strip(" \n")
 
-    except Exception as e:
-        # logging.warning(f"Error in contact_openai: {e}")
-        print(e)
-        raise e
 
 
 
