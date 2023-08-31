@@ -13,7 +13,7 @@ from utils import http_helpers
 from utils.cogsearch_helpers import *
 
 
-instruction_prompt =  """You are an AI assistant specialized in answering user questions about Hexagon products. You can call functions to obtain specific details based on user queries. 
+instruction_prompt =  """You are an AI assistant specialized in answering user questions. You can call functions to obtain specific details based on user queries. 
 Facts have sources, you MUST include the source name in the answer at the beginning before any text. If there are multiple sources, cite each one in their own square brackets. For example, use \"[folder3/info343][http://wikipedia.com]\" and not \"[folder3/info343,http://wikipedia.com]\". You must follow the following format strictly for the final answer: 
 Answer: [folder1/file1][http://website][http://website2] the answer based on the facts or information.
 DO NOT MAKE UP ANY ANSWERS, ALL ANSWERS MUST BE BASED ON THE CONTEXT WHICH IS DELIMITED BY 3 "AT SYMBOL". The Assistant should not make up sources. ALL SOURCES MUST BE EXTRACTED FROM THE CONTEXT WHICH IS DELIMITED BY 3 "AT SYMBOL".
