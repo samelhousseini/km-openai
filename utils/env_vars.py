@@ -6,7 +6,7 @@ import os
 
 CHOSEN_COMP_MODEL = os.environ.get("CHOSEN_COMP_MODEL", "gpt-35-turbo")
 CHOSEN_EMB_MODEL = os.environ.get("CHOSEN_EMB_MODEL", "text-embedding-ada-002")
-MAX_OUTPUT_TOKENS = int(os.environ.get("MAX_OUTPUT_TOKENS", "750"))
+MAX_OUTPUT_TOKENS = int(os.environ.get("MAX_OUTPUT_TOKENS", "2000"))
 MAX_HISTORY_TOKENS = int(os.environ.get("MAX_HISTORY_TOKENS", "1000"))
 MAX_SEARCH_TOKENS = int(os.environ.get("MAX_SEARCH_TOKENS", "2500"))
 MAX_QUERY_TOKENS = int(os.environ.get("MAX_QUERY_TOKENS", "500"))
@@ -14,10 +14,9 @@ PRE_CONTEXT = int(os.environ.get("PRE_CONTEXT", "500"))
 NUM_TOP_MATCHES = int(os.environ.get("NUM_TOP_MATCHES", "3"))
 
 OVERLAP_TEXT = int(os.environ.get("OVERLAP_TEXT", "150"))
-SMALL_EMB_TOKEN_NUM = int(os.environ.get("SMALL_EMB_TOKEN_NUM", "750"))
-MEDIUM_EMB_TOKEN_NUM = int(os.environ.get("MEDIUM_EMB_TOKEN_NUM", "0"))
-LARGE_EMB_TOKEN_NUM = int(os.environ.get("LARGE_EMB_TOKEN_NUM", "0"))
-X_LARGE_EMB_TOKEN_NUM = int(os.environ.get("X_LARGE_EMB_TOKEN_NUM", "0"))
+SMALL_EMB_TOKEN_NUM = int(os.environ.get("SMALL_EMB_TOKEN_NUM", "0"))
+MEDIUM_EMB_TOKEN_NUM = int(os.environ.get("MEDIUM_EMB_TOKEN_NUM", "800"))
+
 
 USE_BING = os.environ.get("USE_BING", "no")
 LIST_OF_COMMA_SEPARATED_URLS = os.environ.get("LIST_OF_COMMA_SEPARATED_URLS", "")
@@ -26,11 +25,12 @@ CONVERSATION_TTL_SECS = int(os.environ.get("CONVERSATION_TTL_SECS", "172800"))
 
 USE_COG_VECSEARCH = int(os.environ.get("USE_COG_VECSEARCH", "1"))
 
-DATABASE_MODE = int(os.environ.get("DATABASE_MODE", "0"))
+DATABASE_MODE = int(os.environ.get("DATABASE_MODE", "1"))
 
-USE_REDIS_CACHE = int(os.environ.get("USE_REDIS_CACHE", "1"))
+USE_REDIS_CACHE = int(os.environ.get("USE_REDIS_CACHE", "0"))
 
 PROCESS_IMAGES = int(os.environ.get("PROCESS_IMAGES", "0"))
+
 
 
 
@@ -63,10 +63,10 @@ BING_SUBSCRIPTION_KEY = os.environ.get("BING_SUBSCRIPTION_KEY", "")
 BING_SEARCH_URL = os.environ.get("BING_SEARCH_URL", "https://api.bing.microsoft.com/v7.0/search")
 
 TRANSLATION_ENDPOINT = os.environ.get("TRANSLATION_ENDPOINT", "https://api.cognitive.microsofttranslator.com")
-TRANSLATION_API_KEY = os.environ.get("TRANSLATION_API_KEY", COG_SERV_KEY)
+TRANSLATION_API_KEY = os.environ.get("TRANSLATION_API_KEY", "ad8ac9b95ba94b79ba37d43cdc0c606c")
 TRANSLATION_LOCATION = os.environ.get("TRANSLATION_LOCATION", "westeurope")
 
-if TRANSLATION_API_KEY == "": TRANSLATION_API_KEY = COG_SERV_KEY
+#if TRANSLATION_API_KEY == "": TRANSLATION_API_KEY = COG_SERV_KEY
 
 
 ###################
@@ -137,9 +137,10 @@ GPT35_TURBO_COMPLETIONS_MAX_TOKENS = int(os.environ.get("GPT35_TURBO_COMPLETIONS
 GPT35_TURBO_COMPLETIONS_ENCODING = os.environ.get("GPT35_TURBO_COMPLETIONS_ENCODING", "cl100k_base")
 FR_CONTAINER = os.environ.get("FR_CONTAINER", "kmoaiforms")
 RESTRICTIVE_PROMPT = os.environ.get("RESTRICTIVE_PROMPT", "no")
-TEMPERATURE = float(os.environ.get("TEMPERATURE", "0"))
+TEMPERATURE = float(os.environ.get("TEMPERATURE", "0.3"))
 GPT4_COMPLETIONS_MODEL_MAX_TOKENS =  int(os.environ.get("GPT4_COMPLETIONS_MODEL_MAX_TOKENS", "8192"))
 GPT4_32K_COMPLETIONS_MODEL_MAX_TOKENS = int(os.environ.get("GPT4_32K_COMPLETIONS_MODEL_MAX_TOKENS", "32768"))
+GPT35_TURBO_16K_COMPLETIONS_MAX_TOKENS = int(os.environ.get("GPT35_TURBO_16K_COMPLETIONS_MAX_TOKENS", "16384"))
 GPT4_MODEL = os.environ.get("GPT4_MODEL", "gpt-4")
 GPT4_32K_MODEL = os.environ.get("GPT4_32K_MODEL", "gpt-4-32k")
 CV_API_VERSION = os.environ.get("CV_API_VERSION", "2023-02-01-preview")

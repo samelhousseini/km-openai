@@ -77,7 +77,7 @@ def test_redis(redis_new_conn):
 
     try:
         out = redis_new_conn.ft(REDIS_INDEX_NAME).info()
-        # print(f"Found Redis Index {REDIS_INDEX_NAME}")
+        print(f"Found Redis Index {REDIS_INDEX_NAME}")
     except Exception as e:
         # print(f"Redis Index {REDIS_INDEX_NAME} not found. Creating a new index.")
         logging.error(f"Redis Index {REDIS_INDEX_NAME} not found. Creating a new index.")
@@ -154,9 +154,15 @@ def redis_query_embedding_index(redis_conn, query_emb, t_id, topK=5, filter_para
 
 
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
-def redis_set(redis_conn, key, field, value, expiry = None, verbose = False):
-    if (REDIS_ADDR is None) or (REDIS_ADDR == '') or (USE_REDIS_CACHE != 1): return None
+def redis_set(redis_conn, key, field, value, expiry = None, verbose = False, force=False):
 
+    print("Entering REDIS SET", REDIS_ADDR, force)
+    if (REDIS_ADDR is not None) and (REDIS_ADDR != '') and (force == True): 
+        pass
+    else:
+        if (REDIS_ADDR is None) or (REDIS_ADDR == '') or (USE_REDIS_CACHE != 1): return None
+
+    print("Executing REDIS SET")
     key = key.replace('"', '')
     res = redis_conn.hset(key, field, value)
 
@@ -168,8 +174,14 @@ def redis_set(redis_conn, key, field, value, expiry = None, verbose = False):
 
 
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(4))
-def redis_get(redis_conn, key, field, expiry = CONVERSATION_TTL_SECS, verbose = False):
-    if (REDIS_ADDR is None) or (REDIS_ADDR == '') or (USE_REDIS_CACHE != 1): return None
+def redis_get(redis_conn, key, field, expiry = CONVERSATION_TTL_SECS, verbose = False, force=False):
+
+    print("Entering REDIS GET", REDIS_ADDR, force)
+    if (REDIS_ADDR is not None) and (REDIS_ADDR != '') and (force == True): 
+        pass
+    else:
+        if (REDIS_ADDR is None) or (REDIS_ADDR == '') or (USE_REDIS_CACHE != 1): return None
+    print("Executing REDIS GET")
 
     key = key.replace('"', '')
     if verbose: print("\nGetting Redis Key: ", key, field)

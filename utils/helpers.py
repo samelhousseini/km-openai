@@ -246,12 +246,12 @@ def process_search_results(results):
 
         try:
             if ('web_url' in t.keys()) and (t['web_url'] is not None) and (t['web_url'] != ''):
-                context.append('######\n' + f"[{t['web_url']}] " + t['text_en'] + '\n######\n')
+                context.append('\n\n' + f"[{t['web_url']}] " + t['text_en'] + '\n\n')
             else:
-                context.append('######\n' + f"[{t['container']}/{t['filename']}] " + t['text_en']  + '\n######\n')
+                context.append('\n\n' + f"[{t['container']}/{t['filename']}] " + t['text_en']  + '\n\n')
         except Exception as e:
             print("------------------- Exception in process_search_results: ", e)
-            context.append('######\n' + t['text_en'] + '\n######\n')
+            context.append('\n\n' + t['text_en'] + '\n\n')
 
 
     for i in range(len(context)):
@@ -301,7 +301,7 @@ def redis_lookup(query: str, filter_param: str):
 
 
 
-def get_llm(model = CHOSEN_COMP_MODEL, temperature=0, max_output_tokens=MAX_OUTPUT_TOKENS, stream=False, callbacks=[]):
+def get_llm(model = CHOSEN_COMP_MODEL, temperature=0.3, max_output_tokens=MAX_OUTPUT_TOKENS, stream=False, callbacks=[]):
     gen = openai_helpers.get_generation(model)
 
     if (gen == 3) :
@@ -313,7 +313,7 @@ def get_llm(model = CHOSEN_COMP_MODEL, temperature=0, max_output_tokens=MAX_OUTP
                         
     elif (gen == 4) or (gen == 3.5):
         llm = ChatOpenAI(model_name=model, model=model, engine=model, 
-                            temperature=0, openai_api_key=openai.api_key, max_retries=30, streaming=stream,
+                            temperature=0.3, openai_api_key=openai.api_key, max_retries=30, streaming=stream,
                             callback_manager=CallbackManager(callbacks),
                             request_timeout=120, max_tokens=max_output_tokens, verbose = True)    
     else:
