@@ -6,24 +6,23 @@ from flask_socketio import send, emit
 import urllib
 
 
-
 from utils import bot_helpers
 from utils import langchain_helpers
 from utils import km_agents
-from utils import redis_helpers
+#from utils import redis_helpers
+from utils import language
 
 
- 
 global_params_dict = {
     'enable_unified_search': False,
-    'enable_redis_search': True,
-    'enable_cognitive_search': False,
+    'enable_redis_search': False,
+    'enable_cognitive_search': True,
     'evaluate_step': False,
     'check_adequacy': False,
-    'check_intent': False
+    'check_intent': True
 }
 
-redis_conn = redis_helpers.get_new_conn()
+# redis_conn = redis_helpers.get_new_conn()
 
 from utils.env_vars import *
 
@@ -83,13 +82,25 @@ def on_disconnect():
 
 @socketio.on('message')
 def handle_message(q):
+
     print(f'received message: {q} from {request.sid}')
     emit('new_message', "Query: " + q + '\n') 
-    answer, sources, likely_sources, s_id = agents_sid[request.sid].run(q, redis_conn, request.sid)
+    
+    lang = language.detect_content_language(q)
+    if lang != 'en': q = language.translate(q, lang, 'en')
+
+    print(f'language detected: {lang}')
+
+    answer, sources, likely_sources, s_id = agents_sid[request.sid].run(q, request.sid)
     sources_str = ''
+
+    if lang != 'en': answer = language.translate(answer, 'en', lang)
+
+    answer = answer.replace('\n', ' <br> ')
+    
     send(answer)
     if len(sources) > 0:
-        for s in sources: 
+        for s in set(sources): 
             try:
                 linkname = urllib.parse.unquote(os.path.basename(s.split('?')[0]))
             except:

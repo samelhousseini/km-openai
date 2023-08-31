@@ -64,6 +64,7 @@ document.getElementById("send-button").addEventListener("click", function () {
 });
 
 socket.on('message', (message) => {
+    console.log(message)
     document.getElementById("chat-container").lastChild.innerHTML   = document.getElementById("chat-container").lastChild.innerHTML  + '<br>' + message + '<br><br>';
     document.getElementById("chat-container").scrollTop = document.getElementById("chat-container").scrollHeight;
 });
