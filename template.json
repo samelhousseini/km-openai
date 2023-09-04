@@ -817,11 +817,11 @@
                         } ,
                         {
                             "name": "SMALL_EMB_TOKEN_NUM",
-                            "value": "750"
+                            "value": "0"
                         } ,
                         {
                             "name": "MEDIUM_EMB_TOKEN_NUM",
-                            "value": "0"
+                            "value": "800"
                         } ,
                         {
                             "name": "LARGE_EMB_TOKEN_NUM",

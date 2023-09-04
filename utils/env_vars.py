@@ -16,7 +16,8 @@ NUM_TOP_MATCHES = int(os.environ.get("NUM_TOP_MATCHES", "3"))
 OVERLAP_TEXT = int(os.environ.get("OVERLAP_TEXT", "150"))
 SMALL_EMB_TOKEN_NUM = int(os.environ.get("SMALL_EMB_TOKEN_NUM", "0"))
 MEDIUM_EMB_TOKEN_NUM = int(os.environ.get("MEDIUM_EMB_TOKEN_NUM", "800"))
-
+LARGE_EMB_TOKEN_NUM = int(os.environ.get("LARGE_EMB_TOKEN_NUM", "0"))
+X_LARGE_EMB_TOKEN_NUM = int(os.environ.get("X_LARGE_EMB_TOKEN_NUM", "0"))
 
 USE_BING = os.environ.get("USE_BING", "no")
 LIST_OF_COMMA_SEPARATED_URLS = os.environ.get("LIST_OF_COMMA_SEPARATED_URLS", "")
