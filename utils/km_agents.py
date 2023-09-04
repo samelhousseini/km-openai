@@ -722,9 +722,12 @@ class KMOAI_Agent():
 
 
 
-    def run(self, query, prompt_id = None, filter_param = None):
+    def run(self, query, prompt_id = None, filter_param = None, redis_conn=None):
 
-        self.redis_conn = redis_helpers.get_new_conn()
+        if redis_conn is None:
+            self.redis_conn = redis_helpers.get_new_conn()
+        else:
+            self.redis_conn = redis_conn
         
         hist, prompt_id = self.get_history(prompt_id)
         self.history = hist.replace('\n', ' ')

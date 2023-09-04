@@ -9,7 +9,7 @@ import urllib
 from utils import bot_helpers
 from utils import langchain_helpers
 from utils import km_agents
-#from utils import redis_helpers
+from utils import redis_helpers
 from utils import language
 
 
@@ -19,7 +19,7 @@ global_params_dict = {
     'enable_cognitive_search': True,
     'evaluate_step': False,
     'check_adequacy': False,
-    'check_intent': True
+    'check_intent': False
 }
 
 # redis_conn = redis_helpers.get_new_conn()
@@ -30,7 +30,7 @@ app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*') 
 app.config['SECRET_KEY'] = 'secret!'
 
-
+redis_conn = redis_helpers.get_new_conn() 
 
 ##############################################################
 ##############################################################
@@ -91,7 +91,7 @@ def handle_message(q):
 
     print(f'language detected: {lang}')
 
-    answer, sources, likely_sources, s_id = agents_sid[request.sid].run(q, request.sid)
+    answer, sources, likely_sources, s_id = agents_sid[request.sid].run(q, request.sid, redis_conn=redis_conn)
     sources_str = ''
 
     if lang != 'en': answer = language.translate(answer, 'en', lang)

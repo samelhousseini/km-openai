@@ -32,7 +32,7 @@ def openai_interrogate_text(query, session_id=None, filter_param=None, agent_nam
     agent = km_agents.KMOAI_Agent(agent_name = agent_name, params_dict=params_dict, verbose = False)
 
 
-    final_answer, sources, likely_sources, session_id = agent.run(query, redis_conn, session_id, filter_param)
+    final_answer, sources, likely_sources, session_id = agent.run(query, prompt_id=session_id, filter_param=filter_param, redis_conn=redis_conn)
 
     if lang != 'en': 
         final_answer = language.translate(final_answer, 'en', lang)
