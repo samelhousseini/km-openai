@@ -48,7 +48,7 @@ def main(msg: func.ServiceBusMessage):
 
     logging.info(f"Generated {len(emb_documents)} emb chunks from doc {json_filename}")
 
-    if (REDIS_ADDR is not None) and (REDIS_ADDR != ''): 
+    if (REDIS_ADDR is not None) and (REDIS_ADDR != '') and (USE_REDIS_CACHE == 1): 
         loaded = helpers.load_embedding_docs_in_redis(emb_documents, document_name = json_filename)
         logging.info(f"Loaded into Redis {loaded} emb chunks from doc {json_filename}")
         print(f"Loaded into Redis {loaded} emb chunks from doc {json_filename}")
