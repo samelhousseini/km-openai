@@ -73,7 +73,8 @@ def redis_reset_index(redis_new_conn):
 
 
 def test_redis(redis_new_conn):
-    if (REDIS_ADDR is None) or (REDIS_ADDR == ''): return None
+    if (REDIS_ADDR is None) or (REDIS_ADDR == '') or (USE_REDIS_CACHE != 1): return None
+    print("test redis")
 
     try:
         out = redis_new_conn.ft(REDIS_INDEX_NAME).info()

@@ -175,7 +175,7 @@ class oai_fc_agent():
             history_length      = len(completion_enc.encode(history))
 
             max_context_len = max_comp_model_tokens - query_length - MAX_OUTPUT_TOKENS - empty_prompt_length - history_length - 1
-
+            
             print("max_context_len", max_context_len)
             search_results = completion_enc.decode(completion_enc.encode(search_results)[:max_context_len])
 
@@ -197,7 +197,7 @@ class oai_fc_agent():
 
             messages.append({"role": "user", "content":body.format(history=history, context=search_results, query=query)})
 
-            print("search_results", len(search_results), search_results)
+            print("search_results", len(completion_enc.encode(search_results)), search_results)
             answer = openai_helpers.contact_openai(messages, completion_model = CHOSEN_COMP_MODEL, functions=intent_functions)
             answer = answer['choices'][0]['message']['content']
 
@@ -209,11 +209,7 @@ class oai_fc_agent():
 
 
     def run(self, query, lc_agent = None, history = None):
-        
-        print("history", history)
-        answer = self.chat(query, lc_agent, history)
-        print(answer)
 
-        # self.update_history(query, answer)
+        answer = self.chat(query, lc_agent, history)
 
         return answer
