@@ -147,12 +147,11 @@ class oai_fc_agent():
         completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
 
         messages.append({"role": "user", "content":intent_body.format(history=history, query=query)})
-        print("messages", messages)
         # messages.append({"role": "user", "content": query})
+        
         response = openai_helpers.contact_openai(messages, completion_model = CHOSEN_COMP_MODEL, functions=intent_functions)
 
         dd = self.get_dict(response)
-        print(dd)
 
         if 'function_call' in dd:
             search_terms  = dd['function_call']['arguments']['search_terms']
@@ -170,7 +169,7 @@ class oai_fc_agent():
             empty_prompt_length = len(completion_enc.encode(instruction_prompt + body))
             max_comp_model_tokens = openai_helpers.get_model_max_tokens(CHOSEN_COMP_MODEL)
             query   = completion_enc.decode(completion_enc.encode(query)[:MAX_QUERY_TOKENS])
-            print("hi34")
+
             history = completion_enc.decode(completion_enc.encode(history)[:MAX_HISTORY_TOKENS])
             query_length        = len(completion_enc.encode(query))
             history_length      = len(completion_enc.encode(history))
@@ -178,7 +177,7 @@ class oai_fc_agent():
             max_context_len = max_comp_model_tokens - query_length - MAX_OUTPUT_TOKENS - empty_prompt_length - history_length - 1
 
             print("max_context_len", max_context_len)
-            context = completion_enc.decode(completion_enc.encode(search_results)[:max_context_len])
+            search_results = completion_enc.decode(completion_enc.encode(search_results)[:max_context_len])
 
 
             messages.append(  # adding assistant response to messages
@@ -207,14 +206,6 @@ class oai_fc_agent():
             answer = dd['content']
 
         return answer
-
-
-    # def final_call(self, query, search_results, history):
-    #     messages = copy.deepcopy(final_call_messages)
-    #     messages.append({"role": "user", "content":body.format(history=history, context=search_results, query=query)})
-    #     response = openai_helpers.contact_openai(messages, completion_model = CHOSEN_COMP_MODEL)
-    #     return response
-
 
 
     def run(self, query, lc_agent = None, history = None):
