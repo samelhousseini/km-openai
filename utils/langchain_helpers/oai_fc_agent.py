@@ -44,25 +44,6 @@ intent_messages= [
 
 
 
-
-# intent_functions= [  
-#     {  
-#         "name": "search_knowledge_base",  
-#         "type": "function",  
-#         "description": "Search through knowledge base to find relevant documents that might help in answering the user query.",  
-#         "parameters": {  
-#             "type": "object",  
-#             "properties": {  
-#                 "search_terms": {
-#                     "type": "string",
-#                     "description": "Search terms that would be used in the search engine"
-#                 }
-#             },  
-#             "required": ["search_terms"]  
-#         }  
-#     }  
-# ]  
-
 intent_functions= [  
     {  
         "name": "extract_search_terms",  
@@ -147,19 +128,18 @@ class oai_fc_agent():
         completion_enc = openai_helpers.get_encoder(CHOSEN_COMP_MODEL)
 
         messages.append({"role": "user", "content":intent_body.format(history=history, query=query)})
-        # messages.append({"role": "user", "content": query})
+        print("messages", messages)
         
         response = openai_helpers.contact_openai(messages, completion_model = CHOSEN_COMP_MODEL, functions=intent_functions)
 
         dd = self.get_dict(response)
+        
 
         if 'function_call' in dd:
             search_terms  = dd['function_call']['arguments']['search_terms']
             search_results = [] 
 
             print("search_terms", search_terms)
-
-            # search_results.append(lc_agent.agent_cog_search(search_terms))
 
             for s in search_terms:
                 search_results.append(lc_agent.agent_cog_search(s['term'] + ' ' + s.get('additional_context', '')))
@@ -174,17 +154,23 @@ class oai_fc_agent():
             query_length        = len(completion_enc.encode(query))
             history_length      = len(completion_enc.encode(history))
 
-            max_context_len = max_comp_model_tokens - query_length - MAX_OUTPUT_TOKENS - empty_prompt_length - history_length - 1
-            
+            functions_length    = len(completion_enc.encode(str(intent_functions)))
+            func_args_length    = len(completion_enc.encode(str(dd['function_call']['arguments'])))
+
+            max_context_len = max_comp_model_tokens - query_length - MAX_OUTPUT_TOKENS - empty_prompt_length - history_length - functions_length -  func_args_length - 1
+            print(max_context_len, max_comp_model_tokens, query_length, MAX_OUTPUT_TOKENS, empty_prompt_length, history_length, functions_length,  func_args_length)
+
             print("max_context_len", max_context_len)
             search_results = completion_enc.decode(completion_enc.encode(search_results)[:max_context_len])
-
 
             messages.append(  # adding assistant response to messages
                     {
                     "role": dd["role"],
-                    "name": dd["function_call"]["name"],
-                    "content": str(dd['function_call']['arguments']['search_terms'])
+                    "function_call": {
+                        "name": dd["function_call"]["name"],
+                        "arguments": str(dd['function_call']['arguments'])
+                    },
+                    "content": None
                     }
             )
             messages.append(
@@ -194,13 +180,9 @@ class oai_fc_agent():
                     "content": str(search_results),
                     }
             )
-
-            messages.append({"role": "user", "content":body.format(history=history, context=search_results, query=query)})
-
-            print("search_results", len(completion_enc.encode(search_results)), search_results)
-            answer = openai_helpers.contact_openai(messages, completion_model = CHOSEN_COMP_MODEL, functions=intent_functions)
-            answer = answer['choices'][0]['message']['content']
-
+            print("search_results", len(search_results), search_results)
+            print('total tokens', len(completion_enc.encode(str(messages))))
+            answer = openai_helpers.contact_openai(messages, completion_model = CHOSEN_COMP_MODEL)
         
         else:
             answer = dd['content']
@@ -208,8 +190,9 @@ class oai_fc_agent():
         return answer
 
 
+
     def run(self, query, lc_agent = None, history = None):
 
         answer = self.chat(query, lc_agent, history)
-
+        print(answer)
         return answer
