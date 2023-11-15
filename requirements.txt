@@ -5,7 +5,7 @@
 azure-functions
 azure-core
 azure-cosmos
-openai
+openai==0.28.1
 numpy
 requests
 pandas
